@@ -1,0 +1,482 @@
+@page "/vpn"
+@inject managerwebapp.Services.SudoService SudoService
+@inject managerwebapp.Services.VpnConfigService VpnConfigService
+@using managerwebapp.Constants
+
+<PageTitle>VPN</PageTitle>
+
+<section class="rounded-b-[2rem] border-x border-b border-fuchsia-400/15 bg-gradient-to-br from-black/35 via-[#0b0612]/30 to-[#17081f]/35 p-8 shadow-[0_0_48px_rgba(168,85,247,0.16)] backdrop-blur-[2px]">
+    <div class="space-y-8">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">VPN</p>
+                <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                    Fields + file
+                </span>
+            </div>
+
+            <button type="button"
+                    @onclick="RefreshAsync"
+                    class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.3)] transition hover:bg-fuchsia-400/25">
+                Refresh
+            </button>
+        </div>
+
+        <div>
+            <h1 class="text-4xl font-semibold tracking-tight text-white">VPN</h1>
+            <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
+                Manage the main WireGuard settings from fields, then open the raw file when you want full control over `wg0.conf`.
+            </p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <div class="@GetStatusMessageClass()">
+                @_statusMessage
+            </div>
+        }
+
+        @if (!_isWireGuardInstalled)
+        {
+            <section class="rounded-[1.6rem] border border-fuchsia-400/15 bg-black/40 p-6 shadow-[0_0_40px_rgba(168,85,247,0.1)] backdrop-blur-md">
+                <div class="flex flex-col items-center justify-center gap-5 text-center">
+                    <div class="space-y-3">
+                        <h2 class="text-2xl font-semibold text-white">WireGuard not installed</h2>
+                        <p class="mx-auto max-w-3xl text-sm leading-6 text-neutral-300">
+                            Install WireGuard when you are ready. Once installed, this page will show the `wg0.conf` state and let you create, open, edit, and apply the config.
+                        </p>
+                    </div>
+
+                    <button type="button"
+                            @onclick="InstallWireGuardAsync"
+                            disabled="@_isInstallingWireGuard"
+                            class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
+                        @(_isInstallingWireGuard ? "Installing..." : "Install WireGuard")
+                    </button>
+                </div>
+            </section>
+        }
+        else if (_file is not null)
+        {
+            <div class="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_24rem]">
+                <section class="space-y-6 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                    <div class="space-y-3">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h2 class="text-3xl font-semibold text-white">WireGuard fields</h2>
+                            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                                @(_file.Exists ? "Loaded" : "New config")
+                            </span>
+                        </div>
+
+                        <p class="max-w-3xl text-base leading-7 text-neutral-300">
+                            Edit the most common WireGuard settings directly from fields. Use the full file dialog when you want to inspect or tweak the raw config.
+                        </p>
+                    </div>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <TextField Label="Private key"
+                                   @bind-Value="_model.PrivateKey"
+                                   autocomplete="off"
+                                   placeholder="Base64 private key" />
+                        <TextField Label="Address"
+                                   @bind-Value="_model.Address"
+                                   autocomplete="off"
+                                   placeholder="10.90.0.2/32" />
+                        <TextField Label="Listen port"
+                                   @bind-Value="_model.ListenPort"
+                                   autocomplete="off"
+                                   placeholder="51820" />
+                        <TextField Label="DNS"
+                                   @bind-Value="_model.Dns"
+                                   autocomplete="off"
+                                   placeholder="1.1.1.1" />
+                        <TextField Label="Peer public key"
+                                   @bind-Value="_model.PeerPublicKey"
+                                   autocomplete="off"
+                                   placeholder="Base64 peer public key" />
+                        <TextField Label="Preshared key"
+                                   @bind-Value="_model.PresharedKey"
+                                   autocomplete="off"
+                                   placeholder="Optional preshared key" />
+                        <TextField Label="Endpoint"
+                                   @bind-Value="_model.Endpoint"
+                                   autocomplete="off"
+                                   placeholder="control.example.com:51820" />
+                        <TextField Label="Allowed IPs"
+                                   @bind-Value="_model.AllowedIps"
+                                   autocomplete="off"
+                                   placeholder="10.90.0.1/32, 10.91.0.0/24" />
+                        <div class="md:col-span-2">
+                            <TextField Label="Persistent keepalive"
+                                       @bind-Value="_model.PersistentKeepalive"
+                                       autocomplete="off"
+                                       placeholder="25"
+                                       Hint="Leave blank if you do not need a keepalive override." />
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <button type="button"
+                                @onclick="SaveFieldsAsync"
+                                disabled="@_isSavingFields"
+                                class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
+                            @(_isSavingFields ? "Saving..." : "Save")
+                        </button>
+
+                        <button type="button"
+                                @onclick="OpenEditorAsync"
+                                class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10">
+                            Open file
+                        </button>
+                    </div>
+                </section>
+
+                <aside class="space-y-4 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                    <div class="rounded-[1.4rem] border border-white/10 bg-white/5 p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Config state</p>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                                @_file.StateLabel
+                            </span>
+                            <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
+                                @(_isWireGuardActive ? "Active" : "Inactive")
+                            </span>
+                        </div>
+                        <p class="mt-4 text-sm leading-6 text-neutral-300">
+                            @_file.Description
+                        </p>
+                    </div>
+
+                    <div class="rounded-[1.4rem] border border-white/10 bg-white/5 p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">File path</p>
+                        <p class="mt-3 text-sm leading-6 text-neutral-300">
+                            <code class="rounded bg-white/10 px-2 py-1 text-neutral-200">@_file.FilePath</code>
+                        </p>
+                    </div>
+
+                    <div class="rounded-[1.4rem] border border-white/10 bg-white/5 p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Save behavior</p>
+                        <p class="mt-3 text-sm leading-6 text-neutral-300">
+                            Saving updates the file immediately. If WireGuard is already active, the app asks whether you want to restart now or do it yourself later.
+                        </p>
+                    </div>
+                </aside>
+            </div>
+        }
+    </div>
+</section>
+
+@if (_file is not null && _isEditorOpen)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-6 backdrop-blur-sm">
+        <div class="flex h-[min(88vh,72rem)] w-full max-w-6xl flex-col rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/92 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
+            <div class="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-6 py-5">
+                <div class="space-y-2">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <h2 class="text-3xl font-semibold text-white">@_file.Title</h2>
+                        <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                            @_file.StateLabel
+                        </span>
+                    </div>
+                    <p class="max-w-3xl text-sm leading-6 text-neutral-300">@_file.Description</p>
+                    <p class="text-xs uppercase tracking-[0.28em] text-neutral-500">@_file.FilePath</p>
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                    <button type="button"
+                            @onclick="SaveEditorAsync"
+                            disabled="@_isSavingEditor"
+                            class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.3)] transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
+                        @(_isSavingEditor ? "Saving..." : "Save")
+                    </button>
+                    <button type="button"
+                            @onclick="CloseEditor"
+                            class="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_editorMessage))
+            {
+                <div class="@GetEditorMessageClass()">
+                    @_editorMessage
+                </div>
+            }
+
+            <div class="flex-1 p-6">
+                <textarea @bind="_editorContent"
+                          @bind:event="oninput"
+                          spellcheck="false"
+                          class="h-full min-h-[32rem] w-full rounded-[1.3rem] border border-white/10 bg-black/40 p-4 font-mono text-sm leading-6 text-fuchsia-100 outline-none"></textarea>
+            </div>
+        </div>
+    </div>
+}
+
+<ConfirmationDialog IsOpen="@_showRestartDialog"
+                    IsBusy="@_isRestartingWireGuard"
+                    Eyebrow="Restart"
+                    Title="Restart WireGuard now?"
+                    Message="The config file was saved. WireGuard is currently active, so the new config will not be applied until `wg-quick@wg0` is restarted."
+                    ConfirmText="Restart now"
+                    CancelText="I'll do it later"
+                    OnConfirm="RestartWireGuardAsync"
+                    OnCancel="SkipRestartAsync" />
+
+@code {
+    private readonly managerwebapp.Services.VpnConfigModel _model = new();
+    private managerwebapp.Services.VpnConfigFileState? _file;
+    private string _editorContent = string.Empty;
+    private string? _statusMessage;
+    private bool _statusIsError;
+    private string? _editorMessage;
+    private bool _editorMessageIsError;
+    private bool _isInstallingWireGuard;
+    private bool _isRestartingWireGuard;
+    private bool _isSavingFields;
+    private bool _isSavingEditor;
+    private bool _isEditorOpen;
+    private bool _isWireGuardActive;
+    private bool _isWireGuardInstalled;
+    private bool _showRestartDialog;
+    private string? _postSaveMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _isWireGuardInstalled = await VpnConfigService.IsWireGuardInstalledAsync();
+        _isWireGuardActive = _isWireGuardInstalled && await SudoService.IsWireGuardActiveAsync();
+
+        if (_isWireGuardInstalled)
+        {
+            _file = await VpnConfigService.LoadStateAsync();
+            await ReloadModelFromFileAsync();
+        }
+        else
+        {
+            _file = null;
+            ResetModel();
+        }
+    }
+
+    private async Task InstallWireGuardAsync()
+    {
+        _isInstallingWireGuard = true;
+        _statusMessage = null;
+        _statusIsError = false;
+
+        try
+        {
+            if (_isWireGuardInstalled)
+            {
+                _statusMessage = "WireGuard is already installed.";
+            }
+            else
+            {
+                _statusMessage = await SudoService.InstallWireGuardAsync();
+            }
+            _statusIsError = false;
+            await RefreshAsync();
+        }
+        catch (Exception exception)
+        {
+            _statusMessage = exception.Message;
+            _statusIsError = true;
+        }
+        finally
+        {
+            _isInstallingWireGuard = false;
+        }
+    }
+
+    private async Task OpenEditorAsync()
+    {
+        if (_file is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _editorContent = await VpnConfigService.LoadEditorContentAsync(_file.FilePath);
+            _editorMessage = null;
+            _editorMessageIsError = false;
+            _statusMessage = null;
+            _statusIsError = false;
+            _isEditorOpen = true;
+        }
+        catch (Exception exception)
+        {
+            _statusMessage = exception.Message;
+            _statusIsError = true;
+        }
+    }
+
+    private void CloseEditor()
+    {
+        _isEditorOpen = false;
+        _editorContent = string.Empty;
+        _editorMessage = null;
+        _editorMessageIsError = false;
+    }
+
+    private async Task SaveFieldsAsync()
+    {
+        if (_file is null)
+        {
+            return;
+        }
+
+        _isSavingFields = true;
+        _statusMessage = null;
+        _statusIsError = false;
+        bool wasWireGuardActive = _isWireGuardActive;
+
+        try
+        {
+            string content = await VpnConfigService.BuildContentAsync(_model);
+            await VpnConfigService.SaveAsync(_file.FilePath, content);
+            _postSaveMessage = $"{_file.Title} saved.";
+            await RefreshAsync();
+            await HandlePostSaveAsync(wasWireGuardActive);
+        }
+        catch (Exception exception)
+        {
+            _statusMessage = exception.Message;
+            _statusIsError = true;
+        }
+        finally
+        {
+            _isSavingFields = false;
+        }
+    }
+
+    private async Task SaveEditorAsync()
+    {
+        if (_file is null)
+        {
+            return;
+        }
+
+        _isSavingEditor = true;
+        bool wasWireGuardActive = _isWireGuardActive;
+
+        try
+        {
+            await VpnConfigService.SaveAsync(_file.FilePath, _editorContent);
+            _postSaveMessage = $"{_file.Title} saved.";
+            await RefreshAsync();
+            await HandlePostSaveAsync(wasWireGuardActive);
+        }
+        catch (Exception exception)
+        {
+            _editorMessage = exception.Message;
+            _editorMessageIsError = true;
+        }
+        finally
+        {
+            _isSavingEditor = false;
+        }
+    }
+
+    private Task HandlePostSaveAsync(bool wasWireGuardActive)
+    {
+        if (wasWireGuardActive)
+        {
+            _showRestartDialog = true;
+            return Task.CompletedTask;
+        }
+
+        _statusMessage = _postSaveMessage ?? "Config saved.";
+        _statusIsError = false;
+        _editorMessage = _statusMessage;
+        _editorMessageIsError = false;
+        _postSaveMessage = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task RestartWireGuardAsync()
+    {
+        _isRestartingWireGuard = true;
+
+        try
+        {
+            await SudoService.RestartWireGuardAsync();
+            _showRestartDialog = false;
+            _statusMessage = $"{_postSaveMessage ?? "Config saved."} {VpnConstants.WireGuardServiceName} restarted.";
+            _statusIsError = false;
+            _editorMessage = _statusMessage;
+            _editorMessageIsError = false;
+            _postSaveMessage = null;
+            await RefreshAsync();
+        }
+        catch (Exception exception)
+        {
+            _statusMessage = exception.Message;
+            _statusIsError = true;
+            _editorMessage = exception.Message;
+            _editorMessageIsError = true;
+        }
+        finally
+        {
+            _isRestartingWireGuard = false;
+        }
+    }
+
+    private Task SkipRestartAsync()
+    {
+        _showRestartDialog = false;
+        _statusMessage = $"{_postSaveMessage ?? "Config saved."} Restart {VpnConstants.WireGuardServiceName} later to apply the new config.";
+        _statusIsError = false;
+        _editorMessage = _statusMessage;
+        _editorMessageIsError = false;
+        _postSaveMessage = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task ReloadModelFromFileAsync()
+    {
+        managerwebapp.Services.VpnConfigModel loadedModel = await VpnConfigService.LoadModelAsync();
+        _model.PrivateKey = loadedModel.PrivateKey;
+        _model.Address = loadedModel.Address;
+        _model.ListenPort = loadedModel.ListenPort;
+        _model.Dns = loadedModel.Dns;
+        _model.PeerPublicKey = loadedModel.PeerPublicKey;
+        _model.PresharedKey = loadedModel.PresharedKey;
+        _model.Endpoint = loadedModel.Endpoint;
+        _model.AllowedIps = loadedModel.AllowedIps;
+        _model.PersistentKeepalive = loadedModel.PersistentKeepalive;
+    }
+
+    private void ResetModel()
+    {
+        _model.PrivateKey = null;
+        _model.Address = null;
+        _model.ListenPort = null;
+        _model.Dns = null;
+        _model.PeerPublicKey = null;
+        _model.PresharedKey = null;
+        _model.Endpoint = null;
+        _model.AllowedIps = null;
+        _model.PersistentKeepalive = null;
+    }
+
+    private string GetStatusMessageClass()
+    {
+        return _statusIsError
+            ? "rounded-2xl border border-red-300/20 bg-red-400/10 px-5 py-4 text-sm text-red-100"
+            : "rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-100";
+    }
+
+    private string GetEditorMessageClass()
+    {
+        return _editorMessageIsError
+            ? "mx-6 mt-6 rounded-2xl border border-red-300/20 bg-red-400/10 px-5 py-4 text-sm text-red-100"
+            : "mx-6 mt-6 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-100";
+    }
+}

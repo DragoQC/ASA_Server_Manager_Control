@@ -92,7 +92,7 @@
                 }
 
                 const alpha = 1 - distance / connectionDistance;
-                context.strokeStyle = `rgba(64, 244, 255, ${alpha * 0.28})`;
+                context.strokeStyle = `rgba(186, 123, 255, ${alpha * 0.3})`;
                 context.lineWidth = 1;
                 context.beginPath();
                 context.moveTo(particle.x, particle.y);
@@ -111,7 +111,7 @@
                     const alpha = 1 - mouseRange / mouseDistance;
                     glowBoost = alpha;
 
-                    context.strokeStyle = `rgba(118, 255, 255, ${alpha * 0.52})`;
+                    context.strokeStyle = `rgba(232, 159, 255, ${alpha * 0.54})`;
                     context.lineWidth = 1.35;
                     context.beginPath();
                     context.moveTo(mouse.x, mouse.y);
@@ -121,9 +121,9 @@
             }
 
             context.beginPath();
-            context.fillStyle = `rgba(174, 255, 255, ${0.62 + glowBoost * 0.38})`;
-            context.shadowBlur = 18 + glowBoost * 26;
-            context.shadowColor = "rgba(46, 241, 255, 0.9)";
+            context.fillStyle = `rgba(236, 203, 255, ${0.66 + glowBoost * 0.34})`;
+            context.shadowBlur = 20 + glowBoost * 28;
+            context.shadowColor = "rgba(168, 85, 247, 0.92)";
             context.arc(particle.x, particle.y, particle.radius + glowBoost * 0.7, 0, Math.PI * 2);
             context.fill();
         }

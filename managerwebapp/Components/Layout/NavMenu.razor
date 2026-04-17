@@ -1,17 +1,73 @@
-﻿<div class="flex h-full flex-col gap-6 p-6">
-    <div class="space-y-2">
-        <p class="text-[0.7rem] uppercase tracking-[0.35em] text-cyan-200/80">ASA Fleet</p>
-        <a class="block text-2xl font-semibold text-white" href="">managerwebapp</a>
-        <p class="text-sm text-neutral-300">Central view for multiple ASA server panels.</p>
-    </div>
+﻿<header class="relative z-20 border-b border-fuchsia-400/10 bg-black/20 shadow-[0_10px_28px_rgba(0,0,0,0.12)] backdrop-blur-[2px]">
+    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 lg:px-8">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <a href="" class="flex items-center gap-3">
+                <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-fuchsia-300/30 bg-fuchsia-400/15 text-sm font-semibold text-fuchsia-100 shadow-[0_0_20px_rgba(168,85,247,0.35)]">
+                    ASA
+                </span>
+                <span>
+                    <span class="block text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">ASA Fleet</span>
+                    <span class="block text-lg font-semibold text-white">Global ASA neon control</span>
+                </span>
+            </a>
 
-    <nav class="flex flex-col gap-2">
-        <NavLink class="rounded-2xl border border-cyan-400/10 bg-white/5 px-4 py-3 text-sm text-neutral-200 transition hover:border-cyan-300/30 hover:bg-cyan-400/10 hover:text-white" href="" Match="NavLinkMatch.All">
-            Dashboard
-        </NavLink>
-    </nav>
+            <AuthorizeView>
+                <Authorized>
+                    <div class="rounded-full border border-fuchsia-400/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.24em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)]">
+                        Authenticated command layer
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/admin/login"
+                       class="rounded-full border border-fuchsia-400/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.24em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition hover:bg-fuchsia-400/15">
+                        Admin login
+                    </a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
 
-    <div class="mt-auto rounded-3xl border border-cyan-400/10 bg-black/25 p-4 text-sm text-neutral-300 backdrop-blur-xl">
-        SQLite, auth, email settings, and remote server records are now wired for this app.
+        <div>
+            <nav class="flex flex-wrap gap-3">
+                <NavLink href=""
+                         Match="NavLinkMatch.All"
+                         class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition hover:bg-fuchsia-400/15"
+                         ActiveClass="border-fuchsia-300/40 bg-fuchsia-400/20 text-white shadow-[0_0_22px_rgba(168,85,247,0.35)]">
+                    Dashboard
+                </NavLink>
+
+                <AuthorizeView>
+                    <Authorized>
+                        <NavLink href="/servers"
+                                 class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition hover:bg-fuchsia-400/15"
+                                 ActiveClass="border-fuchsia-300/40 bg-fuchsia-400/20 text-white shadow-[0_0_22px_rgba(168,85,247,0.35)]">
+                            Servers
+                        </NavLink>
+
+                        <NavLink href="/vpn"
+                                 class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition hover:bg-fuchsia-400/15"
+                                 ActiveClass="border-fuchsia-300/40 bg-fuchsia-400/20 text-white shadow-[0_0_22px_rgba(168,85,247,0.35)]">
+                            VPN
+                        </NavLink>
+
+                        <NavLink href="/settings"
+                                 class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition hover:bg-fuchsia-400/15"
+                                 ActiveClass="border-fuchsia-300/40 bg-fuchsia-400/20 text-white shadow-[0_0_22px_rgba(168,85,247,0.35)]">
+                            Settings
+                        </NavLink>
+                    </Authorized>
+                </AuthorizeView>
+
+                <AuthorizeView>
+                    <Authorized>
+                        <form method="post" action="/auth/logout" @formname="logout" class="contents">
+                            <button type="submit"
+                                    class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition hover:bg-fuchsia-400/15">
+                                Logout
+                            </button>
+                        </form>
+                    </Authorized>
+                </AuthorizeView>
+            </nav>
+        </div>
     </div>
-</div>
+</header>

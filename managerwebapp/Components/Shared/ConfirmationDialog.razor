@@ -1,0 +1,64 @@
+@if (IsOpen)
+{
+    <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
+        <div class="w-full max-w-2xl rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 p-6 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
+            <div class="space-y-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <p class="text-xs font-semibold uppercase tracking-[0.45em] text-fuchsia-300">@Eyebrow</p>
+                    <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                        Action required
+                    </span>
+                </div>
+
+                <div>
+                    <h2 class="text-3xl font-semibold text-white">@Title</h2>
+                    <p class="mt-4 text-base leading-7 text-neutral-300">@Message</p>
+                </div>
+
+                <div class="flex flex-wrap justify-end gap-3 pt-2">
+                    <button type="button"
+                            @onclick="OnCancel"
+                            class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10">
+                        @CancelText
+                    </button>
+
+                    <button type="button"
+                            @onclick="OnConfirm"
+                            disabled="@IsBusy"
+                            class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
+                        @(IsBusy ? $"{ConfirmText}..." : ConfirmText)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public string Eyebrow { get; set; } = "Confirm";
+
+    [Parameter]
+    public string Title { get; set; } = "";
+
+    [Parameter]
+    public string Message { get; set; } = "";
+
+    [Parameter]
+    public string ConfirmText { get; set; } = "Restart now";
+
+    [Parameter]
+    public string CancelText { get; set; } = "Later";
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+}

@@ -23,7 +23,7 @@
 
 ```bash
 apt update && apt upgrade -y && apt install curl -y
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/DragoQC/ASA_Server_Manager/main/setup-server-webapp.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/DragoQC/ASA_Server_Manager_Control/main/setup-manager-webapp.sh)"
 ```
 
 ## What This Repo Is
@@ -155,19 +155,19 @@ setup-manager-webapp.sh
 What it does:
 
 - creates `asa_manager_web_app`
-- prepares `/opt/asa-manager`
+- prepares `/opt/asa-control`
 - installs base Linux deps
 - installs `.NET SDK 10.0.100-rc.2.25502.107`
 - clones `https://github.com/DragoQC/ASA_Server_Manager.git`
 - publishes `managerwebapp`
-- creates `asa-manager-webapp.service`
+- creates `asa-control-webapp.service`
 - starts the manager app on port `8010`
 
 Default runtime layout:
 
-- `/opt/asa-manager/webapp/src`
-- `/opt/asa-manager/webapp/publish`
-- `/etc/systemd/system/asa-manager-webapp.service`
+- `/opt/asa-control/webapp/src`
+- `/opt/asa-control/webapp/publish`
+- `/etc/systemd/system/asa-control-webapp.service`
 
 Default service URL:
 

@@ -41,13 +41,19 @@ log_error() {
 
 USER_NAME="${USER_NAME:-asa_manager_web_app}"
 GROUP_NAME="${GROUP_NAME:-$USER_NAME}"
-BASE_DIR="${BASE_DIR:-/opt/asa-manager}"
+BASE_DIR="${BASE_DIR:-/opt/asa-control}"
+VPN_DIR="${VPN_DIR:-$BASE_DIR/vpn}"
+WG_INTERFACE_NAME="${WG_INTERFACE_NAME:-wg0}"
+WG_CONFIG_PATH="${WG_CONFIG_PATH:-$VPN_DIR/${WG_INTERFACE_NAME}.conf}"
+WG_SYSTEM_CONFIG_DIR="${WG_SYSTEM_CONFIG_DIR:-/etc/wireguard}"
+WG_SYSTEM_CONFIG_PATH="${WG_SYSTEM_CONFIG_PATH:-$WG_SYSTEM_CONFIG_DIR/${WG_INTERFACE_NAME}.conf}"
 WEBAPP_ROOT="${WEBAPP_ROOT:-$BASE_DIR/webapp}"
 REPO_DIR="${REPO_DIR:-$WEBAPP_ROOT/src}"
 PUBLISH_DIR="${PUBLISH_DIR:-$WEBAPP_ROOT/publish}"
-SERVICE_NAME="${SERVICE_NAME:-asa-manager-webapp}"
+SERVICE_NAME="${SERVICE_NAME:-asa-control-webapp}"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
-REPO_URL="${REPO_URL:-https://github.com/DragoQC/ASA_Server_Manager.git}"
+SUDOERS_FILE="/etc/sudoers.d/${USER_NAME}-vpn"
+REPO_URL="${REPO_URL:-https://github.com/DragoQC/ASA_Server_Manager_Control.git}"
 REPO_BRANCH="${REPO_BRANCH:-main}"
 DOTNET_VERSION="${DOTNET_VERSION:-10.0.100-rc.2.25502.107}"
 DOTNET_ROOT="${DOTNET_ROOT:-/usr/share/dotnet}"
@@ -70,7 +76,7 @@ run_as_app_user_bash() {
   runuser -u "${USER_NAME}" -- bash -lc "$1"
 }
 
-log_manager "ASA Server Manager – Manager Web App Installer"
+log_manager "ASA Server Manager Control Installer"
 
 log_manager "Installing dependencies..."
 apt update
@@ -96,12 +102,32 @@ fi
 
 mkdir -p \
   "${BASE_DIR}" \
+  "${VPN_DIR}" \
   "${WEBAPP_ROOT}" \
   "${PUBLISH_DIR}"
 
 chown -R "${USER_NAME}:${GROUP_NAME}" "${BASE_DIR}"
 chmod 0755 "${BASE_DIR}"
+chmod 0775 "${VPN_DIR}"
 log_ok "Prepared ${BASE_DIR}."
+
+mkdir -p "${WG_SYSTEM_CONFIG_DIR}"
+if [ ! -f "${WG_CONFIG_PATH}" ]; then
+  install -o "${USER_NAME}" -g "${GROUP_NAME}" -m 0664 /dev/null "${WG_CONFIG_PATH}"
+fi
+
+ln -sfn "${WG_CONFIG_PATH}" "${WG_SYSTEM_CONFIG_PATH}"
+log_ok "Prepared WireGuard config path ${WG_CONFIG_PATH} -> ${WG_SYSTEM_CONFIG_PATH}."
+
+cat <<EOF > "${SUDOERS_FILE}"
+${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/apt update
+${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/apt install -y wireguard wireguard-tools
+${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/systemctl is-active wg-quick@${WG_INTERFACE_NAME} --quiet
+${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/systemctl restart wg-quick@${WG_INTERFACE_NAME}
+EOF
+chmod 0440 "${SUDOERS_FILE}"
+visudo -cf "${SUDOERS_FILE}"
+log_ok "Granted ${USER_NAME} access to install WireGuard and query/restart wg-quick@${WG_INTERFACE_NAME}."
 
 if [ ! -x "${DOTNET_BIN}" ] || ! "${DOTNET_BIN}" --list-sdks 2>/dev/null | grep -q "^${DOTNET_VERSION} "; then
   log_dotnet "Installing .NET SDK ${DOTNET_VERSION}..."
@@ -131,7 +157,7 @@ else
   log_ok "Updated local repository copy."
 fi
 
-log_dotnet "Publishing manager web app..."
+log_dotnet "Publishing control web app..."
 rm -rf "${PUBLISH_DIR}"
 mkdir -p "${PUBLISH_DIR}"
 chown -R "${USER_NAME}:${GROUP_NAME}" "${WEBAPP_ROOT}"
@@ -140,12 +166,12 @@ run_as_app_user_bash "export DOTNET_ROOT='${DOTNET_ROOT}'; export PATH='${DOTNET
 
 mkdir -p "${PUBLISH_DIR}/Data"
 chown -R "${USER_NAME}:${GROUP_NAME}" "${WEBAPP_ROOT}"
-log_ok "Published manager web app to ${PUBLISH_DIR}."
+log_ok "Published control web app to ${PUBLISH_DIR}."
 
 log_manager "Creating systemd service..."
 cat <<EOF > "${SERVICE_FILE}"
 [Unit]
-Description=ASA Manager Web App
+Description=ASA Server Manager Control Web App
 After=network.target
 
 [Service]
