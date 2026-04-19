@@ -1,5 +1,6 @@
 @page "/admin/invitations"
 @inject managerwebapp.Services.InvitationService InvitationService
+@inject IJSRuntime JS
 
 <PageTitle>Invitations</PageTitle>
 
@@ -30,17 +31,11 @@
             <div class="space-y-3">
                 <h2 class="text-2xl font-semibold text-white">Invite a server</h2>
                 <p class="max-w-3xl text-sm leading-6 text-neutral-300">
-                    Enter the remote manager URL. The next VPN address is prefilled automatically from the current control node address and existing invitation count.
+                    Generate a single invite link for one node. The VPN address is assigned here, the cluster ID comes from Cluster setup, and the node retrieves its full payload from the link.
                 </p>
             </div>
 
             <div class="mt-6 grid gap-4 md:grid-cols-2">
-                <TextField Label="Remote URL"
-                           @bind-Value="_form.RemoteUrl"
-                           placeholder="https://theisland.dragoqc.com"
-                           Hint="Optional. If provided, the app will post to `/api/admin/invite` on that remote server. If left empty, only a one-time invite link is generated."
-                           autocomplete="off" />
-
                 <TextField Label="VPN address"
                            @bind-Value="_form.VpnAddress"
                            placeholder="10.10.10.3/32"
@@ -53,14 +48,6 @@
                            placeholder="Set from Cluster setup"
                            Hint="Managed from the Cluster setup page. Invitations are blocked until a cluster ID is configured."
                            autocomplete="off" />
-
-                <div class="md:col-span-2">
-                    <TextField Label="Remote API key"
-                               @bind-Value="_form.ApiKey"
-                               placeholder="Paste the node API key"
-                               Hint="Optional unless you fill a remote URL. Used as `X-Api-Key` for direct invite push and future node-to-node admin calls."
-                               autocomplete="off" />
-                </div>
             </div>
 
             <div class="mt-6 flex flex-wrap gap-3">
@@ -78,6 +65,29 @@
                     @(_isRefreshing ? "Refreshing..." : "Refresh")
                 </button>
             </div>
+
+            @if (_previewPayload is not null)
+            {
+                <div class="mt-6 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invite link</p>
+                            <p class="mt-2 break-all text-sm text-neutral-300">@(string.IsNullOrWhiteSpace(_lastCreatedInviteLink) ? "Create an invite to get a one-time link." : _lastCreatedInviteLink)</p>
+                        </div>
+                        <button type="button"
+                                @onclick="CopyInviteLinkAsync"
+                                disabled="@string.IsNullOrWhiteSpace(_lastCreatedInviteLink)"
+                                class="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
+                            Copy link
+                        </button>
+                    </div>
+
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Payload preview</p>
+                        <pre class="mt-4 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200">@BuildPayloadPreview()</pre>
+                    </div>
+                </div>
+            }
         </section>
 
         <section class="space-y-4">
@@ -136,6 +146,8 @@
 @code {
     private readonly managerwebapp.Models.Invitations.InvitationFormModel _form = new();
     private IReadOnlyList<managerwebapp.Models.Invitations.InvitationListItem> _items = Array.Empty<managerwebapp.Models.Invitations.InvitationListItem>();
+    private managerwebapp.Models.Invitations.InviteRemoteServerRequest? _previewPayload;
+    private string? _lastCreatedInviteLink;
     private string? _statusMessage;
     private bool _statusIsError;
     private bool _isRefreshing;
@@ -155,6 +167,7 @@
             managerwebapp.Models.Invitations.InvitationFormModel defaults = await InvitationService.CreateDefaultFormAsync();
             _form.ClusterId = defaults.ClusterId;
             _form.VpnAddress = defaults.VpnAddress;
+            _previewPayload = await InvitationService.BuildPreviewAsync(_form);
             _items = await InvitationService.LoadAsync();
         }
         catch (Exception exception)
@@ -177,12 +190,9 @@
         try
         {
             managerwebapp.Models.Invitations.InvitationListItem item = await InvitationService.SendInvitationAsync(_form);
-            _statusMessage = string.IsNullOrWhiteSpace(item.RemoteUrl)
-                ? $"Invitation created. Share {item.InviteLink}"
-                : $"Invitation sent. Backup link: {item.InviteLink}";
+            _statusMessage = $"Invitation created. Share {item.InviteLink}";
             _statusIsError = false;
-            _form.RemoteUrl = null;
-            _form.ApiKey = null;
+            _lastCreatedInviteLink = item.InviteLink;
             await RefreshAsync();
         }
         catch (Exception exception)
@@ -202,4 +212,36 @@
             ? "rounded-2xl border border-red-300/20 bg-red-400/10 px-5 py-4 text-sm text-red-100"
             : "rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-100";
     }
+
+    private async Task CopyInviteLinkAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_lastCreatedInviteLink))
+        {
+            return;
+        }
+
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _lastCreatedInviteLink);
+        _statusMessage = "Invite link copied.";
+        _statusIsError = false;
+    }
+
+    private string BuildPayloadPreview()
+    {
+        if (_previewPayload is null)
+        {
+            return "No payload preview available.";
+        }
+
+        return string.Join(
+            "\n",
+            $"ClusterId: {_previewPayload.ClusterId}",
+            $"VpnAddress: {_previewPayload.VpnAddress}",
+            $"ServerEndpoint: {_previewPayload.ServerEndpoint}",
+            $"Dns: {_previewPayload.Dns}",
+            $"AllowedIps: {_previewPayload.AllowedIps}",
+            $"ServerPublicKey: {_previewPayload.ServerPublicKey}",
+            $"ClientPrivateKey: {_previewPayload.ClientPrivateKey}",
+            $"PresharedKey: {(_previewPayload.PresharedKey ?? "(none)")}");
+    }
+
 }

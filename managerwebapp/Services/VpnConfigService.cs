@@ -284,7 +284,7 @@ public sealed class VpnConfigService
         lines.Add("[Peer]");
         AppendLine(lines, "PublicKey", model.PeerPublicKey);
         AppendLine(lines, "PresharedKey", model.PresharedKey);
-        AppendLine(lines, "Endpoint", model.Endpoint);
+        AppendLine(lines, "Endpoint", BuildEndpointValue(model.Endpoint, model.ListenPort));
         AppendLine(lines, "AllowedIPs", model.AllowedIps);
         AppendLine(lines, "PersistentKeepalive", model.PersistentKeepalive);
 
@@ -297,6 +297,24 @@ public sealed class VpnConfigService
         {
             lines.Add($"{key} = {value.Trim()}");
         }
+    }
+
+    private static string? BuildEndpointValue(string? endpoint, string? listenPort)
+    {
+        if (string.IsNullOrWhiteSpace(endpoint))
+        {
+            return null;
+        }
+
+        string trimmedEndpoint = endpoint.Trim();
+        if (trimmedEndpoint.Contains(':', StringComparison.Ordinal))
+        {
+            return trimmedEndpoint;
+        }
+
+        return string.IsNullOrWhiteSpace(listenPort)
+            ? trimmedEndpoint
+            : $"{trimmedEndpoint}:{listenPort.Trim()}";
     }
 
     private static VpnConfigModel ApplyDefaults(VpnConfigModel model)
