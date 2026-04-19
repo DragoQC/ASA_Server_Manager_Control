@@ -3,6 +3,7 @@
 @inject managerwebapp.Services.VpnConfigService VpnConfigService
 @inject managerwebapp.Services.ClusterSettingsService ClusterSettingsService
 @inject managerwebapp.Services.RemoteClusterService RemoteClusterService
+@inject managerwebapp.Services.WireGuardInstallService WireGuardInstallService
 @inject IJSRuntime JS
 @using managerwebapp.Constants
 @using managerwebapp.Models.Cluster
@@ -124,7 +125,7 @@
         }
         else if (_file is not null)
         {
-            <div class="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_24rem]">
+            <div class="space-y-6">
                 <section class="space-y-6 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
                     <div class="space-y-3">
                         <div class="flex flex-wrap items-center gap-3">
@@ -137,6 +138,8 @@
                         <p class="max-w-3xl text-base leading-7 text-neutral-300">
                             This control app acts as the VPN server. Enter the public endpoint you want remote servers to reach, then use the raw file dialog when you want to inspect or tweak the full config.
                         </p>
+
+                        <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@_file.FilePath</p>
                     </div>
 
                     <div class="rounded-[1.4rem] border border-fuchsia-400/15 bg-fuchsia-400/5 p-5">
@@ -306,43 +309,24 @@
                     </div>
                 </section>
 
-                <aside class="space-y-4 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
-                    <div class="rounded-[1.4rem] border border-white/10 bg-white/5 p-5">
-                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Config state</p>
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                                @_file.StateLabel
-                            </span>
+                <section class="rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Service status</p>
                             <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
                                 @(_isWireGuardActive ? "Active" : "Inactive")
                             </span>
                         </div>
-                        <p class="mt-4 text-sm leading-6 text-neutral-300">
-                            @_file.Description
-                        </p>
+                        <button type="button"
+                                @onclick="RefreshWireGuardStatusAsync"
+                                disabled="@_isRefreshingStatus"
+                                class="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
+                            @(_isRefreshingStatus ? "Loading..." : "Refresh status")
+                        </button>
                     </div>
 
-                    <div class="rounded-[1.4rem] border border-white/10 bg-white/5 p-5">
-                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">File path</p>
-                        <p class="mt-3 text-sm leading-6 text-neutral-300">
-                            <code class="rounded bg-white/10 px-2 py-1 text-neutral-200">@_file.FilePath</code>
-                        </p>
-                    </div>
-
-                    <div class="rounded-[1.4rem] border border-white/10 bg-white/5 p-5">
-                        <div class="flex flex-wrap items-center justify-between gap-3">
-                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Service status</p>
-                            <button type="button"
-                                    @onclick="RefreshWireGuardStatusAsync"
-                                    disabled="@_isRefreshingStatus"
-                                    class="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
-                                @(_isRefreshingStatus ? "Loading..." : "Refresh status")
-                            </button>
-                        </div>
-
-                        <pre class="mt-4 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200">@_wireGuardStatusOutput</pre>
-                    </div>
-                </aside>
+                    <pre class="mt-4 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200">@_wireGuardStatusOutput</pre>
+                </section>
             </div>
         }
     </div>
@@ -483,6 +467,13 @@
 
         try
         {
+            _isInstallingWireGuard = WireGuardInstallService.IsInstalling;
+            if (!string.IsNullOrWhiteSpace(WireGuardInstallService.LastMessage))
+            {
+                _statusMessage = WireGuardInstallService.LastMessage;
+                _statusIsError = WireGuardInstallService.LastRunFailed;
+            }
+
             _clusterSettings = await ClusterSettingsService.LoadAsync();
             _isWireGuardInstalled = await VpnConfigService.IsWireGuardInstalledAsync();
             _isWireGuardActive = _isWireGuardInstalled && await SudoService.IsWireGuardActiveAsync();
@@ -541,7 +532,6 @@
 
     private async Task InstallWireGuardAsync()
     {
-        _isInstallingWireGuard = true;
         _statusMessage = null;
         _statusIsError = false;
 
@@ -551,12 +541,17 @@
             {
                 _statusMessage = "WireGuard is already installed.";
             }
+            else if (WireGuardInstallService.IsInstalling)
+            {
+                _statusMessage = WireGuardInstallService.LastMessage ?? "WireGuard install already running.";
+                _statusIsError = WireGuardInstallService.LastRunFailed;
+            }
             else
             {
-                _statusMessage = await SudoService.InstallWireGuardAsync();
+                await WireGuardInstallService.StartInstallAsync();
+                _statusMessage = WireGuardInstallService.LastMessage;
             }
-            _statusIsError = false;
-            await RefreshAsync();
+            _statusIsError = WireGuardInstallService.LastRunFailed;
         }
         catch (Exception exception)
         {
@@ -565,7 +560,7 @@
         }
         finally
         {
-            _isInstallingWireGuard = false;
+            _isInstallingWireGuard = WireGuardInstallService.IsInstalling;
         }
     }
 

@@ -2,6 +2,7 @@ using managerwebapp.Components;
 using managerwebapp.Data;
 using managerwebapp.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,12 @@ builder.Services.AddAuthentication(options =>
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
     })
     .AddIdentityCookies();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 string databasePath = Path.Combine(builder.Environment.ContentRootPath, "Data", "managerwebapp.db");
 Directory.CreateDirectory(Path.GetDirectoryName(databasePath) ?? builder.Environment.ContentRootPath);
@@ -54,6 +61,7 @@ builder.Services.AddScoped<RemoteClusterService>();
 builder.Services.AddScoped<RemoteServerService>();
 builder.Services.AddScoped<RemoteManagerService>();
 builder.Services.AddSingleton<RemoteServerHubClientService>();
+builder.Services.AddSingleton<WireGuardInstallService>();
 builder.Services.AddScoped<RemoteServerModsService>();
 builder.Services.AddHostedService<RemoteServerModsRefreshService>();
 builder.Services.AddScoped<SudoService>();
@@ -78,6 +86,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseForwardedHeaders();
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 app.UseAuthentication();
