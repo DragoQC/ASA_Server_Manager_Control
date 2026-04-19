@@ -1,10 +1,10 @@
-using managerwebapp.Components;
 using managerwebapp.Data;
 using managerwebapp.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using managerwebapp.Components;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 

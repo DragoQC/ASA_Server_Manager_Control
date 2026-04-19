@@ -16,7 +16,7 @@
         <div>
             <h1 class="text-4xl font-semibold tracking-tight text-white">Invitations</h1>
             <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
-                Send VPN join data to future remote servers, keep a history of previous invitations, and track which invited machines come online on the VPN.
+                Create one-time VPN invitation links for future remote servers, keep a history of previous invitations, and track which invited machines come online on the VPN.
             </p>
         </div>
 
@@ -29,7 +29,7 @@
 
         <section class="rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
             <div class="space-y-3">
-                <h2 class="text-2xl font-semibold text-white">Invite a server</h2>
+                <h2 class="text-2xl font-semibold text-white">Create invitation link</h2>
                 <p class="max-w-3xl text-sm leading-6 text-neutral-300">
                     Generate a single invite link for one node. The VPN address is assigned here, the cluster ID comes from Cluster setup, and the node retrieves its full payload from the link.
                 </p>
@@ -52,10 +52,10 @@
 
             <div class="mt-6 flex flex-wrap gap-3">
                 <button type="button"
-                        @onclick="SendInviteAsync"
+                        @onclick="CreateInvitationLinkAsync"
                         disabled="@_isSending"
                         class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
-                    @(_isSending ? "Creating..." : "Create / send invite")
+                    @(_isSending ? "Creating..." : "Create invitation link")
                 </button>
 
                 <button type="button"
@@ -181,7 +181,7 @@
         }
     }
 
-    private async Task SendInviteAsync()
+    private async Task CreateInvitationLinkAsync()
     {
         _isSending = true;
         _statusMessage = null;
@@ -189,8 +189,8 @@
 
         try
         {
-            managerwebapp.Models.Invitations.InvitationListItem item = await InvitationService.SendInvitationAsync(_form);
-            _statusMessage = $"Invitation created. Share {item.InviteLink}";
+            managerwebapp.Models.Invitations.InvitationListItem item = await InvitationService.CreateInvitationLinkAsync(_form);
+            _statusMessage = $"Invitation link created. Share {item.InviteLink}";
             _statusIsError = false;
             _lastCreatedInviteLink = item.InviteLink;
             await RefreshAsync();
@@ -233,12 +233,13 @@
         }
 
         return string.Join(
-            "\n",
-            $"ClusterId: {_previewPayload.ClusterId}",
+            separator: "\n",
+            value:$"ClusterId: {_previewPayload.ClusterId}",
             $"VpnAddress: {_previewPayload.VpnAddress}",
             $"ServerEndpoint: {_previewPayload.ServerEndpoint}",
             $"Dns: {_previewPayload.Dns}",
             $"AllowedIps: {_previewPayload.AllowedIps}",
+            $"RemoteApiKey: {_previewPayload.RemoteApiKey}",
             $"ServerPublicKey: {_previewPayload.ServerPublicKey}",
             $"ClientPrivateKey: {_previewPayload.ClientPrivateKey}",
             $"PresharedKey: {(_previewPayload.PresharedKey ?? "(none)")}");

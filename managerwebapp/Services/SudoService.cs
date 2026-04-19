@@ -14,10 +14,10 @@ public sealed class SudoService
 
         await RunProcessAsync(
             GlobalConstants.SudoPath,
-            ["-n", GlobalConstants.AptPath, "install", "-y", "wireguard", "wireguard-tools"],
+            ["-n", GlobalConstants.AptPath, "install", "-y", "wireguard", "wireguard-tools", "resolvconf"],
             cancellationToken);
 
-        return "WireGuard installed.";
+        return "WireGuard and resolvconf installed.";
     }
 
     public Task RestartWireGuardAsync(CancellationToken cancellationToken = default)

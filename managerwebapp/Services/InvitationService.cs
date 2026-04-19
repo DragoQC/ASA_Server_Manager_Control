@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using managerwebapp.Data;
 using managerwebapp.Data.Entities;
 using managerwebapp.Models.Invitations;
@@ -65,6 +66,7 @@ public sealed class InvitationService(
             RemoteUrl = string.Empty,
             ClusterId = clusterId,
             VpnAddress = form.VpnAddress.Trim(),
+            RemoteApiKey = "(generated on link creation)",
             OneTimeVpnKey = "preview",
             InviteLink = string.Empty,
             InviteStatus = "Preview",
@@ -74,7 +76,7 @@ public sealed class InvitationService(
         return BuildInviteRequest(previewInvitation, vpnConfig, clientKeys, serverKeys);
     }
 
-    public async Task<InvitationListItem> SendInvitationAsync(InvitationFormModel form, CancellationToken cancellationToken = default)
+    public async Task<InvitationListItem> CreateInvitationLinkAsync(InvitationFormModel form, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(form.VpnAddress))
         {
@@ -88,32 +90,32 @@ public sealed class InvitationService(
 
         if (string.IsNullOrWhiteSpace(vpnConfig.Endpoint))
         {
-            throw new InvalidOperationException("VPN endpoint is required before sending invitations.");
+            throw new InvalidOperationException("VPN endpoint is required before creating invitation links.");
         }
 
         if (string.IsNullOrWhiteSpace(vpnConfig.ListenPort))
         {
-            throw new InvalidOperationException("VPN listen port is required before sending invitations.");
+            throw new InvalidOperationException("VPN listen port is required before creating invitation links.");
         }
 
         if (string.IsNullOrWhiteSpace(vpnConfig.Dns))
         {
-            throw new InvalidOperationException("VPN DNS is required before sending invitations.");
+            throw new InvalidOperationException("VPN DNS is required before creating invitation links.");
         }
 
         if (string.IsNullOrWhiteSpace(vpnConfig.AllowedIps))
         {
-            throw new InvalidOperationException("VPN allowed IPs are required before sending invitations.");
+            throw new InvalidOperationException("VPN allowed IPs are required before creating invitation links.");
         }
 
         if (string.IsNullOrWhiteSpace(clientKeys.PrivateKey) || string.IsNullOrWhiteSpace(clientKeys.PublicKey))
         {
-            throw new InvalidOperationException("Generate client keys before sending invitations.");
+            throw new InvalidOperationException("Generate client keys before creating invitation links.");
         }
 
         if (string.IsNullOrWhiteSpace(serverKeys.PublicKey))
         {
-            throw new InvalidOperationException("Generate server keys before sending invitations.");
+            throw new InvalidOperationException("Generate server keys before creating invitation links.");
         }
 
         InvitationEntity invitation = new()
@@ -121,6 +123,7 @@ public sealed class InvitationService(
             RemoteUrl = string.Empty,
             ClusterId = clusterId,
             VpnAddress = form.VpnAddress.Trim(),
+            RemoteApiKey = GenerateRemoteApiKey(),
             OneTimeVpnKey = GenerateOneTimeVpnKey(),
             InviteLink = string.Empty,
             InviteStatus = "Pending",
@@ -146,7 +149,7 @@ public sealed class InvitationService(
             invitation.CreatedAtUtc);
     }
 
-    public async Task<InviteRemoteServerRequest> ClaimInviteAsync(string inviteKey, CancellationToken cancellationToken = default)
+    public async Task<InviteRemoteServerRequest> GetInviteRequestAsync(string inviteKey, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(inviteKey))
         {
@@ -229,6 +232,11 @@ public sealed class InvitationService(
         return Convert.ToHexString(Guid.NewGuid().ToByteArray()).ToLowerInvariant();
     }
 
+    private static string GenerateRemoteApiKey()
+    {
+        return Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+    }
+
     private static string BuildInviteLink(string? endpoint, string oneTimeVpnKey)
     {
         string host = string.IsNullOrWhiteSpace(endpoint)
@@ -275,6 +283,7 @@ public sealed class InvitationService(
             $"{endpoint}:{listenPort}",
             dns,
             allowedIps,
+            invitation.RemoteApiKey,
             serverPublicKey,
             clientPrivateKey,
             string.IsNullOrWhiteSpace(vpnConfig.PresharedKey) ? null : vpnConfig.PresharedKey.Trim());

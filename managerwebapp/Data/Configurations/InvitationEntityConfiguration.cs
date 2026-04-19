@@ -30,6 +30,10 @@ public sealed class InvitationEntityConfiguration : IEntityTypeConfiguration<Inv
             .HasMaxLength(64)
             .IsRequired();
 
+        builder.Property(invitation => invitation.RemoteApiKey)
+            .HasMaxLength(256)
+            .IsRequired();
+
         builder.Property(invitation => invitation.OneTimeVpnKey)
             .HasMaxLength(128)
             .IsRequired();

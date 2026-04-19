@@ -13,7 +13,7 @@ public sealed class VpnController(InvitationService invitationService) : Control
     {
         try
         {
-            InviteRemoteServerRequest request = await invitationService.ClaimInviteAsync(inviteKey, cancellationToken);
+            InviteRemoteServerRequest request = await invitationService.GetInviteRequestAsync(inviteKey, cancellationToken);
             return Ok(request);
         }
         catch (InvalidOperationException exception)

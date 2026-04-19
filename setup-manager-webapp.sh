@@ -121,7 +121,7 @@ log_ok "Prepared WireGuard config path ${WG_CONFIG_PATH} -> ${WG_SYSTEM_CONFIG_P
 
 cat <<EOF > "${SUDOERS_FILE}"
 ${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/apt update
-${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/apt install -y wireguard wireguard-tools
+${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/apt install -y wireguard wireguard-tools resolvconf
 ${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/systemctl is-active wg-quick@${WG_INTERFACE_NAME} --quiet
 ${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/systemctl status wg-quick@${WG_INTERFACE_NAME} --no-pager --full
 ${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/systemctl start wg-quick@${WG_INTERFACE_NAME}
