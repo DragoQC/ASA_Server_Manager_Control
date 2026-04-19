@@ -7,15 +7,25 @@ namespace managerwebapp.Data;
 
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityUserContext<ApplicationUser>(options)
 {
+    public DbSet<ClusterSettingsEntity> ClusterSettings => Set<ClusterSettingsEntity>();
+    public DbSet<CurseForgeSettingsEntity> CurseForgeSettings => Set<CurseForgeSettingsEntity>();
     public DbSet<EmailSettingsEntity> EmailSettings => Set<EmailSettingsEntity>();
+    public DbSet<InvitationEntity> Invitations => Set<InvitationEntity>();
+    public DbSet<ModEntity> Mods => Set<ModEntity>();
     public DbSet<RemoteServerEntity> RemoteServers => Set<RemoteServerEntity>();
+    public DbSet<RemoteServerModEntity> RemoteServerMods => Set<RemoteServerModEntity>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
+        builder.ApplyConfiguration(new ClusterSettingsEntityConfiguration());
+        builder.ApplyConfiguration(new CurseForgeSettingsEntityConfiguration());
         builder.ApplyConfiguration(new EmailSettingsEntityConfiguration());
+        builder.ApplyConfiguration(new InvitationEntityConfiguration());
+        builder.ApplyConfiguration(new ModEntityConfiguration());
         builder.ApplyConfiguration(new RemoteServerEntityConfiguration());
+        builder.ApplyConfiguration(new RemoteServerModEntityConfiguration());
     }
 
     public override int SaveChanges()

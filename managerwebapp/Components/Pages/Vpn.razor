@@ -1,19 +1,22 @@
-@page "/vpn"
+@page "/admin/vpn"
 @inject managerwebapp.Services.SudoService SudoService
 @inject managerwebapp.Services.VpnConfigService VpnConfigService
+@inject managerwebapp.Services.ClusterSettingsService ClusterSettingsService
+@inject managerwebapp.Services.RemoteClusterService RemoteClusterService
 @inject IJSRuntime JS
 @using managerwebapp.Constants
+@using managerwebapp.Models.Cluster
 @using managerwebapp.Models.Vpn
 
-<PageTitle>VPN</PageTitle>
+<PageTitle>Cluster Setup</PageTitle>
 
 <section class="rounded-b-[2rem] border-x border-b border-fuchsia-400/15 bg-gradient-to-br from-black/35 via-[#0b0612]/30 to-[#17081f]/35 p-8 shadow-[0_0_48px_rgba(168,85,247,0.16)] backdrop-blur-[2px]">
     <div class="space-y-8">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div class="flex flex-wrap items-center gap-4">
-                <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">VPN</p>
+                <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Cluster setup</p>
                 <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                    Fields + file
+                    Cluster + VPN
                 </span>
             </div>
 
@@ -45,9 +48,9 @@
         </div>
 
         <div>
-            <h1 class="text-4xl font-semibold tracking-tight text-white">VPN</h1>
+            <h1 class="text-4xl font-semibold tracking-tight text-white">Cluster setup</h1>
             <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
-                Manage the main WireGuard settings from fields, then open the raw file when you want full control over `wg0.conf`.
+                Manage the shared ARK cluster ID at the top, then configure the WireGuard link used by the control node and invited servers.
             </p>
         </div>
 
@@ -57,6 +60,47 @@
                 @_statusMessage
             </div>
         }
+
+        <section class="space-y-6 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+            <div class="space-y-3">
+                <div class="flex flex-wrap items-center gap-3">
+                    <h2 class="text-3xl font-semibold text-white">Cluster ID</h2>
+                    <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                        ARK cluster
+                    </span>
+                </div>
+
+                <p class="max-w-3xl text-base leading-7 text-neutral-300">
+                    This ID links multiple ASA servers into the same cluster for shared transfers and cluster travel. Invitations require it, but you can manage it independently from the VPN config.
+                </p>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
+                <TextHelpField Label="Cluster ID"
+                               @bind-Value="_clusterSettings.ClusterId"
+                               OnHelpClick="@(() => OpenHelpDialog(
+                                   "Cluster ID",
+                                   "ARK uses the cluster ID to decide which servers belong to the same transfer cluster. Every server that should share characters, items, or creatures must use the exact same cluster ID. Generate a unique value once, then keep it consistent across the fleet."))"
+                               HelpButtonLabel="Cluster ID help"
+                               autocomplete="off"
+                               placeholder="Unique ARK cluster id"
+                               Hint="Required for invitations and cluster travel. This value is stored separately from wg0.conf." />
+
+                <button type="button"
+                        @onclick="GenerateClusterId"
+                        disabled="@_isSavingClusterId"
+                        class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
+                    Generate
+                </button>
+
+                <button type="button"
+                        @onclick="SaveClusterIdAsync"
+                        disabled="@_isSavingClusterId"
+                        class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
+                    @(_isSavingClusterId ? "Saving..." : "Save cluster ID")
+                </button>
+            </div>
+        </section>
 
         @if (!_isWireGuardInstalled)
         {
@@ -84,14 +128,14 @@
                 <section class="space-y-6 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
                     <div class="space-y-3">
                         <div class="flex flex-wrap items-center gap-3">
-                            <h2 class="text-3xl font-semibold text-white">WireGuard fields</h2>
+                        <h2 class="text-3xl font-semibold text-white">WireGuard fields</h2>
                             <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
                                 @(_file.Exists ? "Loaded" : "New config")
                             </span>
                         </div>
 
                         <p class="max-w-3xl text-base leading-7 text-neutral-300">
-                            Edit the most common WireGuard settings directly from fields. Use the full file dialog when you want to inspect or tweak the raw config.
+                            This control app acts as the VPN server. Enter the public endpoint you want remote servers to reach, then use the raw file dialog when you want to inspect or tweak the full config.
                         </p>
                     </div>
 
@@ -155,6 +199,7 @@
                     <div class="grid gap-4 md:grid-cols-2">
                         <TextHelpField Label="Private key"
                                        @bind-Value="_model.PrivateKey"
+                                       Error="@GetFieldError(nameof(VpnConfigModel.PrivateKey))"
                                        OnHelpClick="@(() => OpenHelpDialog(
                                            "Private key",
                                            "This is the private key for the local [Interface]. Keep it secret and do not share it. Use client key generation for this field on a client config."))"
@@ -164,6 +209,7 @@
                                        Hint="Use `Generate client keys` to create one and fill this field automatically." />
                         <TextHelpField Label="Address"
                                        @bind-Value="_model.Address"
+                                       Error="@GetFieldError(nameof(VpnConfigModel.Address))"
                                        OnHelpClick="@(() => OpenHelpDialog(
                                            "Address",
                                            "This is the VPN IP/subnet assigned to this node. Pick a private range that is not already used on your LAN or another routed VPN. Good examples are 10.10.10.2/32 for one client or 10.10.10.1/24 for a server subnet."))"
@@ -173,15 +219,17 @@
                                        Hint="Prefilled in UI with 10.10.10.2/32 until the file contains something else." />
                         <TextHelpField Label="Listen port"
                                        @bind-Value="_model.ListenPort"
+                                       Error="@GetFieldError(nameof(VpnConfigModel.ListenPort))"
                                        OnHelpClick="@(() => OpenHelpDialog(
                                            "Listen port",
-                                           "UDP port WireGuard listens on. 51820 is the common default. This is usually required for a server config and often optional for a simple client config."))"
+                                           "UDP port WireGuard listens on. 51820 is the common WireGuard default and is prefilled here for the control app server."))"
                                        HelpButtonLabel="Listen port help"
                                        autocomplete="off"
                                        placeholder="51820"
-                                       Hint="Prefilled in UI with 51820 until the file contains something else." />
+                                       Hint="Prefilled in UI with 51820 unless the file already contains another value." />
                         <TextHelpField Label="DNS"
                                        @bind-Value="_model.Dns"
+                                       Error="@GetFieldError(nameof(VpnConfigModel.Dns))"
                                        OnHelpClick="@(() => OpenHelpDialog(
                                            "DNS",
                                            "DNS server used while the tunnel is up. This can be a public resolver like 1.1.1.1 or an internal DNS server reachable through the VPN."))"
@@ -191,6 +239,7 @@
                                        Hint="Common values: 1.1.1.1, 8.8.8.8, or your own internal DNS." />
                         <TextHelpField Label="Peer public key"
                                        @bind-Value="_model.PeerPublicKey"
+                                       Error="@GetFieldError(nameof(VpnConfigModel.PeerPublicKey))"
                                        OnHelpClick="@(() => OpenHelpDialog(
                                            "Peer public key",
                                            "This is the public key of the remote peer. On a client config, this is usually the server public key. The server private key stays on the server and must not be pasted here."))"
@@ -200,6 +249,7 @@
                                        Hint="Use `Generate server keys` to create a fresh server pair and fill this field with the server public key." />
                         <TextHelpField Label="Preshared key"
                                        @bind-Value="_model.PresharedKey"
+                                       Error="@GetFieldError(nameof(VpnConfigModel.PresharedKey))"
                                        OnHelpClick="@(() => OpenHelpDialog(
                                            "Preshared key",
                                            "Optional extra shared secret used by both sides. If you use one, the exact same key must be configured on the remote peer too."))"
@@ -208,14 +258,17 @@
                                        placeholder="Optional preshared key" />
                         <TextHelpField Label="Endpoint"
                                        @bind-Value="_model.Endpoint"
+                                       Error="@GetFieldError(nameof(VpnConfigModel.Endpoint))"
                                        OnHelpClick="@(() => OpenHelpDialog(
                                            "Endpoint",
-                                           "Public host or IP and UDP port of the remote WireGuard server, for example vpn.example.com:51820 or 203.0.113.10:51820."))"
+                                           "Enter only the public host or IP for this control app, because this app is the VPN server. The port is handled separately by the listen port field. Example host: control.dragoqc.com."))"
                                        HelpButtonLabel="Endpoint help"
                                        autocomplete="off"
-                                       placeholder="control.example.com:51820" />
+                                       placeholder="control.example.com"
+                                       Hint="Enter the server URL/host only here. Do not include the port." />
                         <TextHelpField Label="Allowed IPs"
                                        @bind-Value="_model.AllowedIps"
+                                       Error="@GetFieldError(nameof(VpnConfigModel.AllowedIps))"
                                        OnHelpClick="@(() => OpenHelpDialog(
                                            "Allowed IPs",
                                            "Defines which traffic should go through the VPN tunnel for this peer. For a VPN-only subnet use something like 10.10.10.0/24. For a full tunnel use 0.0.0.0/0 and ::/0."))"
@@ -226,6 +279,7 @@
                         <div class="md:col-span-2">
                             <TextHelpField Label="Persistent keepalive"
                                            @bind-Value="_model.PersistentKeepalive"
+                                           Error="@GetFieldError(nameof(VpnConfigModel.PersistentKeepalive))"
                                            OnHelpClick="@(() => OpenHelpDialog(
                                                "Persistent keepalive",
                                                "Useful for clients behind NAT. 25 seconds is the usual value. Leave it empty if you do not need it."))"
@@ -379,6 +433,8 @@
 
 @code {
     private readonly VpnConfigModel _model = new();
+    private readonly Dictionary<string, string> _fieldErrors = new(StringComparer.Ordinal);
+    private ClusterSettingsModel _clusterSettings = new();
     private VpnConfigFileState? _file;
     private string _editorContent = string.Empty;
     private string? _statusMessage;
@@ -395,6 +451,7 @@
     private bool _isStoppingWireGuard;
     private bool _isRefreshingStatus;
     private bool _isRefreshingPage;
+    private bool _isSavingClusterId;
     private bool _isEditorOpen;
     private bool _isWireGuardActive;
     private bool _isWireGuardInstalled;
@@ -426,6 +483,7 @@
 
         try
         {
+            _clusterSettings = await ClusterSettingsService.LoadAsync();
             _isWireGuardInstalled = await VpnConfigService.IsWireGuardInstalledAsync();
             _isWireGuardActive = _isWireGuardInstalled && await SudoService.IsWireGuardActiveAsync();
 
@@ -448,6 +506,36 @@
         finally
         {
             _isRefreshingPage = false;
+        }
+    }
+
+    private void GenerateClusterId()
+    {
+        _clusterSettings.ClusterId = ClusterSettingsService.GenerateClusterId();
+    }
+
+    private async Task SaveClusterIdAsync()
+    {
+        _isSavingClusterId = true;
+        _statusMessage = null;
+        _statusIsError = false;
+
+        try
+        {
+            await ClusterSettingsService.SaveAsync(_clusterSettings);
+            int pushedCount = await RemoteClusterService.PushClusterIdToConnectedServersAsync(_clusterSettings.ClusterId);
+            _statusMessage = pushedCount > 0
+                ? $"Cluster ID saved and pushed to {pushedCount} connected server(s)."
+                : "Cluster ID saved.";
+        }
+        catch (Exception exception)
+        {
+            _statusMessage = exception.Message;
+            _statusIsError = true;
+        }
+        finally
+        {
+            _isSavingClusterId = false;
         }
     }
 
@@ -580,10 +668,18 @@
         _isSavingFields = true;
         _statusMessage = null;
         _statusIsError = false;
+        _fieldErrors.Clear();
         bool wasWireGuardActive = _isWireGuardActive;
 
         try
         {
+            if (!ValidateFields())
+            {
+                _statusMessage = "Please fill the required VPN fields.";
+                _statusIsError = true;
+                return;
+            }
+
             string content = await VpnConfigService.BuildContentAsync(_model);
             await VpnConfigService.SaveAsync(_file.FilePath, content);
             _postSaveMessage = $"{_file.Title} saved.";
@@ -775,10 +871,11 @@
     private void ResetModel()
     {
         VpnConfigModel defaults = VpnConfigService.CreateDefaultModel();
+        _fieldErrors.Clear();
         _model.PrivateKey = null;
         _model.Address = defaults.Address;
         _model.ListenPort = defaults.ListenPort;
-        _model.Dns = null;
+        _model.Dns = defaults.Dns;
         _model.PeerPublicKey = null;
         _model.PresharedKey = null;
         _model.Endpoint = null;
@@ -808,6 +905,31 @@
         await JS.InvokeVoidAsync("navigator.clipboard.writeText", _serverKeys.PublicKey);
         _statusMessage = "Server public key copied.";
         _statusIsError = false;
+    }
+
+    private bool ValidateFields()
+    {
+        AddRequiredFieldError(nameof(VpnConfigModel.PrivateKey), _model.PrivateKey, "Private key is required.");
+        AddRequiredFieldError(nameof(VpnConfigModel.Address), _model.Address, "Address is required.");
+        AddRequiredFieldError(nameof(VpnConfigModel.ListenPort), _model.ListenPort, "Listen port is required.");
+        AddRequiredFieldError(nameof(VpnConfigModel.Dns), _model.Dns, "DNS is required.");
+        AddRequiredFieldError(nameof(VpnConfigModel.PeerPublicKey), _model.PeerPublicKey, "Peer public key is required.");
+        AddRequiredFieldError(nameof(VpnConfigModel.Endpoint), _model.Endpoint, "Endpoint is required.");
+        AddRequiredFieldError(nameof(VpnConfigModel.AllowedIps), _model.AllowedIps, "Allowed IPs is required.");
+        return _fieldErrors.Count == 0;
+    }
+
+    private void AddRequiredFieldError(string fieldName, string? value, string message)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            _fieldErrors[fieldName] = message;
+        }
+    }
+
+    private string? GetFieldError(string fieldName)
+    {
+        return _fieldErrors.GetValueOrDefault(fieldName);
     }
 
     private string GetStatusMessageClass()

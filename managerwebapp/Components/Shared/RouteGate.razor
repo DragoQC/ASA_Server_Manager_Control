@@ -25,7 +25,8 @@
 
         bool isLoginPage = RouteData.PageType == typeof(Pages.Login);
         bool isResetPasswordPage = RouteData.PageType == typeof(Pages.ResetPassword);
-        bool isPublicPage = RouteData.PageType == typeof(Pages.NotFound) ||
+        bool isPublicPage = RouteData.PageType == typeof(Pages.Home) ||
+                            RouteData.PageType == typeof(Pages.NotFound) ||
                             RouteData.PageType == typeof(Pages.Error);
 
         _canRender = false;
@@ -38,7 +39,7 @@
 
         if (isAuthenticated && isLoginPage)
         {
-            NavigationManager.NavigateTo(mustChangePassword ? "/admin/reset-password?firstLogin=true" : "/", forceLoad: true);
+            NavigationManager.NavigateTo(mustChangePassword ? "/admin/reset-password?firstLogin=true" : "/admin/dashboard", forceLoad: true);
             return;
         }
 

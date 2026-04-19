@@ -9,6 +9,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddControllers();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication(options =>
@@ -42,8 +43,23 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     .AddDefaultTokenProviders();
 
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<ClusterSettingsService>();
+builder.Services.AddHttpClient<CurseForgeService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.curseforge.com");
+});
+builder.Services.AddScoped<InvitationService>();
+builder.Services.AddHttpClient<RemoteAdminHttpClient>();
+builder.Services.AddScoped<RemoteClusterService>();
+builder.Services.AddScoped<RemoteServerService>();
+builder.Services.AddScoped<RemoteManagerService>();
+builder.Services.AddSingleton<RemoteServerHubClientService>();
+builder.Services.AddScoped<RemoteServerModsService>();
+builder.Services.AddHostedService<RemoteServerModsRefreshService>();
 builder.Services.AddScoped<SudoService>();
 builder.Services.AddScoped<VpnConfigService>();
+builder.Services.AddHostedService<InvitationMonitorService>();
+builder.Services.AddHostedService(services => services.GetRequiredService<RemoteServerHubClientService>());
 
 WebApplication app = builder.Build();
 
@@ -51,6 +67,7 @@ await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
 {
     AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.EnsureCreatedAsync();
+    await SchemaBootstrapper.EnsureRemoteServersColumnsAsync(dbContext);
     AuthService authService = scope.ServiceProvider.GetRequiredService<AuthService>();
     await authService.EnsureDefaultAdminUserAsync();
 }
@@ -80,7 +97,7 @@ app.MapPost("/auth/login",
                                   await authService.MustChangePasswordAsync(request.Username);
 
         return result.Succeeded
-            ? Results.LocalRedirect(mustChangePassword ? "/admin/reset-password?firstLogin=true" : "/")
+            ? Results.LocalRedirect(mustChangePassword ? "/admin/reset-password?firstLogin=true" : "/admin/dashboard")
             : Results.LocalRedirect("/admin/login?error=Invalid%20username%20or%20password.");
     })
     .DisableAntiforgery();
@@ -94,6 +111,7 @@ app.MapPost("/auth/logout",
     .DisableAntiforgery();
 
 app.MapStaticAssets();
+app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

@@ -8,6 +8,7 @@ public sealed class VpnConfigService
 {
     public const string DefaultAddress = "10.10.10.2/32";
     public const string DefaultListenPort = "51820";
+    public const string DefaultDns = "1.1.1.1";
     public const string DefaultAllowedIps = "10.10.10.0/24";
     public const string DefaultPersistentKeepalive = "25";
 
@@ -52,6 +53,24 @@ public sealed class VpnConfigService
     {
         string content = await LoadEditorContentAsync(VpnConstants.VpnConfigFilePath, cancellationToken);
         return ApplyDefaults(ParseModel(content));
+    }
+
+    public async Task<VpnConfigModel> LoadConfiguredModelAsync(CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(VpnConstants.VpnConfigFilePath))
+        {
+            throw new InvalidOperationException("Configure and save wg0.conf before using invitations.");
+        }
+
+        string content = await LoadEditorContentAsync(VpnConstants.VpnConfigFilePath, cancellationToken);
+        VpnConfigModel model = ParseModel(content);
+
+        if (string.IsNullOrWhiteSpace(model.Address))
+        {
+            throw new InvalidOperationException("VPN address must be configured in wg0.conf before using invitations.");
+        }
+
+        return model;
     }
 
     public Task<string> BuildContentAsync(VpnConfigModel model, CancellationToken cancellationToken = default)
@@ -284,6 +303,7 @@ public sealed class VpnConfigService
     {
         model.Address = string.IsNullOrWhiteSpace(model.Address) ? DefaultAddress : model.Address;
         model.ListenPort = string.IsNullOrWhiteSpace(model.ListenPort) ? DefaultListenPort : model.ListenPort;
+        model.Dns = string.IsNullOrWhiteSpace(model.Dns) ? DefaultDns : model.Dns;
         model.AllowedIps = string.IsNullOrWhiteSpace(model.AllowedIps) ? DefaultAllowedIps : model.AllowedIps;
         model.PersistentKeepalive = string.IsNullOrWhiteSpace(model.PersistentKeepalive) ? DefaultPersistentKeepalive : model.PersistentKeepalive;
         return model;

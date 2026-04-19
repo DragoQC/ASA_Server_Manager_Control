@@ -1,44 +1,175 @@
 ﻿@page "/"
+@inject managerwebapp.Services.RemoteServerModsService RemoteServerModsService
 
-<PageTitle>Manager Dashboard</PageTitle>
+<PageTitle>ASA Fleet</PageTitle>
 
 <section class="rounded-b-[2rem] border-x border-b border-fuchsia-400/15 bg-gradient-to-br from-black/35 via-[#0b0612]/30 to-[#17081f]/35 p-8 shadow-[0_0_48px_rgba(168,85,247,0.16)] backdrop-blur-[2px]">
     <div class="space-y-8">
-        <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Dashboard</p>
-        <div>
-            <h1 class="text-4xl font-semibold tracking-tight text-white">Coming soon</h1>
-            <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
-                This dashboard will become the central place to see other servers info, live fleet state, connection health, and cross-server actions.
-            </p>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Public fleet overview</p>
+                <h1 class="mt-3 text-4xl font-semibold tracking-tight text-white">Remote ASA servers</h1>
+                <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
+                    Public status page for the ASA fleet. Expand a server to see the current player count and the locally cached mod catalog for that node.
+                </p>
+            </div>
+
+            <ActionButton Text="@(_isRefreshing ? "Refreshing..." : "Refresh")"
+                          OnClick="RefreshAsync"
+                          Disabled="@_isRefreshing"
+                          Secondary="true" />
         </div>
 
-        <div class="grid gap-4 lg:grid-cols-3">
+        @if (_servers.Count == 0)
+        {
             <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Servers</p>
-                <p class="mt-3 text-2xl font-semibold text-white">Coming soon</p>
-                <p class="mt-2 text-sm text-neutral-300">Remote server pages will show fleet info, connection status, and per-server visibility from one control panel.</p>
-                <a href="/servers" class="mt-4 inline-flex rounded-full border border-fuchsia-300/25 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 transition hover:bg-fuchsia-400/20">
-                    Open Servers
-                </a>
+                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Fleet</p>
+                <p class="mt-3 text-2xl font-semibold text-white">No accepted servers yet</p>
+                <p class="mt-2 text-sm text-neutral-300">No public server entries yet. Once a remote node accepts an invite, it will appear here.</p>
             </div>
+        }
+        else
+        {
+            <div class="space-y-4">
+                @foreach (managerwebapp.Models.Servers.PublicServerOverviewItem server in _servers)
+                {
+                    <details class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
+                        <summary class="cursor-pointer list-none">
+                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                <div class="space-y-3">
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                                            @server.ConnectionState
+                                        </span>
+                                        <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
+                                            @server.ValidationStatus
+                                        </span>
+                                    </div>
 
-            <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">VPN</p>
-                <p class="mt-3 text-2xl font-semibold text-white">Coming soon</p>
-                <p class="mt-2 text-sm text-neutral-300">VPN tools will create shared configs and expose the connection details required by the other managed servers.</p>
-                <a href="/vpn" class="mt-4 inline-flex rounded-full border border-fuchsia-300/25 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 transition hover:bg-fuchsia-400/20">
-                    Open VPN
-                </a>
-            </div>
+                                    <div>
+                                        <p class="text-base font-semibold text-white">@server.RemoteUrl</p>
+                                        <p class="mt-1 text-sm text-neutral-300">VPN address: @server.VpnAddress</p>
+                                    </div>
+                                </div>
 
-            <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Settings</p>
-                <p class="mt-3 text-2xl font-semibold text-white">Coming soon</p>
-                <p class="mt-2 text-sm text-neutral-300">Control-app settings will live here, including local manager options, security access, and operator tools.</p>
-                <a href="/settings" class="mt-4 inline-flex rounded-full border border-fuchsia-300/25 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 transition hover:bg-fuchsia-400/20">
-                    Open Settings
-                </a>
+                                <div class="grid gap-3 text-sm text-neutral-300 lg:grid-cols-3 lg:text-right">
+                                    <div>
+                                        <p class="text-[0.65rem] uppercase tracking-[0.24em] text-fuchsia-200/70">Players</p>
+                                        <p class="mt-1 font-semibold text-white">@server.CurrentPlayers / @server.MaxPlayers</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[0.65rem] uppercase tracking-[0.24em] text-fuchsia-200/70">Map</p>
+                                        <p class="mt-1 font-semibold text-white">@server.MapName</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[0.65rem] uppercase tracking-[0.24em] text-fuchsia-200/70">Mods</p>
+                                        <p class="mt-1 font-semibold text-white">@server.Mods.Count</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </summary>
+
+                        <div class="mt-6 border-t border-fuchsia-300/10 pt-6">
+                            @if (server.Mods.Count == 0)
+                            {
+                                <p class="text-sm text-neutral-300">No mods cached for this server yet.</p>
+                            }
+                            else
+                            {
+                                <div class="grid gap-4 lg:grid-cols-3">
+                                    @foreach (managerwebapp.Models.Servers.PublicServerModItem mod in server.Mods)
+                                    {
+                                        <article class="group overflow-hidden rounded-[1.6rem] border border-fuchsia-200/12 bg-black/40 shadow-[0_0_40px_rgba(168,85,247,0.08)] backdrop-blur-md">
+                                            @if (!string.IsNullOrWhiteSpace(mod.WebsiteUrl))
+                                            {
+                                                <a href="@mod.WebsiteUrl"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   class="block">
+                                                    <div class="relative h-32 overflow-hidden border-b border-fuchsia-200/10 bg-gradient-to-br from-fuchsia-400/15 via-[#07121d] to-violet-400/10">
+                                                        @if (!string.IsNullOrWhiteSpace(mod.LogoUrl))
+                                                        {
+                                                            <img src="@mod.LogoUrl" alt="@mod.Name" class="h-full w-full object-cover opacity-90 transition duration-300 group-hover:scale-[1.03]" />
+                                                            <div class="absolute inset-0 bg-gradient-to-t from-[#05070d] via-[#05070d]/20 to-transparent"></div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="absolute inset-0 flex items-center justify-center">
+                                                                <div class="h-14 w-14 rounded-2xl border border-fuchsia-300/20 bg-black/25"></div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <div class="relative h-32 overflow-hidden border-b border-fuchsia-200/10 bg-gradient-to-br from-fuchsia-400/15 via-[#07121d] to-violet-400/10">
+                                                    @if (!string.IsNullOrWhiteSpace(mod.LogoUrl))
+                                                    {
+                                                        <img src="@mod.LogoUrl" alt="@mod.Name" class="h-full w-full object-cover opacity-90 transition duration-300 group-hover:scale-[1.03]" />
+                                                        <div class="absolute inset-0 bg-gradient-to-t from-[#05070d] via-[#05070d]/20 to-transparent"></div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="absolute inset-0 flex items-center justify-center">
+                                                            <div class="h-14 w-14 rounded-2xl border border-fuchsia-300/20 bg-black/25"></div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+
+                                            <div class="space-y-4 p-5">
+                                                <div class="flex items-start justify-between gap-3">
+                                                    <div>
+                                                        <p class="text-xs uppercase tracking-[0.3em] text-fuchsia-200/70">Mod</p>
+                                                        <h3 class="mt-2 text-xl font-semibold text-white">@mod.Name</h3>
+                                                    </div>
+                                                    <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                                                        @mod.ModId
+                                                    </span>
+                                                </div>
+
+                                                <p class="text-sm leading-6 text-neutral-300">@mod.Summary</p>
+
+                                                @if (!string.IsNullOrWhiteSpace(mod.WebsiteUrl))
+                                                {
+                                                    <ActionButton Text="CurseForge"
+                                                                  Href="@mod.WebsiteUrl"
+                                                                  Target="_blank" />
+                                                }
+                                            </div>
+                                        </article>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </details>
+                }
             </div>
-        </div>
+        }
     </div>
 </section>
+
+@code {
+    private IReadOnlyList<managerwebapp.Models.Servers.PublicServerOverviewItem> _servers = [];
+    private bool _isRefreshing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _isRefreshing = true;
+
+        try
+        {
+            _servers = await RemoteServerModsService.LoadOverviewAsync();
+        }
+        finally
+        {
+            _isRefreshing = false;
+        }
+    }
+}

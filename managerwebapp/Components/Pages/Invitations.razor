@@ -1,0 +1,205 @@
+@page "/admin/invitations"
+@inject managerwebapp.Services.InvitationService InvitationService
+
+<PageTitle>Invitations</PageTitle>
+
+<section class="rounded-b-[2rem] border-x border-b border-fuchsia-400/15 bg-gradient-to-br from-black/35 via-[#0b0612]/30 to-[#17081f]/35 p-8 shadow-[0_0_48px_rgba(168,85,247,0.16)] backdrop-blur-[2px]">
+    <div class="space-y-8">
+        <div class="flex flex-wrap items-center gap-4">
+            <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Invitations</p>
+            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                Remote join flow
+            </span>
+        </div>
+
+        <div>
+            <h1 class="text-4xl font-semibold tracking-tight text-white">Invitations</h1>
+            <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
+                Send VPN join data to future remote servers, keep a history of previous invitations, and track which invited machines come online on the VPN.
+            </p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <div class="@GetStatusMessageClass()">
+                @_statusMessage
+            </div>
+        }
+
+        <section class="rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+            <div class="space-y-3">
+                <h2 class="text-2xl font-semibold text-white">Invite a server</h2>
+                <p class="max-w-3xl text-sm leading-6 text-neutral-300">
+                    Enter the remote manager URL. The next VPN address is prefilled automatically from the current control node address and existing invitation count.
+                </p>
+            </div>
+
+            <div class="mt-6 grid gap-4 md:grid-cols-2">
+                <TextField Label="Remote URL"
+                           @bind-Value="_form.RemoteUrl"
+                           placeholder="https://theisland.dragoqc.com"
+                           Hint="Optional. If provided, the app will post to `/api/admin/invite` on that remote server. If left empty, only a one-time invite link is generated."
+                           autocomplete="off" />
+
+                <TextField Label="VPN address"
+                           @bind-Value="_form.VpnAddress"
+                           placeholder="10.10.10.3/32"
+                           Hint="Prefilled from current VPN setup. Adjust only if you need another address."
+                           autocomplete="off" />
+
+                <TextField Label="Cluster ID"
+                           @bind-Value="_form.ClusterId"
+                           readonly="readonly"
+                           placeholder="Set from Cluster setup"
+                           Hint="Managed from the Cluster setup page. Invitations are blocked until a cluster ID is configured."
+                           autocomplete="off" />
+
+                <div class="md:col-span-2">
+                    <TextField Label="Remote API key"
+                               @bind-Value="_form.ApiKey"
+                               placeholder="Paste the node API key"
+                               Hint="Optional unless you fill a remote URL. Used as `X-Api-Key` for direct invite push and future node-to-node admin calls."
+                               autocomplete="off" />
+                </div>
+            </div>
+
+            <div class="mt-6 flex flex-wrap gap-3">
+                <button type="button"
+                        @onclick="SendInviteAsync"
+                        disabled="@_isSending"
+                        class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
+                    @(_isSending ? "Creating..." : "Create / send invite")
+                </button>
+
+                <button type="button"
+                        @onclick="RefreshAsync"
+                        disabled="@_isRefreshing"
+                        class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
+                    @(_isRefreshing ? "Refreshing..." : "Refresh")
+                </button>
+            </div>
+        </section>
+
+        <section class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 class="text-2xl font-semibold text-white">Previous invitations</h2>
+                <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                    @_items.Count invitation(s)
+                </span>
+            </div>
+
+            @if (_items.Count == 0)
+            {
+                <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-6 text-sm leading-6 text-neutral-300">
+                    No invitations yet.
+                </div>
+            }
+            else
+            {
+                <div class="space-y-4">
+                    @foreach (managerwebapp.Models.Invitations.InvitationListItem item in _items)
+                    {
+                        <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                            <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                                <div class="space-y-3">
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                                            @item.InviteStatus
+                                        </span>
+                                        <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
+                                            @item.ValidationStatus
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-sm font-medium text-white">@(string.IsNullOrWhiteSpace(item.RemoteUrl) ? "Link-based invitation" : item.RemoteUrl)</p>
+                                        <p class="mt-1 text-sm text-neutral-300">Cluster ID: @item.ClusterId</p>
+                                        <p class="mt-1 text-sm text-neutral-300">VPN address: @item.VpnAddress</p>
+                                        <p class="mt-1 break-all text-sm text-neutral-300">Invite link: @item.InviteLink</p>
+                                    </div>
+                                </div>
+
+                                <div class="text-sm text-neutral-400">
+                                    <p>Created: @item.CreatedAtUtc.LocalDateTime</p>
+                                    <p>Used: @(item.UsedAtUtc?.LocalDateTime.ToString() ?? "Not used")</p>
+                                    <p>Last seen: @(item.LastSeenAtUtc?.LocalDateTime.ToString() ?? "Never")</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+</section>
+
+@code {
+    private readonly managerwebapp.Models.Invitations.InvitationFormModel _form = new();
+    private IReadOnlyList<managerwebapp.Models.Invitations.InvitationListItem> _items = Array.Empty<managerwebapp.Models.Invitations.InvitationListItem>();
+    private string? _statusMessage;
+    private bool _statusIsError;
+    private bool _isRefreshing;
+    private bool _isSending;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _isRefreshing = true;
+
+        try
+        {
+            managerwebapp.Models.Invitations.InvitationFormModel defaults = await InvitationService.CreateDefaultFormAsync();
+            _form.ClusterId = defaults.ClusterId;
+            _form.VpnAddress = defaults.VpnAddress;
+            _items = await InvitationService.LoadAsync();
+        }
+        catch (Exception exception)
+        {
+            _statusMessage = exception.Message;
+            _statusIsError = true;
+        }
+        finally
+        {
+            _isRefreshing = false;
+        }
+    }
+
+    private async Task SendInviteAsync()
+    {
+        _isSending = true;
+        _statusMessage = null;
+        _statusIsError = false;
+
+        try
+        {
+            managerwebapp.Models.Invitations.InvitationListItem item = await InvitationService.SendInvitationAsync(_form);
+            _statusMessage = string.IsNullOrWhiteSpace(item.RemoteUrl)
+                ? $"Invitation created. Share {item.InviteLink}"
+                : $"Invitation sent. Backup link: {item.InviteLink}";
+            _statusIsError = false;
+            _form.RemoteUrl = null;
+            _form.ApiKey = null;
+            await RefreshAsync();
+        }
+        catch (Exception exception)
+        {
+            _statusMessage = exception.Message;
+            _statusIsError = true;
+        }
+        finally
+        {
+            _isSending = false;
+        }
+    }
+
+    private string GetStatusMessageClass()
+    {
+        return _statusIsError
+            ? "rounded-2xl border border-red-300/20 bg-red-400/10 px-5 py-4 text-sm text-red-100"
+            : "rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-100";
+    }
+}

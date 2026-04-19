@@ -29,6 +29,11 @@
     {
         <p class="mt-2 text-sm text-neutral-400">@Hint</p>
     }
+
+    @if (!string.IsNullOrWhiteSpace(Error))
+    {
+        <p class="mt-2 text-sm text-red-300">@Error</p>
+    }
 </div>
 
 @code {
@@ -46,6 +51,9 @@
 
     [Parameter]
     public string? Hint { get; set; }
+
+    [Parameter]
+    public string? Error { get; set; }
 
     [Parameter]
     public string HelpButtonLabel { get; set; } = "Open help";

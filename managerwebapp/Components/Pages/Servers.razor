@@ -1,4 +1,5 @@
-@page "/servers"
+@page "/admin/servers"
+@inject managerwebapp.Services.RemoteServerService RemoteServerService
 
 <PageTitle>Servers</PageTitle>
 
@@ -18,24 +19,79 @@
             </p>
         </div>
 
-        <div class="grid gap-4 lg:grid-cols-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm text-neutral-300">Accepted invited servers become registered here so we know where to call, ping, and track them later.</p>
+            <button type="button"
+                    @onclick="RefreshAsync"
+                    disabled="@_isRefreshing"
+                    class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
+                @(_isRefreshing ? "Refreshing..." : "Refresh")
+            </button>
+        </div>
+
+        @if (_items.Count == 0)
+        {
             <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
                 <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Overview</p>
-                <p class="mt-3 text-2xl font-semibold text-white">Coming soon</p>
-                <p class="mt-2 text-sm text-neutral-300">A unified list of remote ASA panels with status, labels, and quick access to each server entry.</p>
+                <p class="mt-3 text-2xl font-semibold text-white">No servers yet</p>
+                <p class="mt-2 text-sm text-neutral-300">Send an invitation from the Invitations page. Once a remote server accepts, it will appear here.</p>
             </div>
+        }
+        else
+        {
+            <div class="space-y-4">
+                @foreach (managerwebapp.Models.Servers.RemoteServerListItem item in _items)
+                {
+                    <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
+                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div class="space-y-3">
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                                        @item.InviteStatus
+                                    </span>
+                                    <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
+                                        @item.ValidationStatus
+                                    </span>
+                                </div>
 
-            <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Connectivity</p>
-                <p class="mt-3 text-2xl font-semibold text-white">Coming soon</p>
-                <p class="mt-2 text-sm text-neutral-300">Connection checks will confirm which servers are reachable, authenticated, and streaming valid manager data.</p>
-            </div>
+                                <div>
+                                    <p class="text-base font-semibold text-white">@item.RemoteUrl</p>
+                                    <p class="mt-1 text-sm text-neutral-300">VPN address: @item.VpnAddress</p>
+                                </div>
+                            </div>
 
-            <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Actions</p>
-                <p class="mt-3 text-2xl font-semibold text-white">Coming soon</p>
-                <p class="mt-2 text-sm text-neutral-300">Server pages will eventually hold quick fleet actions, detail views, and deeper remote-management links.</p>
+                            <div class="text-sm text-neutral-400">
+                                <p>Created: @item.CreatedAtUtc.LocalDateTime</p>
+                                <p>Last seen: @(item.LastSeenAtUtc?.LocalDateTime.ToString() ?? "Never")</p>
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
-        </div>
+        }
     </div>
 </section>
+
+@code {
+    private IReadOnlyList<managerwebapp.Models.Servers.RemoteServerListItem> _items = Array.Empty<managerwebapp.Models.Servers.RemoteServerListItem>();
+    private bool _isRefreshing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _isRefreshing = true;
+
+        try
+        {
+            _items = await RemoteServerService.LoadAsync();
+        }
+        finally
+        {
+            _isRefreshing = false;
+        }
+    }
+}

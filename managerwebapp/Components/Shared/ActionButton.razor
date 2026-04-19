@@ -1,0 +1,49 @@
+@if (!string.IsNullOrWhiteSpace(Href))
+{
+    <a href="@Href"
+       target="@Target"
+       rel="@Rel"
+       class="@CssClass">
+        @Text
+    </a>
+}
+else
+{
+    <button type="@ButtonType"
+            @onclick="OnClick"
+            disabled="@Disabled"
+            class="@CssClass">
+        @Text
+    </button>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = "";
+
+    [Parameter]
+    public string? Href { get; set; }
+
+    [Parameter]
+    public string ButtonType { get; set; } = "button";
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public string Target { get; set; } = "_self";
+
+    [Parameter]
+    public string Rel { get; set; } = "noopener noreferrer";
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    [Parameter]
+    public bool Secondary { get; set; }
+
+    private string CssClass =>
+        Secondary
+            ? "inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+            : "inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.3)] transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60";
+}
