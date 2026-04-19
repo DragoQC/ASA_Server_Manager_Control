@@ -13,6 +13,62 @@ public sealed class NfsShareService(
     NfsConfigurationService nfsConfigurationService,
     VpnConfigService vpnConfigService)
 {
+    public async Task<IReadOnlyList<NfsShareInviteServerOption>> LoadTargetServersAsync(CancellationToken cancellationToken = default)
+    {
+        await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        return await dbContext.RemoteServers
+            .Where(server => server.InviteStatus == "Accepted")
+            .OrderBy(server => server.VpnAddress)
+            .Select(server => new NfsShareInviteServerOption(
+                server.Id,
+                server.VpnAddress,
+                server.Port))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<NfsShareInviteListItem>> LoadAsync(CancellationToken cancellationToken = default)
+    {
+        await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        List<NfsShareInviteListItem> items = await dbContext.NfsShareInvites
+            .Select(invite => new NfsShareInviteListItem(
+                invite.Id,
+                invite.RemoteServerId,
+                invite.RemoteServer.VpnAddress,
+                invite.InviteLink,
+                invite.UsedAtUtc,
+                invite.CreatedAtUtc))
+            .ToListAsync(cancellationToken);
+
+        return items
+            .OrderByDescending(invite => invite.CreatedAtUtc)
+            .ToList();
+    }
+
+    public async Task<NfsShareInviteResponse> BuildPreviewAsync(int remoteServerId, CancellationToken cancellationToken = default)
+    {
+        if (remoteServerId <= 0)
+        {
+            throw new InvalidOperationException("Remote server is required.");
+        }
+
+        await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        bool exists = await dbContext.RemoteServers
+            .AnyAsync(server => server.Id == remoteServerId && server.InviteStatus == "Accepted", cancellationToken);
+
+        if (!exists)
+        {
+            throw new InvalidOperationException("Accepted remote server is required for an NFS invite.");
+        }
+
+        NfsConfigurationModel configuration = await nfsConfigurationService.LoadAsync(cancellationToken);
+        return new NfsShareInviteResponse(
+            ClusterShareConstants.ClusterDirectoryPath,
+            ClusterShareConstants.ClientMountPath,
+            configuration.ClientConfigContent);
+    }
+
     public async Task<string> CreateInviteLinkAsync(int remoteServerId, CancellationToken cancellationToken = default)
     {
         if (remoteServerId <= 0)
@@ -22,11 +78,11 @@ public sealed class NfsShareService(
 
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         RemoteServerEntity? remoteServer = await dbContext.RemoteServers
-            .FirstOrDefaultAsync(server => server.Id == remoteServerId, cancellationToken);
+            .FirstOrDefaultAsync(server => server.Id == remoteServerId && server.InviteStatus == "Accepted", cancellationToken);
 
         if (remoteServer is null)
         {
-            throw new InvalidOperationException("Remote server was not found.");
+            throw new InvalidOperationException("Accepted remote server was not found.");
         }
 
         VpnConfigModel vpnConfig = await vpnConfigService.LoadConfiguredModelAsync(cancellationToken);
