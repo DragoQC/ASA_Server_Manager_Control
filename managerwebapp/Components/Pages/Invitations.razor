@@ -31,7 +31,7 @@
             <div class="space-y-3">
                 <h2 class="text-2xl font-semibold text-white">Create invitation link</h2>
                 <p class="max-w-3xl text-sm leading-6 text-neutral-300">
-                    Generate a single invite link for one node. The VPN address is assigned here, the cluster ID comes from Cluster setup, and the node retrieves its full payload from the link.
+                    Generate a single invite link for one node. The VPN address is assigned here, the cluster ID comes from Cluster setup, and the control app pregenerates that node's WireGuard files before the link is used.
                 </p>
             </div>
 
@@ -86,6 +86,11 @@
                         <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Payload preview</p>
                         <pre class="mt-4 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200">@BuildPayloadPreview()</pre>
                     </div>
+
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invitation wg0.conf preview</p>
+                        <pre class="mt-4 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200">@_previewPayload.Wg0Config</pre>
+                    </div>
                 </div>
             }
         </section>
@@ -126,6 +131,11 @@
                                         <p class="mt-1 text-sm text-neutral-300">Cluster ID: @item.ClusterId</p>
                                         <p class="mt-1 text-sm text-neutral-300">VPN address: @item.VpnAddress</p>
                                         <p class="mt-1 break-all text-sm text-neutral-300">Invite link: @item.InviteLink</p>
+                                        <button type="button"
+                                                @onclick="() => OpenInvitationConfigAsync(item.Id)"
+                                                class="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10">
+                                            View wg0.conf
+                                        </button>
                                     </div>
                                 </div>
 
@@ -148,10 +158,13 @@
     private IReadOnlyList<managerwebapp.Models.Invitations.InvitationListItem> _items = Array.Empty<managerwebapp.Models.Invitations.InvitationListItem>();
     private managerwebapp.Models.Invitations.InviteRemoteServerRequest? _previewPayload;
     private string? _lastCreatedInviteLink;
+    private string? _selectedInvitationConfig;
+    private string _selectedInvitationConfigTitle = string.Empty;
     private string? _statusMessage;
     private bool _statusIsError;
     private bool _isRefreshing;
     private bool _isSending;
+    private bool _isInvitationConfigDialogOpen;
 
     protected override async Task OnInitializedAsync()
     {
@@ -206,6 +219,29 @@
         }
     }
 
+    private async Task OpenInvitationConfigAsync(int invitationId)
+    {
+        try
+        {
+            _selectedInvitationConfig = await InvitationService.LoadInvitationConfigAsync(invitationId);
+            _selectedInvitationConfigTitle = $"Invitation {invitationId} wg0.conf";
+            _isInvitationConfigDialogOpen = true;
+        }
+        catch (Exception exception)
+        {
+            _statusMessage = exception.Message;
+            _statusIsError = true;
+        }
+    }
+
+    private Task CloseInvitationConfigDialog()
+    {
+        _isInvitationConfigDialogOpen = false;
+        _selectedInvitationConfig = null;
+        _selectedInvitationConfigTitle = string.Empty;
+        return Task.CompletedTask;
+    }
+
     private string GetStatusMessageClass()
     {
         return _statusIsError
@@ -242,7 +278,15 @@
             $"RemoteApiKey: {_previewPayload.RemoteApiKey}",
             $"ServerPublicKey: {_previewPayload.ServerPublicKey}",
             $"ClientPrivateKey: {_previewPayload.ClientPrivateKey}",
+            $"Wg0Config: generated",
             $"PresharedKey: {(_previewPayload.PresharedKey ?? "(none)")}");
     }
 
 }
+
+<InfoDialog IsOpen="@_isInvitationConfigDialogOpen"
+            Eyebrow="Invitation file"
+            Title="@_selectedInvitationConfigTitle"
+            OnClose="@CloseInvitationConfigDialog">
+    <pre class="overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-fuchsia-100">@(_selectedInvitationConfig ?? "No invitation config loaded.")</pre>
+</InfoDialog>

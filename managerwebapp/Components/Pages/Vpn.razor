@@ -3,6 +3,7 @@
 @inject managerwebapp.Services.VpnConfigService VpnConfigService
 @inject managerwebapp.Services.ClusterSettingsService ClusterSettingsService
 @inject managerwebapp.Services.RemoteClusterService RemoteClusterService
+@inject managerwebapp.Services.InvitationService InvitationService
 @inject managerwebapp.Services.WireGuardInstallService WireGuardInstallService
 @inject IJSRuntime JS
 @using managerwebapp.Constants
@@ -151,29 +152,14 @@
 
                     <div class="flex flex-wrap gap-3">
                         <button type="button"
-                                @onclick="GenerateClientKeysAsync"
-                                disabled="@_isGeneratingKeys"
-                                class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
-                            @(_isGeneratingClientKeys ? "Generating client keys..." : "Generate client keys")
-                        </button>
-
-                        <button type="button"
                                 @onclick="GenerateServerKeysAsync"
                                 disabled="@_isGeneratingKeys"
-                                class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
-                            @(_isGeneratingServerKeys ? "Generating server keys..." : "Generate server keys")
+                                class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
+                                @(_isGeneratingServerKeys ? "Generating server keys..." : "Generate server keys")
                         </button>
                     </div>
 
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div class="rounded-[1.4rem] border border-white/10 bg-white/5 p-5">
-                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Client keys</p>
-                            <p class="mt-3 text-sm leading-6 text-neutral-300">
-                                @(_clientKeys?.Exists == true ? "Saved under the VPN folder for reuse and copy." : "No saved client key pair yet.")
-                            </p>
-                            <p class="mt-3 text-xs uppercase tracking-[0.2em] text-neutral-500">@VpnConstants.ClientPublicKeyFilePath</p>
-                        </div>
-
+                    <div class="grid gap-4 md:grid-cols-1">
                         <div class="rounded-[1.4rem] border border-white/10 bg-white/5 p-5">
                             <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Server keys</p>
                             <p class="mt-3 text-sm leading-6 text-neutral-300">
@@ -184,13 +170,6 @@
                     </div>
 
                     <div class="flex flex-wrap gap-3">
-                        <button type="button"
-                                @onclick="CopyClientPublicKeyAsync"
-                                disabled="@string.IsNullOrWhiteSpace(_clientKeys?.PublicKey)"
-                                class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
-                            Copy client public key
-                        </button>
-
                         <button type="button"
                                 @onclick="CopyServerPublicKeyAsync"
                                 disabled="@string.IsNullOrWhiteSpace(_serverKeys?.PublicKey)"
@@ -205,11 +184,11 @@
                                        Error="@GetFieldError(nameof(VpnConfigModel.PrivateKey))"
                                        OnHelpClick="@(() => OpenHelpDialog(
                                            "Private key",
-                                           "This is the private key for the local [Interface]. Keep it secret and do not share it. Use client key generation for this field on a client config."))"
+                                           "This is the WireGuard server private key used by the control node [Interface]. Keep it secret and do not share it. Remote nodes do not use this key."))"
                                        HelpButtonLabel="Private key help"
                                        autocomplete="off"
                                        placeholder="Base64 private key"
-                                       Hint="Use `Generate client keys` to create one and fill this field automatically." />
+                                       Hint="Use `Generate server keys` to create one and fill this field automatically." />
                         <TextHelpField Label="Address"
                                        @bind-Value="_model.Address"
                                        Error="@GetFieldError(nameof(VpnConfigModel.Address))"
@@ -240,16 +219,6 @@
                                        autocomplete="off"
                                        placeholder="1.1.1.1"
                                        Hint="Common values: 1.1.1.1, 8.8.8.8, or your own internal DNS." />
-                        <TextHelpField Label="Peer public key"
-                                       @bind-Value="_model.PeerPublicKey"
-                                       Error="@GetFieldError(nameof(VpnConfigModel.PeerPublicKey))"
-                                       OnHelpClick="@(() => OpenHelpDialog(
-                                           "Peer public key",
-                                           "This is the public key of the remote peer. On a client config, this is usually the server public key. The server private key stays on the server and must not be pasted here."))"
-                                       HelpButtonLabel="Peer public key help"
-                                       autocomplete="off"
-                                       placeholder="Base64 peer public key"
-                                       Hint="Use `Generate server keys` to create a fresh server pair and fill this field with the server public key." />
                         <TextHelpField Label="Preshared key"
                                        @bind-Value="_model.PresharedKey"
                                        Error="@GetFieldError(nameof(VpnConfigModel.PresharedKey))"
@@ -429,7 +398,6 @@
     private bool _isRestartingWireGuard;
     private bool _isSavingFields;
     private bool _isSavingEditor;
-    private bool _isGeneratingClientKeys;
     private bool _isGeneratingServerKeys;
     private bool _isStartingWireGuard;
     private bool _isStoppingWireGuard;
@@ -449,11 +417,10 @@
     private string _generatedKeysMessage = string.Empty;
     private string _generatedPrivateKey = string.Empty;
     private string _generatedPublicKey = string.Empty;
-    private SavedVpnKeyPair? _clientKeys;
     private SavedVpnKeyPair? _serverKeys;
     private string _wireGuardStatusOutput = "WireGuard status not loaded yet.";
     private string? _postSaveMessage;
-    private bool _isGeneratingKeys => _isGeneratingClientKeys || _isGeneratingServerKeys;
+    private bool _isGeneratingKeys => _isGeneratingServerKeys;
     private bool _isWireGuardCommandBusy => _isStartingWireGuard || _isStoppingWireGuard || _isRestartingWireGuard;
 
     protected override async Task OnInitializedAsync()
@@ -489,7 +456,6 @@
             {
                 _file = null;
                 ResetModel();
-                _clientKeys = null;
                 _serverKeys = null;
                 _wireGuardStatusOutput = "WireGuard is not installed.";
             }
@@ -587,35 +553,6 @@
         }
     }
 
-    private async Task GenerateClientKeysAsync()
-    {
-        _isGeneratingClientKeys = true;
-        _statusMessage = null;
-        _statusIsError = false;
-
-        try
-        {
-            SavedVpnKeyPair keyPair = await VpnConfigService.GenerateAndSaveClientKeyPairAsync();
-            _model.PrivateKey = keyPair.PrivateKey;
-            _clientKeys = keyPair;
-            _generatedKeysEyebrow = "Client keys";
-            _generatedKeysTitle = "Client keys generated";
-            _generatedKeysMessage = "The client private key was inserted into the `Private key` field. Keep that private key secret. The public key is shown for reference if you need to register the client on the server side.";
-            _generatedPrivateKey = keyPair.PrivateKey ?? string.Empty;
-            _generatedPublicKey = keyPair.PublicKey ?? string.Empty;
-            _showGeneratedKeysDialog = true;
-        }
-        catch (Exception exception)
-        {
-            _statusMessage = exception.Message;
-            _statusIsError = true;
-        }
-        finally
-        {
-            _isGeneratingClientKeys = false;
-        }
-    }
-
     private async Task GenerateServerKeysAsync()
     {
         _isGeneratingServerKeys = true;
@@ -625,11 +562,11 @@
         try
         {
             SavedVpnKeyPair keyPair = await VpnConfigService.GenerateAndSaveServerKeyPairAsync();
-            _model.PeerPublicKey = keyPair.PublicKey;
+            _model.PrivateKey = keyPair.PrivateKey;
             _serverKeys = keyPair;
             _generatedKeysEyebrow = "Server keys";
             _generatedKeysTitle = "Server keys generated";
-            _generatedKeysMessage = "The server public key was inserted into the `Peer public key` field. The server private key shown below belongs on the server side only and should not be pasted into this client peer field.";
+            _generatedKeysMessage = "The server private key was inserted into the `Private key` field. Remote peers created from invitations will use the server public key shown below.";
             _generatedPrivateKey = keyPair.PrivateKey ?? string.Empty;
             _generatedPublicKey = keyPair.PublicKey ?? string.Empty;
             _showGeneratedKeysDialog = true;
@@ -677,6 +614,7 @@
 
             string content = await VpnConfigService.BuildContentAsync(_model);
             await VpnConfigService.SaveAsync(_file.FilePath, content);
+            await InvitationService.RebuildServerConfigAsync();
             _postSaveMessage = $"{_file.Title} saved.";
             await RefreshAsync();
             await HandlePostSaveAsync(wasWireGuardActive);
@@ -705,6 +643,7 @@
         try
         {
             await VpnConfigService.SaveAsync(_file.FilePath, _editorContent);
+            await InvitationService.RebuildServerConfigAsync();
             _postSaveMessage = $"{_file.Title} saved.";
             await RefreshAsync();
             await HandlePostSaveAsync(wasWireGuardActive);
@@ -830,7 +769,6 @@
         _model.Address = loadedModel.Address;
         _model.ListenPort = loadedModel.ListenPort;
         _model.Dns = loadedModel.Dns;
-        _model.PeerPublicKey = loadedModel.PeerPublicKey;
         _model.PresharedKey = loadedModel.PresharedKey;
         _model.Endpoint = loadedModel.Endpoint;
         _model.AllowedIps = loadedModel.AllowedIps;
@@ -859,7 +797,6 @@
 
     private async Task ReloadSavedKeysAsync()
     {
-        _clientKeys = await VpnConfigService.LoadClientKeyPairAsync();
         _serverKeys = await VpnConfigService.LoadServerKeyPairAsync();
     }
 
@@ -871,23 +808,10 @@
         _model.Address = defaults.Address;
         _model.ListenPort = defaults.ListenPort;
         _model.Dns = defaults.Dns;
-        _model.PeerPublicKey = null;
         _model.PresharedKey = null;
         _model.Endpoint = null;
         _model.AllowedIps = defaults.AllowedIps;
         _model.PersistentKeepalive = defaults.PersistentKeepalive;
-    }
-
-    private async Task CopyClientPublicKeyAsync()
-    {
-        if (string.IsNullOrWhiteSpace(_clientKeys?.PublicKey))
-        {
-            return;
-        }
-
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _clientKeys.PublicKey);
-        _statusMessage = "Client public key copied.";
-        _statusIsError = false;
     }
 
     private async Task CopyServerPublicKeyAsync()
@@ -908,7 +832,6 @@
         AddRequiredFieldError(nameof(VpnConfigModel.Address), _model.Address, "Address is required.");
         AddRequiredFieldError(nameof(VpnConfigModel.ListenPort), _model.ListenPort, "Listen port is required.");
         AddRequiredFieldError(nameof(VpnConfigModel.Dns), _model.Dns, "DNS is required.");
-        AddRequiredFieldError(nameof(VpnConfigModel.PeerPublicKey), _model.PeerPublicKey, "Peer public key is required.");
         AddRequiredFieldError(nameof(VpnConfigModel.Endpoint), _model.Endpoint, "Endpoint is required.");
         AddRequiredFieldError(nameof(VpnConfigModel.AllowedIps), _model.AllowedIps, "Allowed IPs is required.");
         return _fieldErrors.Count == 0;

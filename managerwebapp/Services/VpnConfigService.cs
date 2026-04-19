@@ -6,6 +6,11 @@ namespace managerwebapp.Services;
 
 public sealed class VpnConfigService
 {
+    private const string ControlEndpointCommentKey = "ControlEndpoint";
+    private const string ClientDnsCommentKey = "ClientDns";
+    private const string ClientAllowedIpsCommentKey = "ClientAllowedIps";
+    private const string ClientPersistentKeepaliveCommentKey = "ClientPersistentKeepalive";
+    private const string InvitationPresharedKeyCommentKey = "InvitationPresharedKey";
     public const string DefaultAddress = "10.10.10.2/32";
     public const string DefaultListenPort = "51820";
     public const string DefaultDns = "1.1.1.1";
@@ -112,7 +117,79 @@ public sealed class VpnConfigService
 
     public async Task SaveAsync(string filePath, string content, CancellationToken cancellationToken = default)
     {
-        await File.WriteAllTextAsync(filePath, NormalizeContent(content), cancellationToken);
+        string normalizedContent = NormalizeContent(content);
+
+        if (string.Equals(filePath, VpnConstants.VpnConfigFilePath, StringComparison.Ordinal))
+        {
+            normalizedContent = NormalizeControlServerContent(normalizedContent);
+        }
+
+        await File.WriteAllTextAsync(filePath, normalizedContent, cancellationToken);
+    }
+
+    public string GetInvitationDirectoryPath(int invitationId)
+    {
+        return Path.Combine(VpnConstants.InvitationDirectoryPath, invitationId.ToString());
+    }
+
+    public string GetInvitationConfigFilePath(int invitationId)
+    {
+        return Path.Combine(GetInvitationDirectoryPath(invitationId), "wg0.conf");
+    }
+
+    public string GetInvitationClientPrivateKeyFilePath(int invitationId)
+    {
+        return Path.Combine(GetInvitationDirectoryPath(invitationId), "client.key");
+    }
+
+    public string GetInvitationClientPublicKeyFilePath(int invitationId)
+    {
+        return Path.Combine(GetInvitationDirectoryPath(invitationId), "client.pub");
+    }
+
+    public async Task SaveInvitationFilesAsync(
+        int invitationId,
+        VpnConfigModel model,
+        string vpnAddress,
+        string clientPrivateKey,
+        string clientPublicKey,
+        string serverPublicKey,
+        CancellationToken cancellationToken = default)
+    {
+        string invitationDirectoryPath = GetInvitationDirectoryPath(invitationId);
+        Directory.CreateDirectory(invitationDirectoryPath);
+
+        await File.WriteAllTextAsync(GetInvitationClientPrivateKeyFilePath(invitationId), NormalizeContent(clientPrivateKey.Trim() + "\n"), cancellationToken);
+        await File.WriteAllTextAsync(GetInvitationClientPublicKeyFilePath(invitationId), NormalizeContent(clientPublicKey.Trim() + "\n"), cancellationToken);
+
+        string invitationConfigContent = BuildInvitationConfigContent(model, vpnAddress, clientPrivateKey, serverPublicKey);
+        await File.WriteAllTextAsync(GetInvitationConfigFilePath(invitationId), invitationConfigContent, cancellationToken);
+    }
+
+    public Task<string> LoadInvitationConfigContentAsync(int invitationId, CancellationToken cancellationToken = default)
+    {
+        return LoadEditorContentAsync(GetInvitationConfigFilePath(invitationId), cancellationToken);
+    }
+
+    public async Task<string?> LoadInvitationClientPublicKeyAsync(int invitationId, CancellationToken cancellationToken = default)
+    {
+        string filePath = GetInvitationClientPublicKeyFilePath(invitationId);
+        if (!File.Exists(filePath))
+        {
+            return null;
+        }
+
+        return (await File.ReadAllTextAsync(filePath, cancellationToken)).Trim();
+    }
+
+    public Task<string> BuildServerConfigWithPeersAsync(
+        VpnConfigModel model,
+        string serverPrivateKey,
+        IReadOnlyList<(string PublicKey, string AllowedIp, string? PresharedKey)> peers,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(BuildServerConfigWithPeers(model, serverPrivateKey, peers));
     }
 
     public VpnConfigModel CreateDefaultModel()
@@ -204,6 +281,30 @@ public sealed class VpnConfigService
         foreach (string rawLine in content.Split('\n'))
         {
             string line = rawLine.Trim();
+            if (TryParseMetadataComment(line, out string metadataKey, out string metadataValue))
+            {
+                switch (metadataKey)
+                {
+                    case ControlEndpointCommentKey:
+                        model.Endpoint = metadataValue;
+                        break;
+                    case ClientDnsCommentKey:
+                        model.Dns = metadataValue;
+                        break;
+                    case ClientAllowedIpsCommentKey:
+                        model.AllowedIps = metadataValue;
+                        break;
+                    case ClientPersistentKeepaliveCommentKey:
+                        model.PersistentKeepalive = metadataValue;
+                        break;
+                    case InvitationPresharedKeyCommentKey:
+                        model.PresharedKey = metadataValue;
+                        break;
+                }
+
+                continue;
+            }
+
             if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#') || line.StartsWith(';'))
             {
                 continue;
@@ -242,27 +343,6 @@ public sealed class VpnConfigService
                         break;
                 }
             }
-            else if (string.Equals(currentSection, "Peer", StringComparison.OrdinalIgnoreCase))
-            {
-                switch (key)
-                {
-                    case "PublicKey":
-                        model.PeerPublicKey = value;
-                        break;
-                    case "PresharedKey":
-                        model.PresharedKey = value;
-                        break;
-                    case "Endpoint":
-                        model.Endpoint = value;
-                        break;
-                    case "AllowedIPs":
-                        model.AllowedIps = value;
-                        break;
-                    case "PersistentKeepalive":
-                        model.PersistentKeepalive = value;
-                        break;
-                }
-            }
         }
 
         return model;
@@ -278,15 +358,68 @@ public sealed class VpnConfigService
         AppendLine(lines, "PrivateKey", model.PrivateKey);
         AppendLine(lines, "Address", model.Address);
         AppendLine(lines, "ListenPort", model.ListenPort);
+        AppendCommentLine(lines, ClientDnsCommentKey, model.Dns);
+        AppendCommentLine(lines, ControlEndpointCommentKey, BuildEndpointValue(model.Endpoint, model.ListenPort));
+        AppendCommentLine(lines, ClientAllowedIpsCommentKey, model.AllowedIps);
+        AppendCommentLine(lines, ClientPersistentKeepaliveCommentKey, model.PersistentKeepalive);
+        AppendCommentLine(lines, InvitationPresharedKeyCommentKey, model.PresharedKey);
+
+        return NormalizeContent(string.Join('\n', lines).TrimEnd() + "\n");
+    }
+
+    private static string BuildInvitationConfigContent(
+        VpnConfigModel model,
+        string vpnAddress,
+        string clientPrivateKey,
+        string serverPublicKey)
+    {
+        List<string> lines =
+        [
+            "[Interface]"
+        ];
+
+        AppendLine(lines, "PrivateKey", clientPrivateKey);
+        AppendLine(lines, "Address", vpnAddress);
         AppendLine(lines, "DNS", model.Dns);
 
         lines.Add(string.Empty);
         lines.Add("[Peer]");
-        AppendLine(lines, "PublicKey", model.PeerPublicKey);
+        AppendLine(lines, "PublicKey", serverPublicKey);
         AppendLine(lines, "PresharedKey", model.PresharedKey);
         AppendLine(lines, "Endpoint", BuildEndpointValue(model.Endpoint, model.ListenPort));
         AppendLine(lines, "AllowedIPs", model.AllowedIps);
         AppendLine(lines, "PersistentKeepalive", model.PersistentKeepalive);
+
+        return NormalizeContent(string.Join('\n', lines).TrimEnd() + "\n");
+    }
+
+    private static string BuildServerConfigWithPeers(
+        VpnConfigModel model,
+        string serverPrivateKey,
+        IReadOnlyList<(string PublicKey, string AllowedIp, string? PresharedKey)> peers)
+    {
+        List<string> lines =
+        [
+            "[Interface]"
+        ];
+
+        AppendLine(lines, "PrivateKey", serverPrivateKey);
+        AppendLine(lines, "Address", model.Address);
+        AppendLine(lines, "ListenPort", model.ListenPort);
+        AppendCommentLine(lines, ClientDnsCommentKey, model.Dns);
+        AppendCommentLine(lines, ControlEndpointCommentKey, BuildEndpointValue(model.Endpoint, model.ListenPort));
+        AppendCommentLine(lines, ClientAllowedIpsCommentKey, model.AllowedIps);
+        AppendCommentLine(lines, ClientPersistentKeepaliveCommentKey, model.PersistentKeepalive);
+        AppendCommentLine(lines, InvitationPresharedKeyCommentKey, model.PresharedKey);
+
+        foreach ((string publicKey, string allowedIp, string? presharedKey) in peers)
+        {
+            lines.Add(string.Empty);
+            lines.Add("[Peer]");
+            AppendLine(lines, "PublicKey", publicKey);
+            AppendLine(lines, "PresharedKey", presharedKey);
+            AppendLine(lines, "AllowedIPs", allowedIp);
+        }
 
         return NormalizeContent(string.Join('\n', lines).TrimEnd() + "\n");
     }
@@ -296,6 +429,14 @@ public sealed class VpnConfigService
         if (!string.IsNullOrWhiteSpace(value))
         {
             lines.Add($"{key} = {value.Trim()}");
+        }
+    }
+
+    private static void AppendCommentLine(ICollection<string> lines, string key, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            lines.Add($"# {key} = {value.Trim()}");
         }
     }
 
@@ -315,6 +456,111 @@ public sealed class VpnConfigService
         return string.IsNullOrWhiteSpace(listenPort)
             ? trimmedEndpoint
             : $"{trimmedEndpoint}:{listenPort.Trim()}";
+    }
+
+    private static bool TryParseMetadataComment(string line, out string key, out string value)
+    {
+        key = string.Empty;
+        value = string.Empty;
+
+        if (!line.StartsWith('#'))
+        {
+            return false;
+        }
+
+        string trimmedLine = line[1..].Trim();
+        int separatorIndex = trimmedLine.IndexOf('=');
+        if (separatorIndex < 0)
+        {
+            return false;
+        }
+
+        key = trimmedLine[..separatorIndex].Trim();
+        value = trimmedLine[(separatorIndex + 1)..].Trim();
+        return key.Length > 0;
+    }
+
+    private static string NormalizeControlServerContent(string content)
+    {
+        List<string> normalizedLines = [];
+        string? currentSection = null;
+
+        foreach (string rawLine in content.Split('\n'))
+        {
+            string trimmedLine = rawLine.Trim();
+
+            if (trimmedLine.StartsWith('[') && trimmedLine.EndsWith(']'))
+            {
+                currentSection = trimmedLine[1..^1];
+                normalizedLines.Add(trimmedLine);
+                continue;
+            }
+
+            if (TryConvertToMetadataComment(currentSection, trimmedLine, out string? commentLine))
+            {
+                if (!string.IsNullOrWhiteSpace(commentLine))
+                {
+                    normalizedLines.Add(commentLine);
+                }
+
+                continue;
+            }
+
+            normalizedLines.Add(rawLine);
+        }
+
+        return NormalizeContent(string.Join('\n', normalizedLines).TrimEnd() + "\n");
+    }
+
+    private static bool TryConvertToMetadataComment(string? currentSection, string line, out string? commentLine)
+    {
+        commentLine = null;
+
+        int separatorIndex = line.IndexOf('=');
+        if (separatorIndex < 0)
+        {
+            return false;
+        }
+
+        string key = line[..separatorIndex].Trim();
+        string value = line[(separatorIndex + 1)..].Trim();
+
+        if (string.Equals(currentSection, "Interface", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(key, "DNS", StringComparison.OrdinalIgnoreCase))
+        {
+            commentLine = string.IsNullOrWhiteSpace(value) ? null : $"# {ClientDnsCommentKey} = {value}";
+            return true;
+        }
+
+        if (string.Equals(currentSection, "Peer", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(key, "Endpoint", StringComparison.OrdinalIgnoreCase))
+        {
+            commentLine = string.IsNullOrWhiteSpace(value) ? null : $"# {ControlEndpointCommentKey} = {value}";
+            return true;
+        }
+
+        if (string.Equals(currentSection, "Peer", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(key, "AllowedIPs", StringComparison.OrdinalIgnoreCase))
+        {
+            commentLine = string.IsNullOrWhiteSpace(value) ? null : $"# {ClientAllowedIpsCommentKey} = {value}";
+            return true;
+        }
+
+        if (string.Equals(currentSection, "Peer", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(key, "PersistentKeepalive", StringComparison.OrdinalIgnoreCase))
+        {
+            commentLine = string.IsNullOrWhiteSpace(value) ? null : $"# {ClientPersistentKeepaliveCommentKey} = {value}";
+            return true;
+        }
+
+        if (string.Equals(currentSection, "Peer", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(key, "PresharedKey", StringComparison.OrdinalIgnoreCase))
+        {
+            commentLine = string.IsNullOrWhiteSpace(value) ? null : $"# {InvitationPresharedKeyCommentKey} = {value}";
+            return true;
+        }
+
+        return false;
     }
 
     private static VpnConfigModel ApplyDefaults(VpnConfigModel model)
