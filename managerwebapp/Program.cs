@@ -60,6 +60,7 @@ builder.Services.AddHttpClient<RemoteAdminHttpClient>();
 builder.Services.AddScoped<RemoteClusterService>();
 builder.Services.AddScoped<RemoteServerService>();
 builder.Services.AddScoped<RemoteManagerService>();
+builder.Services.AddScoped<RemoteRconService>();
 builder.Services.AddSingleton<RemoteServerHubClientService>();
 builder.Services.AddSingleton<WireGuardInstallService>();
 builder.Services.AddScoped<RemoteServerModsService>();

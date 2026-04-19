@@ -2,6 +2,7 @@ using managerwebapp.Data;
 using managerwebapp.Data.Entities;
 using managerwebapp.Models.Servers;
 using Microsoft.EntityFrameworkCore;
+using System.Net.NetworkInformation;
 
 namespace managerwebapp.Services;
 
@@ -20,39 +21,58 @@ public sealed class RemoteServerService(
                 server.Id,
                 server.VpnAddress,
                 server.Port,
-                server.InviteStatus,
                 server.ValidationStatus,
+                false,
+                false,
+                false,
                 server.LastSeenAtUtc,
                 server.CreatedAtUtc))
             .ToListAsync(cancellationToken);
 
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        List<RemoteServerListItem> updatedItems = [];
         IReadOnlyDictionary<int, RemoteServerHubSnapshot> snapshots = remoteServerHubClientService.GetSnapshots();
 
-        return items
-            .Select(item =>
+        foreach (RemoteServerListItem item in items)
+        {
+            bool isReachable = await PingAddressAsync(GetIpAddress(item.VpnAddress));
+            if (!isReachable)
             {
-                if (!snapshots.TryGetValue(item.Id, out RemoteServerHubSnapshot? snapshot))
+                updatedItems.Add(item with
                 {
-                    return item;
-                }
+                    StateLabel = "Unknown",
+                    CanStart = false,
+                    CanStop = false,
+                    CanOpenRcon = false
+                });
+                continue;
+            }
 
-                string validationStatus = snapshot.ConnectionState switch
+            if (!snapshots.TryGetValue(item.Id, out RemoteServerHubSnapshot? snapshot) ||
+                !string.Equals(snapshot.ConnectionState, "Connected", StringComparison.Ordinal))
+            {
+                updatedItems.Add(item with
                 {
-                    "Connected" => "Online",
-                    "Reconnecting" => "Reconnecting",
-                    _ => "Disconnected"
-                };
+                    StateLabel = "Reachable",
+                    CanStart = false,
+                    CanStop = false,
+                    CanOpenRcon = false,
+                    LastSeenAtUtc = now
+                });
+                continue;
+            }
 
-                DateTimeOffset? lastSeenAtUtc = string.Equals(snapshot.ConnectionState, "Connected", StringComparison.Ordinal)
-                    ? snapshot.UpdatedAtUtc
-                    : item.LastSeenAtUtc;
+            updatedItems.Add(item with
+            {
+                StateLabel = string.IsNullOrWhiteSpace(snapshot.AsaStatus.DisplayText) ? "Reachable" : snapshot.AsaStatus.DisplayText,
+                CanStart = snapshot.AsaStatus.CanStart,
+                CanStop = snapshot.AsaStatus.CanStop,
+                CanOpenRcon = snapshot.AsaStatus.IsRunning,
+                LastSeenAtUtc = snapshot.UpdatedAtUtc
+            });
+        }
 
-                return item with
-                {
-                    ValidationStatus = validationStatus,
-                    LastSeenAtUtc = lastSeenAtUtc
-                };
-            })
+        return updatedItems
             .OrderByDescending(server => server.CreatedAtUtc)
             .ToList();
     }
@@ -156,5 +176,24 @@ public sealed class RemoteServerService(
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static string GetIpAddress(string address)
+    {
+        return address.Split('/', 2, StringSplitOptions.TrimEntries)[0];
+    }
+
+    private static async Task<bool> PingAddressAsync(string ipAddress)
+    {
+        try
+        {
+            using Ping ping = new();
+            PingReply reply = await ping.SendPingAsync(ipAddress, 1500);
+            return reply.Status == IPStatus.Success;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
