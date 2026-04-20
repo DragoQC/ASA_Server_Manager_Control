@@ -1,7 +1,9 @@
 @page "/admin/invitations"
 @inject managerwebapp.Services.InvitationService InvitationService
+@inject managerwebapp.Services.InvitationEventsService InvitationEventsService
 @inject managerwebapp.Services.NfsShareService NfsShareService
 @inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <PageTitle>Invitations</PageTitle>
 
@@ -321,35 +323,41 @@
 
     protected override async Task OnInitializedAsync()
     {
+        InvitationEventsService.Changed += OnInvitationChangedAsync;
         await RefreshAsync();
     }
 
     private async Task RefreshAsync()
     {
+        await RefreshAsync(includeDefaults: true, showErrors: true);
+    }
+
+    private async Task RefreshAsync(bool includeDefaults, bool showErrors)
+    {
         _isRefreshing = true;
 
         try
         {
-            managerwebapp.Models.Invitations.InvitationFormModel defaults = await InvitationService.CreateDefaultFormAsync();
-            _form.ClusterId = defaults.ClusterId;
-            _form.VpnAddress = defaults.VpnAddress;
-            _form.Port = defaults.Port;
-            _previewPayload = !string.IsNullOrWhiteSpace(_form.VpnAddress)
-                ? await InvitationService.BuildPreviewAsync(_form)
-                : null;
-            _items = await InvitationService.LoadAsync();
+            if (includeDefaults)
+            {
+                managerwebapp.Models.Invitations.InvitationFormModel defaults = await InvitationService.CreateDefaultFormAsync();
+                _form.ClusterId = defaults.ClusterId;
+                _form.VpnAddress = defaults.VpnAddress;
+                _form.Port = defaults.Port;
+                _previewPayload = !string.IsNullOrWhiteSpace(_form.VpnAddress)
+                    ? await InvitationService.BuildPreviewAsync(_form)
+                    : null;
+            }
 
-            _nfsServerOptions = await NfsShareService.LoadTargetServersAsync();
-            _selectedNfsRemoteServerId = GetInitialNfsRemoteServerId();
-            _nfsPreviewPayload = _selectedNfsRemoteServerId.HasValue
-                ? await NfsShareService.BuildPreviewAsync(_selectedNfsRemoteServerId.Value)
-                : null;
-            _nfsItems = await NfsShareService.LoadAsync();
+            await RefreshLiveDataAsync();
         }
         catch (Exception exception)
         {
-            _statusMessage = exception.Message;
-            _statusIsError = true;
+            if (showErrors)
+            {
+                _statusMessage = exception.Message;
+                _statusIsError = true;
+            }
         }
         finally
         {
@@ -430,6 +438,39 @@
             _statusMessage = exception.Message;
             _statusIsError = true;
         }
+    }
+
+    private async Task RefreshLiveDataAsync()
+    {
+        _items = await InvitationService.LoadAsync();
+        _nfsServerOptions = await NfsShareService.LoadTargetServersAsync();
+        _nfsItems = await NfsShareService.LoadAsync();
+
+        int? previousSelection = _selectedNfsRemoteServerId;
+        _selectedNfsRemoteServerId = GetInitialNfsRemoteServerId();
+
+        if (_selectedNfsRemoteServerId.HasValue)
+        {
+            _nfsPreviewPayload = await NfsShareService.BuildPreviewAsync(_selectedNfsRemoteServerId.Value);
+        }
+        else
+        {
+            _nfsPreviewPayload = null;
+        }
+    }
+
+    private Task OnInvitationChangedAsync()
+    {
+        if (_isRefreshing || _isSending || _isSendingNfs || _isInvitationConfigDialogOpen)
+        {
+            return Task.CompletedTask;
+        }
+
+        return InvokeAsync(async () =>
+        {
+            await RefreshAsync(includeDefaults: false, showErrors: false);
+            StateHasChanged();
+        });
     }
 
     private async Task OpenInvitationConfigAsync(int invitationId)
@@ -567,6 +608,12 @@
             "",
             "[ClientConfig]",
             _nfsPreviewPayload.ClientConfig);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        InvitationEventsService.Changed -= OnInvitationChangedAsync;
+        return ValueTask.CompletedTask;
     }
 }
 

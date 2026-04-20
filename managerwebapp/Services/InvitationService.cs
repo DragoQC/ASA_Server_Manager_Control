@@ -12,7 +12,8 @@ public sealed class InvitationService(
     IDbContextFactory<AppDbContext> dbContextFactory,
     VpnConfigService vpnConfigService,
     ClusterSettingsService clusterSettingsService,
-    SudoService sudoService)
+    SudoService sudoService,
+    InvitationEventsService invitationEventsService)
 {
     private const int DefaultRemoteServerPort = 8000;
 
@@ -235,6 +236,7 @@ public sealed class InvitationService(
         invitation.RemoteServer.InviteStatus = "Accepted";
         invitation.RemoteServer.ValidationStatus = "Unknown";
         await dbContext.SaveChangesAsync(cancellationToken);
+        await invitationEventsService.NotifyChangedAsync();
 
         return BuildInviteRequest(invitation, vpnConfig, clientPrivateKey, invitationConfigContent, serverKeys);
     }
