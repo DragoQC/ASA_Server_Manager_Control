@@ -23,6 +23,14 @@ public sealed class SudoService
             cancellationToken);
     }
 
+    public Task EnableWireGuardAsync(CancellationToken cancellationToken = default)
+    {
+        return RunProcessAsync(
+            GlobalConstants.SudoPath,
+            ["-n", GlobalConstants.SystemctlPath, "enable", VpnConstants.WireGuardServiceName],
+            cancellationToken);
+    }
+
     public Task StartWireGuardAsync(CancellationToken cancellationToken = default)
     {
         return RunProcessAsync(

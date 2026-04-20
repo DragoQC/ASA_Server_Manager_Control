@@ -15,6 +15,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     public DbSet<NfsShareInviteEntity> NfsShareInvites => Set<NfsShareInviteEntity>();
     public DbSet<RemoteServerEntity> RemoteServers => Set<RemoteServerEntity>();
     public DbSet<RemoteServerModEntity> RemoteServerMods => Set<RemoteServerModEntity>();
+    public DbSet<VpnServerSettingsEntity> VpnServerSettings => Set<VpnServerSettingsEntity>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -28,6 +29,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
         builder.ApplyConfiguration(new NfsShareInviteEntityConfiguration());
         builder.ApplyConfiguration(new RemoteServerEntityConfiguration());
         builder.ApplyConfiguration(new RemoteServerModEntityConfiguration());
+        builder.ApplyConfiguration(new VpnServerSettingsEntityConfiguration());
     }
 
     public override int SaveChanges()

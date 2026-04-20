@@ -2,6 +2,8 @@
 @inject managerwebapp.Services.RemoteServerService RemoteServerService
 @inject managerwebapp.Services.RemoteManagerService RemoteManagerService
 @inject managerwebapp.Services.RemoteRconService RemoteRconService
+@inject managerwebapp.Services.RemoteServerHubClientService RemoteServerHubClientService
+@implements IDisposable
 
 <PageTitle>Servers</PageTitle>
 
@@ -226,7 +228,13 @@
 
     protected override async Task OnInitializedAsync()
     {
+        RemoteServerHubClientService.StatusUpdated += OnRemoteStatusUpdatedAsync;
         await RefreshAsync();
+    }
+
+    public void Dispose()
+    {
+        RemoteServerHubClientService.StatusUpdated -= OnRemoteStatusUpdatedAsync;
     }
 
     private async Task RefreshAsync()
@@ -241,6 +249,20 @@
         {
             _isRefreshing = false;
         }
+    }
+
+    private Task OnRemoteStatusUpdatedAsync(int _, managerwebapp.Models.Servers.RemoteAsaServiceStatus __)
+    {
+        return InvokeAsync(async () =>
+        {
+            if (_isRefreshing)
+            {
+                return;
+            }
+
+            await RefreshAsync();
+            StateHasChanged();
+        });
     }
 
     private void OpenEditServerDialog(managerwebapp.Models.Servers.RemoteServerListItem item)

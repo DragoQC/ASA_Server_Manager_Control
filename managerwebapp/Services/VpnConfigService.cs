@@ -4,12 +4,8 @@ using System.Diagnostics;
 
 namespace managerwebapp.Services;
 
-public sealed class VpnConfigService
+public sealed class VpnConfigService(VpnServerSettingsService vpnServerSettingsService)
 {
-    private const string ControlEndpointCommentKey = "ControlEndpoint";
-    private const string ClientAllowedIpsCommentKey = "ClientAllowedIps";
-    private const string ClientPersistentKeepaliveCommentKey = "ClientPersistentKeepalive";
-    private const string InvitationPresharedKeyCommentKey = "InvitationPresharedKey";
     public const string DefaultAddress = "10.10.10.2/32";
     public const string DefaultListenPort = "51820";
     public const string DefaultAllowedIps = "10.10.10.0/24";
@@ -55,7 +51,9 @@ public sealed class VpnConfigService
     public async Task<VpnConfigModel> LoadModelAsync(CancellationToken cancellationToken = default)
     {
         string content = await LoadEditorContentAsync(VpnConstants.VpnConfigFilePath, cancellationToken);
-        return ApplyDefaults(ParseModel(content));
+        VpnConfigModel model = ParseServerModel(content);
+        VpnServerSettingsModel settings = await vpnServerSettingsService.LoadAsync(cancellationToken);
+        return ApplyDefaults(MergeServerSettings(model, settings));
     }
 
     public async Task<VpnConfigModel> LoadConfiguredModelAsync(CancellationToken cancellationToken = default)
@@ -66,14 +64,32 @@ public sealed class VpnConfigService
         }
 
         string content = await LoadEditorContentAsync(VpnConstants.VpnConfigFilePath, cancellationToken);
-        VpnConfigModel model = ParseModel(content);
+        VpnConfigModel model = ParseServerModel(content);
 
         if (string.IsNullOrWhiteSpace(model.Address))
         {
             throw new InvalidOperationException("VPN address must be configured in wg0.conf before using invitations.");
         }
 
-        return model;
+        if (string.IsNullOrWhiteSpace(model.ListenPort))
+        {
+            throw new InvalidOperationException("VPN listen port must be configured in wg0.conf before using invitations.");
+        }
+
+        VpnServerSettingsModel settings = await vpnServerSettingsService.LoadAsync(cancellationToken);
+        VpnConfigModel configuredModel = MergeServerSettings(model, settings);
+
+        if (string.IsNullOrWhiteSpace(configuredModel.Endpoint))
+        {
+            throw new InvalidOperationException("VPN endpoint must be configured before using invitations.");
+        }
+
+        if (string.IsNullOrWhiteSpace(configuredModel.AllowedIps))
+        {
+            throw new InvalidOperationException("VPN allowed IPs must be configured before using invitations.");
+        }
+
+        return configuredModel;
     }
 
     public async Task<string> LoadConfiguredAddressAsync(CancellationToken cancellationToken = default)
@@ -118,7 +134,7 @@ public sealed class VpnConfigService
     public Task<string> BuildContentAsync(VpnConfigModel model, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(BuildContent(model));
+        return Task.FromResult(BuildServerContent(model));
     }
 
     public Task<bool> IsWireGuardInstalledAsync(CancellationToken cancellationToken = default)
@@ -155,12 +171,6 @@ public sealed class VpnConfigService
     public async Task SaveAsync(string filePath, string content, CancellationToken cancellationToken = default)
     {
         string normalizedContent = NormalizeContent(content);
-
-        if (string.Equals(filePath, VpnConstants.VpnConfigFilePath, StringComparison.Ordinal))
-        {
-            normalizedContent = NormalizeControlServerContent(normalizedContent);
-        }
-
         await File.WriteAllTextAsync(filePath, normalizedContent, cancellationToken);
     }
 
@@ -310,7 +320,7 @@ public sealed class VpnConfigService
         return stdout;
     }
 
-    private static VpnConfigModel ParseModel(string content)
+    private static VpnConfigModel ParseServerModel(string content)
     {
         VpnConfigModel model = new();
         string? currentSection = null;
@@ -318,26 +328,6 @@ public sealed class VpnConfigService
         foreach (string rawLine in content.Split('\n'))
         {
             string line = rawLine.Trim();
-            if (TryParseMetadataComment(line, out string metadataKey, out string metadataValue))
-            {
-                switch (metadataKey)
-                {
-                    case ControlEndpointCommentKey:
-                        model.Endpoint = metadataValue;
-                        break;
-                    case ClientAllowedIpsCommentKey:
-                        model.AllowedIps = metadataValue;
-                        break;
-                    case ClientPersistentKeepaliveCommentKey:
-                        model.PersistentKeepalive = metadataValue;
-                        break;
-                    case InvitationPresharedKeyCommentKey:
-                        model.PresharedKey = metadataValue;
-                        break;
-                }
-
-                continue;
-            }
 
             if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#') || line.StartsWith(';'))
             {
@@ -379,7 +369,16 @@ public sealed class VpnConfigService
         return model;
     }
 
-    private static string BuildContent(VpnConfigModel model)
+    private static VpnConfigModel MergeServerSettings(VpnConfigModel serverModel, VpnServerSettingsModel settings)
+    {
+        serverModel.Endpoint = settings.Endpoint;
+        serverModel.AllowedIps = settings.AllowedIps;
+        serverModel.PersistentKeepalive = settings.PersistentKeepalive;
+        serverModel.PresharedKey = settings.PresharedKey;
+        return serverModel;
+    }
+
+    private static string BuildServerContent(VpnConfigModel model)
     {
         List<string> lines =
         [
@@ -389,10 +388,6 @@ public sealed class VpnConfigService
         AppendLine(lines, "PrivateKey", model.PrivateKey);
         AppendLine(lines, "Address", model.Address);
         AppendLine(lines, "ListenPort", model.ListenPort);
-        AppendCommentLine(lines, ControlEndpointCommentKey, model.Endpoint);
-        AppendCommentLine(lines, ClientAllowedIpsCommentKey, model.AllowedIps);
-        AppendCommentLine(lines, ClientPersistentKeepaliveCommentKey, model.PersistentKeepalive);
-        AppendCommentLine(lines, InvitationPresharedKeyCommentKey, model.PresharedKey);
 
         return NormalizeContent(string.Join('\n', lines).TrimEnd() + "\n");
     }
@@ -435,10 +430,6 @@ public sealed class VpnConfigService
         AppendLine(lines, "PrivateKey", serverPrivateKey);
         AppendLine(lines, "Address", model.Address);
         AppendLine(lines, "ListenPort", model.ListenPort);
-        AppendCommentLine(lines, ControlEndpointCommentKey, model.Endpoint);
-        AppendCommentLine(lines, ClientAllowedIpsCommentKey, model.AllowedIps);
-        AppendCommentLine(lines, ClientPersistentKeepaliveCommentKey, model.PersistentKeepalive);
-        AppendCommentLine(lines, InvitationPresharedKeyCommentKey, model.PresharedKey);
 
         foreach ((string publicKey, string allowedIp, string? presharedKey) in peers)
         {
@@ -460,14 +451,6 @@ public sealed class VpnConfigService
         }
     }
 
-    private static void AppendCommentLine(ICollection<string> lines, string key, string? value)
-    {
-        if (!string.IsNullOrWhiteSpace(value))
-        {
-            lines.Add($"# {key} = {value.Trim()}");
-        }
-    }
-
     private static string? BuildEndpointValue(string? endpoint, string? listenPort)
     {
         if (string.IsNullOrWhiteSpace(endpoint))
@@ -484,83 +467,6 @@ public sealed class VpnConfigService
         return string.IsNullOrWhiteSpace(listenPort)
             ? trimmedEndpoint
             : $"{trimmedEndpoint}:{listenPort.Trim()}";
-    }
-
-    private static bool TryParseMetadataComment(string line, out string key, out string value)
-    {
-        key = string.Empty;
-        value = string.Empty;
-
-        if (!line.StartsWith('#'))
-        {
-            return false;
-        }
-
-        string trimmedLine = line[1..].Trim();
-        int separatorIndex = trimmedLine.IndexOf('=');
-        if (separatorIndex < 0)
-        {
-            return false;
-        }
-
-        key = trimmedLine[..separatorIndex].Trim();
-        value = trimmedLine[(separatorIndex + 1)..].Trim();
-        return key.Length > 0;
-    }
-
-    private static string NormalizeControlServerContent(string content)
-    {
-        List<string> normalizedLines = [];
-        string? currentSection = null;
-
-        foreach (string rawLine in content.Split('\n'))
-        {
-            string trimmedLine = rawLine.Trim();
-
-            if (trimmedLine.StartsWith('[') && trimmedLine.EndsWith(']'))
-            {
-                currentSection = trimmedLine[1..^1];
-                normalizedLines.Add(trimmedLine);
-                continue;
-            }
-
-            if (TryConvertToMetadataComment(currentSection, trimmedLine, out string? commentLine))
-            {
-                if (!string.IsNullOrWhiteSpace(commentLine))
-                {
-                    normalizedLines.Add(commentLine);
-                }
-
-                continue;
-            }
-
-            normalizedLines.Add(rawLine);
-        }
-
-        return NormalizeContent(string.Join('\n', normalizedLines).TrimEnd() + "\n");
-    }
-
-    private static bool TryConvertToMetadataComment(string? currentSection, string line, out string? commentLine)
-    {
-        commentLine = null;
-
-        int separatorIndex = line.IndexOf('=');
-        if (separatorIndex < 0)
-        {
-            return false;
-        }
-
-        string key = line[..separatorIndex].Trim();
-        string value = line[(separatorIndex + 1)..].Trim();
-
-        if (string.Equals(currentSection, "Peer", StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(key, "Endpoint", StringComparison.OrdinalIgnoreCase))
-        {
-            commentLine = string.IsNullOrWhiteSpace(value) ? null : $"# {ControlEndpointCommentKey} = {value}";
-            return true;
-        }
-
-        return false;
     }
 
     private static VpnConfigModel ApplyDefaults(VpnConfigModel model)
