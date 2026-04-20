@@ -3,6 +3,7 @@
 @inject managerwebapp.Services.RemoteManagerService RemoteManagerService
 @inject managerwebapp.Services.RemoteRconService RemoteRconService
 @inject managerwebapp.Services.RemoteServerHubClientService RemoteServerHubClientService
+@inject managerwebapp.Services.RemoteServerInfoService RemoteServerInfoService
 @implements IDisposable
 
 <PageTitle>Servers</PageTitle>
@@ -57,8 +58,18 @@
 
                                 <div>
                                     <p class="text-base font-semibold text-white">@(item.Port.HasValue ? $"{item.VpnAddress}:{item.Port.Value}" : item.VpnAddress)</p>
+                                    <p class="mt-1 text-sm text-neutral-300">Contact URL: @GetContactUrl(item)</p>
                                     <p class="mt-1 text-sm text-neutral-300">VPN address: @item.VpnAddress</p>
                                     <p class="mt-1 text-sm text-neutral-300">Port: @(item.Port?.ToString() ?? "Not set")</p>
+                                    @if (item.IsOnline)
+                                    {
+                                        <p class="mt-1 text-sm text-neutral-300">Map: @(string.IsNullOrWhiteSpace(item.MapName) ? "Unknown" : item.MapName)</p>
+                                        <p class="mt-1 text-sm text-neutral-300">Players: @item.CurrentPlayers / @(item.MaxPlayers > 0 ? item.MaxPlayers : 0)</p>
+                                    }
+                                    else
+                                    {
+                                        <p class="mt-1 text-sm text-neutral-300">Server offline</p>
+                                    }
                                 </div>
                             </div>
 
@@ -229,12 +240,14 @@
     protected override async Task OnInitializedAsync()
     {
         RemoteServerHubClientService.StatusUpdated += OnRemoteStatusUpdatedAsync;
+        RemoteServerInfoService.InfoUpdated += OnRemoteInfoUpdatedAsync;
         await RefreshAsync();
     }
 
     public void Dispose()
     {
         RemoteServerHubClientService.StatusUpdated -= OnRemoteStatusUpdatedAsync;
+        RemoteServerInfoService.InfoUpdated -= OnRemoteInfoUpdatedAsync;
     }
 
     private async Task RefreshAsync()
@@ -252,6 +265,20 @@
     }
 
     private Task OnRemoteStatusUpdatedAsync(int _, managerwebapp.Models.Servers.RemoteAsaServiceStatus __)
+    {
+        return InvokeAsync(async () =>
+        {
+            if (_isRefreshing)
+            {
+                return;
+            }
+
+            await RefreshAsync();
+            StateHasChanged();
+        });
+    }
+
+    private Task OnRemoteInfoUpdatedAsync(int _)
     {
         return InvokeAsync(async () =>
         {
@@ -404,5 +431,18 @@
         return _dialogStatusIsError
             ? "rounded-2xl border border-red-300/20 bg-red-400/10 px-5 py-4 text-sm text-red-100"
             : "rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-100";
+    }
+
+    private static string GetContactUrl(managerwebapp.Models.Servers.RemoteServerListItem item)
+    {
+        if (!item.Port.HasValue)
+        {
+            return "Port not set";
+        }
+
+        string host = item.VpnAddress.Split('/', 2, StringSplitOptions.TrimEntries)[0];
+        return Uri.CheckHostName(host) == UriHostNameType.Dns
+            ? $"https://{host}:{item.Port.Value}"
+            : $"http://{host}:{item.Port.Value}";
     }
 }

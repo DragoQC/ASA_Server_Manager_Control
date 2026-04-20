@@ -25,6 +25,11 @@ public sealed class RemoteServerService(
                 false,
                 false,
                 false,
+                false,
+                server.MapName,
+                0,
+                server.MaxPlayers ?? 0,
+                server.ServerInfoCheckedAtUtc,
                 server.LastSeenAtUtc,
                 server.CreatedAtUtc))
             .ToListAsync(cancellationToken);
@@ -41,9 +46,13 @@ public sealed class RemoteServerService(
                 updatedItems.Add(item with
                 {
                     StateLabel = "Unknown",
+                    IsOnline = false,
                     CanStart = false,
                     CanStop = false,
-                    CanOpenRcon = false
+                    CanOpenRcon = false,
+                    MapName = string.Empty,
+                    CurrentPlayers = 0,
+                    MaxPlayers = 0
                 });
                 continue;
             }
@@ -53,23 +62,50 @@ public sealed class RemoteServerService(
                 updatedItems.Add(item with
                 {
                     StateLabel = "Config needed",
+                    IsOnline = false,
                     CanStart = false,
                     CanStop = false,
                     CanOpenRcon = false,
+                    MapName = string.Empty,
+                    CurrentPlayers = 0,
+                    MaxPlayers = 0,
                     LastSeenAtUtc = now
                 });
                 continue;
             }
 
-            if (!snapshots.TryGetValue(item.Id, out RemoteServerHubSnapshot? snapshot) ||
+            bool hasSnapshot = snapshots.TryGetValue(item.Id, out RemoteServerHubSnapshot? snapshot);
+            if (!hasSnapshot ||
+                snapshot is null ||
                 !string.Equals(snapshot.ConnectionState, "Connected", StringComparison.Ordinal))
             {
                 updatedItems.Add(item with
                 {
                     StateLabel = "Misconfigured",
+                    IsOnline = false,
                     CanStart = false,
                     CanStop = false,
                     CanOpenRcon = false,
+                    MapName = string.Empty,
+                    CurrentPlayers = 0,
+                    MaxPlayers = 0,
+                    LastSeenAtUtc = now
+                });
+                continue;
+            }
+
+            if (!snapshot.AsaStatus.IsRunning)
+            {
+                updatedItems.Add(item with
+                {
+                    StateLabel = string.IsNullOrWhiteSpace(snapshot.AsaStatus.DisplayText) ? "Server offline" : snapshot.AsaStatus.DisplayText,
+                    IsOnline = false,
+                    CanStart = snapshot.AsaStatus.CanStart,
+                    CanStop = snapshot.AsaStatus.CanStop,
+                    CanOpenRcon = false,
+                    MapName = string.Empty,
+                    CurrentPlayers = snapshot?.PlayerCount.CurrentPlayers ?? 0,
+                    MaxPlayers = item.MaxPlayers,
                     LastSeenAtUtc = now
                 });
                 continue;
@@ -78,9 +114,13 @@ public sealed class RemoteServerService(
             updatedItems.Add(item with
             {
                 StateLabel = string.IsNullOrWhiteSpace(snapshot.AsaStatus.DisplayText) ? "Reachable" : snapshot.AsaStatus.DisplayText,
+                IsOnline = true,
                 CanStart = snapshot.AsaStatus.CanStart,
                 CanStop = snapshot.AsaStatus.CanStop,
                 CanOpenRcon = snapshot.AsaStatus.IsRunning,
+                MapName = item.MapName,
+                CurrentPlayers = snapshot.PlayerCount.CurrentPlayers,
+                MaxPlayers = item.MaxPlayers > 0 ? item.MaxPlayers : snapshot.PlayerCount.MaxPlayers,
                 LastSeenAtUtc = snapshot.UpdatedAtUtc
             });
         }

@@ -5,8 +5,13 @@ public sealed record RemoteServerListItem(
     string VpnAddress,
     int? Port,
     string StateLabel,
+    bool IsOnline,
     bool CanStart,
     bool CanStop,
     bool CanOpenRcon,
+    string MapName,
+    int CurrentPlayers,
+    int MaxPlayers,
+    DateTimeOffset? ServerInfoCheckedAtUtc,
     DateTimeOffset? LastSeenAtUtc,
     DateTimeOffset CreatedAtUtc);

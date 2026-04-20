@@ -37,6 +37,15 @@ public sealed class RemoteServerEntityConfiguration : IEntityTypeConfiguration<R
 
         builder.Property(remoteServer => remoteServer.LastSeenAtUtc);
 
+        builder.Property(remoteServer => remoteServer.MapName)
+            .HasMaxLength(256)
+            .IsRequired();
+
+        builder.Property(remoteServer => remoteServer.MaxPlayers)
+            .IsRequired(false);
+
+        builder.Property(remoteServer => remoteServer.ServerInfoCheckedAtUtc);
+
         builder.Property(remoteServer => remoteServer.ApiKey)
             .HasColumnName("ApiKeyHash")
             .HasMaxLength(512)

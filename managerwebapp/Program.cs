@@ -64,6 +64,7 @@ builder.Services.AddScoped<RemoteServerService>();
 builder.Services.AddScoped<RemoteManagerService>();
 builder.Services.AddScoped<RemoteRconService>();
 builder.Services.AddSingleton<RemoteServerHubClientService>();
+builder.Services.AddSingleton<RemoteServerInfoService>();
 builder.Services.AddSingleton<WireGuardInstallService>();
 builder.Services.AddScoped<RemoteServerModsService>();
 builder.Services.AddHostedService<RemoteServerModsRefreshService>();
@@ -71,6 +72,7 @@ builder.Services.AddScoped<SudoService>();
 builder.Services.AddScoped<VpnService>();
 builder.Services.AddHostedService<InvitationMonitorService>();
 builder.Services.AddHostedService(services => services.GetRequiredService<RemoteServerHubClientService>());
+builder.Services.AddHostedService(services => services.GetRequiredService<RemoteServerInfoService>());
 
 WebApplication app = builder.Build();
 

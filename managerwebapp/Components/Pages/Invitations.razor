@@ -97,17 +97,9 @@
                                 @if (_previewPayload is not null)
                                 {
                                     <div class="mt-6 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-5">
-                                        <div class="flex flex-wrap items-center justify-between gap-3">
-                                            <div>
-                                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invite link</p>
-                                                <p class="mt-2 break-all text-sm text-neutral-300">@(string.IsNullOrWhiteSpace(_lastCreatedInviteLink) ? "Create an invite to get a one-time link." : _lastCreatedInviteLink)</p>
-                                            </div>
-                                            <button type="button"
-                                                    @onclick="CopyInviteLinkAsync"
-                                                    disabled="@string.IsNullOrWhiteSpace(_lastCreatedInviteLink)"
-                                                    class="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
-                                                Copy link
-                                            </button>
+                                        <div>
+                                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invite link</p>
+                                            <p class="mt-2 break-all text-sm text-neutral-300">@(string.IsNullOrWhiteSpace(_lastCreatedInviteLink) ? "Create an invite to get a one-time link." : _lastCreatedInviteLink)</p>
                                         </div>
 
                                         <div>
@@ -159,11 +151,22 @@
                                                             <p class="mt-1 text-sm text-neutral-300">Cluster ID: @item.ClusterId</p>
                                                             <p class="mt-1 text-sm text-neutral-300">VPN address: @item.VpnAddress</p>
                                                             <p class="mt-1 break-all text-sm text-neutral-300">Invite link: @item.InviteLink</p>
-                                                            <button type="button"
-                                                                    @onclick="() => OpenInvitationConfigAsync(item.Id)"
-                                                                    class="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10">
-                                                                View wg0.conf
-                                                            </button>
+                                                            <div class="mt-3 flex flex-wrap gap-3">
+                                                                <button type="button"
+                                                                        @onclick="() => OpenInvitationConfigAsync(item.Id)"
+                                                                        class="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10">
+                                                                    View wg0.conf
+                                                                </button>
+
+                                                                @if (item.UsedAtUtc is null)
+                                                                {
+                                                                    <button type="button"
+                                                                            @onclick="() => CopyVpnInviteLinkAsync(item.InviteLink)"
+                                                                            class="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10">
+                                                                        Copy link
+                                                                    </button>
+                                                                }
+                                                            </div>
                                                         </div>
                                                     </div>
 
@@ -234,17 +237,9 @@
                                 @if (_nfsPreviewPayload is not null)
                                 {
                                     <div class="mt-6 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-5">
-                                        <div class="flex flex-wrap items-center justify-between gap-3">
-                                            <div>
-                                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invite link</p>
-                                                <p class="mt-2 break-all text-sm text-neutral-300">@(string.IsNullOrWhiteSpace(_lastCreatedNfsInviteLink) ? "Create an invite to get a one-time link." : _lastCreatedNfsInviteLink)</p>
-                                            </div>
-                                            <button type="button"
-                                                    @onclick="CopyNfsInviteLinkAsync"
-                                                    disabled="@string.IsNullOrWhiteSpace(_lastCreatedNfsInviteLink)"
-                                                    class="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
-                                                Copy link
-                                            </button>
+                                        <div>
+                                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invite link</p>
+                                            <p class="mt-2 break-all text-sm text-neutral-300">@(string.IsNullOrWhiteSpace(_lastCreatedNfsInviteLink) ? "Create an invite to get a one-time link." : _lastCreatedNfsInviteLink)</p>
                                         </div>
 
                                         <div>
@@ -280,6 +275,14 @@
                                                         <p class="text-sm font-medium text-white">NFS invitation</p>
                                                         <p class="mt-1 text-sm text-neutral-300">VPN address: @item.VpnAddress</p>
                                                         <p class="mt-1 break-all text-sm text-neutral-300">Invite link: @item.InviteLink</p>
+                                                        @if (item.UsedAtUtc is null)
+                                                        {
+                                                            <button type="button"
+                                                                    @onclick="() => CopyNfsInviteLinkAsync(item.InviteLink)"
+                                                                    class="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10">
+                                                                Copy link
+                                                            </button>
+                                                        }
                                                     </div>
 
                                                     <div class="text-sm text-neutral-400">
@@ -377,6 +380,7 @@
             _statusMessage = $"VPN invitation link created. Share {item.InviteLink}";
             _statusIsError = false;
             _lastCreatedInviteLink = item.InviteLink;
+            await CopyTextAsync(item.InviteLink, "VPN invitation link copied.");
             await RefreshAsync();
         }
         catch (Exception exception)
@@ -408,6 +412,7 @@
             _lastCreatedNfsInviteLink = await NfsService.CreateInviteLinkAsync(_selectedNfsRemoteServerId.Value);
             _statusMessage = $"NFS invitation link created. Share {_lastCreatedNfsInviteLink}";
             _statusIsError = false;
+            await CopyTextAsync(_lastCreatedNfsInviteLink, "NFS invitation link copied.");
             await RefreshAsync();
         }
         catch (Exception exception)
@@ -550,28 +555,26 @@
         return $"space-y-8 { _panelAnimationClass }";
     }
 
-    private async Task CopyInviteLinkAsync()
+    private async Task CopyTextAsync(string? value, string successMessage)
     {
-        if (string.IsNullOrWhiteSpace(_lastCreatedInviteLink))
+        if (string.IsNullOrWhiteSpace(value))
         {
             return;
         }
 
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _lastCreatedInviteLink);
-        _statusMessage = "VPN invitation link copied.";
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", value);
+        _statusMessage = successMessage;
         _statusIsError = false;
     }
 
-    private async Task CopyNfsInviteLinkAsync()
+    private Task CopyVpnInviteLinkAsync(string? inviteLink)
     {
-        if (string.IsNullOrWhiteSpace(_lastCreatedNfsInviteLink))
-        {
-            return;
-        }
+        return CopyTextAsync(inviteLink, "VPN invitation link copied.");
+    }
 
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _lastCreatedNfsInviteLink);
-        _statusMessage = "NFS invitation link copied.";
-        _statusIsError = false;
+    private Task CopyNfsInviteLinkAsync(string? inviteLink)
+    {
+        return CopyTextAsync(inviteLink, "NFS invitation link copied.");
     }
 
     private string BuildPayloadPreview()
