@@ -2,7 +2,7 @@ using managerwebapp.Data;
 using managerwebapp.Data.Entities;
 using managerwebapp.Models.Servers;
 using Microsoft.EntityFrameworkCore;
-using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 namespace managerwebapp.Services;
 
@@ -40,24 +40,8 @@ public sealed class RemoteServerService(
 
         foreach (RemoteServerListItem item in items)
         {
-            bool isReachable = await PingAddressAsync(GetIpAddress(item.VpnAddress));
-            if (!isReachable)
-            {
-                updatedItems.Add(item with
-                {
-                    StateLabel = "Unknown",
-                    IsOnline = false,
-                    CanStart = false,
-                    CanStop = false,
-                    CanOpenRcon = false,
-                    MapName = string.Empty,
-                    CurrentPlayers = 0,
-                    MaxPlayers = 0
-                });
-                continue;
-            }
-
-            if (!item.Port.HasValue)
+            bool requiresExplicitPort = IsIpAddress(item.VpnAddress);
+            if (requiresExplicitPort && !item.Port.HasValue)
             {
                 updatedItems.Add(item with
                 {
@@ -75,53 +59,72 @@ public sealed class RemoteServerService(
             }
 
             bool hasSnapshot = snapshots.TryGetValue(item.Id, out RemoteServerHubSnapshot? snapshot);
-            if (!hasSnapshot ||
-                snapshot is null ||
-                !string.Equals(snapshot.ConnectionState, "Connected", StringComparison.Ordinal))
+            if (hasSnapshot &&
+                snapshot is not null &&
+                string.Equals(snapshot.ConnectionState, "Connected", StringComparison.Ordinal))
+            {
+                if (!snapshot.AsaStatus.IsRunning)
+                {
+                    updatedItems.Add(item with
+                    {
+                        StateLabel = string.IsNullOrWhiteSpace(snapshot.AsaStatus.DisplayText) ? "Server offline" : snapshot.AsaStatus.DisplayText,
+                        IsOnline = false,
+                        CanStart = snapshot.AsaStatus.CanStart,
+                        CanStop = snapshot.AsaStatus.CanStop,
+                        CanOpenRcon = false,
+                        MapName = string.Empty,
+                        CurrentPlayers = snapshot.PlayerCount.CurrentPlayers,
+                        MaxPlayers = item.MaxPlayers,
+                        LastSeenAtUtc = now
+                    });
+                    continue;
+                }
+
+                updatedItems.Add(item with
+                {
+                    StateLabel = string.IsNullOrWhiteSpace(snapshot.AsaStatus.DisplayText) ? "Reachable" : snapshot.AsaStatus.DisplayText,
+                    IsOnline = true,
+                    CanStart = snapshot.AsaStatus.CanStart,
+                    CanStop = snapshot.AsaStatus.CanStop,
+                    CanOpenRcon = snapshot.AsaStatus.IsRunning,
+                    MapName = item.MapName,
+                    CurrentPlayers = snapshot.PlayerCount.CurrentPlayers,
+                    MaxPlayers = item.MaxPlayers > 0 ? item.MaxPlayers : snapshot.PlayerCount.MaxPlayers,
+                    LastSeenAtUtc = snapshot.UpdatedAtUtc
+                });
+                continue;
+            }
+
+            bool isReachable = item.Port.HasValue
+                ? await IsTcpReachableAsync(GetIpAddress(item.VpnAddress), item.Port.Value)
+                : false;
+            if (!isReachable)
             {
                 updatedItems.Add(item with
                 {
-                    StateLabel = "Misconfigured",
+                    StateLabel = "Unknown",
                     IsOnline = false,
                     CanStart = false,
                     CanStop = false,
                     CanOpenRcon = false,
                     MapName = string.Empty,
                     CurrentPlayers = 0,
-                    MaxPlayers = 0,
-                    LastSeenAtUtc = now
-                });
-                continue;
-            }
-
-            if (!snapshot.AsaStatus.IsRunning)
-            {
-                updatedItems.Add(item with
-                {
-                    StateLabel = string.IsNullOrWhiteSpace(snapshot.AsaStatus.DisplayText) ? "Server offline" : snapshot.AsaStatus.DisplayText,
-                    IsOnline = false,
-                    CanStart = snapshot.AsaStatus.CanStart,
-                    CanStop = snapshot.AsaStatus.CanStop,
-                    CanOpenRcon = false,
-                    MapName = string.Empty,
-                    CurrentPlayers = snapshot?.PlayerCount.CurrentPlayers ?? 0,
-                    MaxPlayers = item.MaxPlayers,
-                    LastSeenAtUtc = now
+                    MaxPlayers = 0
                 });
                 continue;
             }
 
             updatedItems.Add(item with
             {
-                StateLabel = string.IsNullOrWhiteSpace(snapshot.AsaStatus.DisplayText) ? "Reachable" : snapshot.AsaStatus.DisplayText,
-                IsOnline = true,
-                CanStart = snapshot.AsaStatus.CanStart,
-                CanStop = snapshot.AsaStatus.CanStop,
-                CanOpenRcon = snapshot.AsaStatus.IsRunning,
-                MapName = item.MapName,
-                CurrentPlayers = snapshot.PlayerCount.CurrentPlayers,
-                MaxPlayers = item.MaxPlayers > 0 ? item.MaxPlayers : snapshot.PlayerCount.MaxPlayers,
-                LastSeenAtUtc = snapshot.UpdatedAtUtc
+                StateLabel = "Misconfigured",
+                IsOnline = false,
+                CanStart = false,
+                CanStop = false,
+                CanOpenRcon = false,
+                MapName = string.Empty,
+                CurrentPlayers = 0,
+                MaxPlayers = item.MaxPlayers,
+                LastSeenAtUtc = now
             });
         }
 
@@ -216,13 +219,19 @@ public sealed class RemoteServerService(
         return address.Split('/', 2, StringSplitOptions.TrimEntries)[0];
     }
 
-    private static async Task<bool> PingAddressAsync(string ipAddress)
+    private static bool IsIpAddress(string address)
+    {
+        return System.Net.IPAddress.TryParse(GetIpAddress(address), out _);
+    }
+
+    private static async Task<bool> IsTcpReachableAsync(string host, int port)
     {
         try
         {
-            using Ping ping = new();
-            PingReply reply = await ping.SendPingAsync(ipAddress, 1500);
-            return reply.Status == IPStatus.Success;
+            using TcpClient client = new();
+            using CancellationTokenSource cancellationTokenSource = new(TimeSpan.FromSeconds(2));
+            await client.ConnectAsync(host, port, cancellationTokenSource.Token);
+            return client.Connected;
         }
         catch
         {

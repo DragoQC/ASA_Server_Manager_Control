@@ -12,6 +12,7 @@ public sealed class RemoteServerHubClientService(
     private readonly ConcurrentDictionary<int, RemoteHubRegistration> _connections = new();
     private readonly ConcurrentDictionary<int, RemoteServerHubSnapshot> _snapshots = new();
     public event Func<int, RemoteAsaServiceStatus, Task>? StatusUpdated;
+    public event Func<int, Task>? SnapshotUpdated;
 
     public IReadOnlyDictionary<int, RemoteServerHubSnapshot> GetSnapshots()
     {
@@ -117,19 +118,35 @@ public sealed class RemoteServerHubClientService(
                 });
 
             _ = NotifyStatusUpdatedAsync(server.Id, status);
+            _ = NotifySnapshotUpdatedAsync(server.Id);
         });
 
-        connection.On<RemotePlayerCountSnapshot>(AsaStateHubConstants.PlayerCountUpdatedMethod, playerCount =>
+        connection.On<int>(AsaStateHubConstants.PlayerCountUpdatedMethod, currentPlayers =>
         {
             _snapshots.AddOrUpdate(
                 server.Id,
-                _ => new RemoteServerHubSnapshot(server.Id, connection.State.ToString(), RemoteAsaServiceStatus.Unknown(), playerCount, DateTimeOffset.UtcNow),
+                _ => new RemoteServerHubSnapshot(
+                    server.Id,
+                    connection.State.ToString(),
+                    RemoteAsaServiceStatus.Unknown(),
+                    RemotePlayerCountSnapshot.Default() with
+                    {
+                        CurrentPlayers = currentPlayers,
+                        UpdatedAtUtc = DateTimeOffset.UtcNow
+                    },
+                    DateTimeOffset.UtcNow),
                 (_, current) => current with
                 {
                     ConnectionState = connection.State.ToString(),
-                    PlayerCount = playerCount,
+                    PlayerCount = current.PlayerCount with
+                    {
+                        CurrentPlayers = currentPlayers,
+                        UpdatedAtUtc = DateTimeOffset.UtcNow
+                    },
                     UpdatedAtUtc = DateTimeOffset.UtcNow
                 });
+
+            _ = NotifySnapshotUpdatedAsync(server.Id);
         });
 
         connection.Reconnecting += error =>
@@ -196,6 +213,8 @@ public sealed class RemoteServerHubClientService(
                 ConnectionState = connectionState,
                 UpdatedAtUtc = DateTimeOffset.UtcNow
             });
+
+        _ = NotifySnapshotUpdatedAsync(remoteServerId);
     }
 
     private static async Task DisposeConnectionAsync(HubConnection connection)
@@ -226,6 +245,27 @@ public sealed class RemoteServerHubClientService(
             catch (Exception exception)
             {
                 logger.LogWarning(exception, "Remote hub status subscriber failed for server {RemoteServerId}.", remoteServerId);
+            }
+        }
+    }
+
+    private async Task NotifySnapshotUpdatedAsync(int remoteServerId)
+    {
+        Func<int, Task>? handlers = SnapshotUpdated;
+        if (handlers is null)
+        {
+            return;
+        }
+
+        foreach (Func<int, Task> handler in handlers.GetInvocationList().Cast<Func<int, Task>>())
+        {
+            try
+            {
+                await handler(remoteServerId);
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, "Remote hub snapshot subscriber failed for server {RemoteServerId}.", remoteServerId);
             }
         }
     }

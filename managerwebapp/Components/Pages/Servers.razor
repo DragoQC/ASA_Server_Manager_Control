@@ -240,6 +240,7 @@
     protected override async Task OnInitializedAsync()
     {
         RemoteServerHubClientService.StatusUpdated += OnRemoteStatusUpdatedAsync;
+        RemoteServerHubClientService.SnapshotUpdated += OnRemoteSnapshotUpdatedAsync;
         RemoteServerInfoService.InfoUpdated += OnRemoteInfoUpdatedAsync;
         await RefreshAsync();
     }
@@ -247,6 +248,7 @@
     public void Dispose()
     {
         RemoteServerHubClientService.StatusUpdated -= OnRemoteStatusUpdatedAsync;
+        RemoteServerHubClientService.SnapshotUpdated -= OnRemoteSnapshotUpdatedAsync;
         RemoteServerInfoService.InfoUpdated -= OnRemoteInfoUpdatedAsync;
     }
 
@@ -265,6 +267,20 @@
     }
 
     private Task OnRemoteStatusUpdatedAsync(int _, managerwebapp.Models.Servers.RemoteAsaServiceStatus __)
+    {
+        return InvokeAsync(async () =>
+        {
+            if (_isRefreshing)
+            {
+                return;
+            }
+
+            await RefreshAsync();
+            StateHasChanged();
+        });
+    }
+
+    private Task OnRemoteSnapshotUpdatedAsync(int _)
     {
         return InvokeAsync(async () =>
         {
@@ -435,13 +451,15 @@
 
     private static string GetContactUrl(managerwebapp.Models.Servers.RemoteServerListItem item)
     {
+        string host = item.VpnAddress.Split('/', 2, StringSplitOptions.TrimEntries)[0];
+        bool isDomain = Uri.CheckHostName(host) == UriHostNameType.Dns;
+
         if (!item.Port.HasValue)
         {
-            return "Port not set";
+            return isDomain ? $"https://{host}" : "Port not set";
         }
 
-        string host = item.VpnAddress.Split('/', 2, StringSplitOptions.TrimEntries)[0];
-        return Uri.CheckHostName(host) == UriHostNameType.Dns
+        return isDomain
             ? $"https://{host}:{item.Port.Value}"
             : $"http://{host}:{item.Port.Value}";
     }
