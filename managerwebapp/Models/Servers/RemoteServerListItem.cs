@@ -8,7 +8,7 @@ public sealed record RemoteServerListItem(
     bool IsOnline,
     bool CanStart,
     bool CanStop,
-    bool CanOpenRcon,
+    bool CanSendRconCommand,
     string MapName,
     int CurrentPlayers,
     int MaxPlayers,

@@ -213,8 +213,6 @@ public sealed class NfsService(
         string shareSubnet = GetShareSubnet(configuredAddress);
 
         return Normalize($"""
-# NFS export for the ASA cluster share.
-# Apply this to /etc/exports when you are ready to expose the share to the VPN subnet.
 {ClusterShareConstants.ClusterDirectoryPath} {shareSubnet}(rw,sync,no_subtree_check,no_root_squash)
 """);
     }
@@ -222,8 +220,6 @@ public sealed class NfsService(
     private static string BuildClientConfig(string controlVpnIp)
     {
         return Normalize($"""
-# Client mount example for a remote ASA node.
-# Add this line to /etc/fstab on the node when automatic mount support is ready there.
 {controlVpnIp}:{ClusterShareConstants.ClusterDirectoryPath} {ClusterShareConstants.ClientMountPath} nfs defaults,_netdev,nofail,x-systemd.automount,x-systemd.requires=wg-quick@wg0.service 0 0
 """);
     }

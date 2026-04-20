@@ -109,7 +109,7 @@ public sealed class RemoteServerHubClientService(
         {
             _snapshots.AddOrUpdate(
                 server.Id,
-                _ => new RemoteServerHubSnapshot(server.Id, connection.State.ToString(), status, RemotePlayerCountSnapshot.Default(), DateTimeOffset.UtcNow),
+                _ => new RemoteServerHubSnapshot(server.Id, connection.State.ToString(), status, RemotePlayerCountSnapshot.Default(), false, DateTimeOffset.UtcNow),
                 (_, current) => current with
                 {
                     ConnectionState = connection.State.ToString(),
@@ -134,6 +134,7 @@ public sealed class RemoteServerHubClientService(
                         CurrentPlayers = currentPlayers,
                         UpdatedAtUtc = DateTimeOffset.UtcNow
                     },
+                    false,
                     DateTimeOffset.UtcNow),
                 (_, current) => current with
                 {
@@ -143,6 +144,27 @@ public sealed class RemoteServerHubClientService(
                         CurrentPlayers = currentPlayers,
                         UpdatedAtUtc = DateTimeOffset.UtcNow
                     },
+                    UpdatedAtUtc = DateTimeOffset.UtcNow
+                });
+
+            _ = NotifySnapshotUpdatedAsync(server.Id);
+        });
+
+        connection.On<bool>(AsaStateHubConstants.CanSendRconCommandUpdatedMethod, canSendRconCommand =>
+        {
+            _snapshots.AddOrUpdate(
+                server.Id,
+                _ => new RemoteServerHubSnapshot(
+                    server.Id,
+                    connection.State.ToString(),
+                    RemoteAsaServiceStatus.Unknown(),
+                    RemotePlayerCountSnapshot.Default(),
+                    canSendRconCommand,
+                    DateTimeOffset.UtcNow),
+                (_, current) => current with
+                {
+                    ConnectionState = connection.State.ToString(),
+                    CanSendRconCommand = canSendRconCommand,
                     UpdatedAtUtc = DateTimeOffset.UtcNow
                 });
 
@@ -269,9 +291,4 @@ public sealed class RemoteServerHubClientService(
             }
         }
     }
-
-    private sealed record RemoteHubRegistration(
-        HubConnection Connection,
-        string BaseUrl,
-        string ApiKey);
 }

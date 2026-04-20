@@ -5,6 +5,7 @@ public sealed record RemoteServerHubSnapshot(
     string ConnectionState,
     RemoteAsaServiceStatus AsaStatus,
     RemotePlayerCountSnapshot PlayerCount,
+    bool CanSendRconCommand,
     DateTimeOffset UpdatedAtUtc)
 {
     public static RemoteServerHubSnapshot Default(int remoteServerId)
@@ -14,6 +15,7 @@ public sealed record RemoteServerHubSnapshot(
             "Disconnected",
             RemoteAsaServiceStatus.Unknown("Disconnected"),
             RemotePlayerCountSnapshot.Default(),
+            false,
             DateTimeOffset.UtcNow);
     }
 }

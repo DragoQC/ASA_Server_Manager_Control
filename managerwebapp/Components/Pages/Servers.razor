@@ -26,12 +26,6 @@
 
         <div class="flex flex-wrap items-center justify-between gap-3">
             <p class="text-sm text-neutral-300">Servers are created automatically when an invitation link is generated. Edit their VPN address or node port here if needed.</p>
-            <button type="button"
-                    @onclick="RefreshAsync"
-                    disabled="@_isRefreshing"
-                    class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
-                @(_isRefreshing ? "Refreshing..." : "Refresh")
-            </button>
         </div>
 
         @if (_items.Count == 0)
@@ -88,15 +82,15 @@
                                     <ActionButton Text="Edit"
                                                   Secondary="true"
                                                   OnClick="@(() => OpenEditServerDialog(item))" />
-                                    <ActionButton Text="@(_busyServerIds.Contains(item.Id) ? "Starting..." : "Start")"
-                                                  Disabled="@(_busyServerIds.Contains(item.Id) || !item.CanStart)"
+                                    <ActionButton Text="Start"
+                                                  Disabled="@(IsStartBusy(item.Id) || !item.CanStart)"
                                                   OnClick="@(() => StartServerAsync(item.Id))" />
-                                    <ActionButton Text="@(_busyServerIds.Contains(item.Id) ? "Stopping..." : "Stop")"
-                                                  Disabled="@(_busyServerIds.Contains(item.Id) || !item.CanStop)"
+                                    <ActionButton Text="Stop"
+                                                  Disabled="@(IsStopBusy(item.Id) || !item.CanStop)"
                                                   Secondary="true"
                                                   OnClick="@(() => StopServerAsync(item.Id))" />
                                     <ActionButton Text="Open RCON"
-                                                  Disabled="@(!item.CanOpenRcon)"
+                                                  Disabled="@(!item.CanSendRconCommand)"
                                                   Secondary="true"
                                                   OnClick="@(() => OpenRconDialogAsync(item))" />
                                 </div>
@@ -200,7 +194,7 @@
 
                 <div class="flex justify-end gap-3">
                     <ActionButton Text="Send"
-                                  Disabled="@_isSendingRcon"
+                                  Disabled="@(_isSendingRcon || !_canSendRconCommand)"
                                   OnClick="SendRconAsync" />
                     <ActionButton Text="Close"
                                   Secondary="true"
@@ -219,7 +213,7 @@
 @code {
     private IReadOnlyList<managerwebapp.Models.Servers.RemoteServerListItem> _items = Array.Empty<managerwebapp.Models.Servers.RemoteServerListItem>();
     private readonly Dictionary<int, string> _serverMessages = [];
-    private readonly HashSet<int> _busyServerIds = [];
+    private readonly Dictionary<int, string> _busyActions = [];
     private int _selectedRemoteServerId;
     private string? _selectedVpnAddress;
     private string? _selectedPort;
@@ -236,6 +230,7 @@
     private string? _rconResponse;
     private string? _rconStatusMessage;
     private bool _rconStatusIsError;
+    private bool _canSendRconCommand;
 
     protected override async Task OnInitializedAsync()
     {
@@ -351,22 +346,25 @@
 
     private async Task StartServerAsync(int remoteServerId)
     {
-        await RunManagerCommandAsync(remoteServerId, () => RemoteManagerService.StartAsync(remoteServerId));
+        await RunManagerCommandAsync(remoteServerId, "start", () => RemoteManagerService.StartAsync(remoteServerId));
     }
 
     private async Task StopServerAsync(int remoteServerId)
     {
-        await RunManagerCommandAsync(remoteServerId, () => RemoteManagerService.StopAsync(remoteServerId));
+        await RunManagerCommandAsync(remoteServerId, "stop", () => RemoteManagerService.StopAsync(remoteServerId));
     }
 
     private async Task RunManagerCommandAsync(
         int remoteServerId,
+        string actionName,
         Func<Task<managerwebapp.Models.Servers.RemoteManagerCommandResponse>> action)
     {
-        if (!_busyServerIds.Add(remoteServerId))
+        if (_busyActions.ContainsKey(remoteServerId))
         {
             return;
         }
+
+        _busyActions[remoteServerId] = actionName;
 
         try
         {
@@ -380,14 +378,27 @@
         }
         finally
         {
-            _busyServerIds.Remove(remoteServerId);
+            _busyActions.Remove(remoteServerId);
         }
+    }
+
+    private bool IsStartBusy(int remoteServerId)
+    {
+        return _busyActions.TryGetValue(remoteServerId, out string? actionName) &&
+               string.Equals(actionName, "start", StringComparison.Ordinal);
+    }
+
+    private bool IsStopBusy(int remoteServerId)
+    {
+        return _busyActions.TryGetValue(remoteServerId, out string? actionName) &&
+               string.Equals(actionName, "stop", StringComparison.Ordinal);
     }
 
     private async Task OpenRconDialogAsync(managerwebapp.Models.Servers.RemoteServerListItem item)
     {
         _rconRemoteServerId = item.Id;
         _rconEndpointUrl = await RemoteRconService.GetEndpointUrlAsync(item.Id);
+        _canSendRconCommand = item.CanSendRconCommand;
         _rconCommand = null;
         _rconResponse = null;
         _rconStatusMessage = null;
@@ -405,10 +416,18 @@
         _rconResponse = null;
         _rconStatusMessage = null;
         _rconStatusIsError = false;
+        _canSendRconCommand = false;
     }
 
     private async Task SendRconAsync()
     {
+        if (!_canSendRconCommand)
+        {
+            _rconStatusMessage = "RCON is not currently available on the remote server.";
+            _rconStatusIsError = true;
+            return;
+        }
+
         _isSendingRcon = true;
         _rconStatusMessage = null;
         _rconStatusIsError = false;
