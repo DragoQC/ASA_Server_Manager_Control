@@ -10,7 +10,8 @@ namespace managerwebapp.Services;
 
 public sealed class NfsService(
     IDbContextFactory<AppDbContext> dbContextFactory,
-    VpnService vpnService)
+    VpnService vpnService,
+    InvitationEventsService invitationEventsService)
 {
     public async Task<NfsConfigurationModel> LoadConfigurationAsync(CancellationToken cancellationToken = default)
     {
@@ -200,6 +201,7 @@ public sealed class NfsService(
 
         invite.UsedAtUtc = DateTimeOffset.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
+        await invitationEventsService.NotifyChangedAsync();
 
         NfsConfigurationModel configuration = await LoadConfigurationAsync(cancellationToken);
         return new NfsShareInviteResponse(

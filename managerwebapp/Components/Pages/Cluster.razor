@@ -73,7 +73,7 @@
                 </p>
             </div>
 
-            <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+            <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
                 <TextHelpField Label="Cluster ID"
                                @bind-Value="_clusterSettings.ClusterId"
                                OnHelpClick="@(() => OpenHelpDialog(
@@ -89,6 +89,13 @@
                         disabled="@_isSavingClusterId"
                         class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
                     @(_isSavingClusterId ? "Saving..." : "Generate and save cluster ID")
+                </button>
+
+                <button type="button"
+                        @onclick="SaveClusterIdAsync"
+                        disabled="@_isSavingClusterId"
+                        class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
+                    @(_isSavingClusterId ? "Saving..." : "Save cluster ID")
                 </button>
             </div>
         </section>
