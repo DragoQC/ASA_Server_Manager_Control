@@ -51,6 +51,7 @@
 @code {
     private ControlLogsSnapshot _snapshot = new(
         new LogSectionSnapshot("Service status", "Live systemctl status output for asa-control-webapp.", "Loading...", false),
+        new LogSectionSnapshot("WireGuard status", "Live systemctl status output for wg-quick@wg0.", "Loading...", false),
         new LogSectionSnapshot("App journal", "Recent journalctl output for asa-control-webapp.", "Loading...", false),
         DateTimeOffset.UtcNow);
     private CancellationTokenSource? _refreshLoopCancellationTokenSource;
@@ -110,6 +111,7 @@
         return
         [
             _snapshot.StatusSection,
+            _snapshot.WireGuardStatusSection,
             _snapshot.JournalSection
         ];
     }

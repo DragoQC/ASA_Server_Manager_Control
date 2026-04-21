@@ -271,25 +271,6 @@
                     </div>
                 </section>
 
-                <section class="rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Service status</p>
-                            <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
-                                @GetWireGuardStateLabel()
-                            </span>
-                        </div>
-                        <button type="button"
-                                @onclick="RefreshWireGuardStatusAsync"
-                                disabled="@_isRefreshingStatus"
-                                class="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
-                            @(_isRefreshingStatus ? "Loading..." : "Refresh status")
-                        </button>
-                    </div>
-
-                    <pre class="mt-4 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200">@_wireGuardStatusOutput</pre>
-                </section>
-
                 <section class="space-y-6 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
                     <div class="space-y-3">
                         <div class="flex flex-wrap items-center gap-3">
@@ -455,7 +436,6 @@
     private bool _isGeneratingServerKeys;
     private bool _isStartingWireGuard;
     private bool _isStoppingWireGuard;
-    private bool _isRefreshingStatus;
     private bool _isSavingClusterId;
     private bool _isSavingNfsConfiguration;
     private bool _isVpnConfigured;
@@ -474,7 +454,6 @@
     private string _nfsServerConfigContent = string.Empty;
     private string _nfsClientConfigContent = string.Empty;
     private SavedVpnKeyPair? _serverKeys;
-    private string _wireGuardStatusOutput = "WireGuard status not loaded yet.";
     private bool _isGeneratingKeys => _isGeneratingServerKeys;
     private bool _isWireGuardCommandBusy => _isStartingWireGuard || _isStoppingWireGuard || _isRestartingWireGuard;
     private bool _isWireGuardShownActive => _isWireGuardActive || _isStartingWireGuard || _isRestartingWireGuard;
@@ -509,14 +488,12 @@
                 _file = await VpnService.LoadStateAsync();
             await ReloadModelFromFileAsync();
             await ReloadSavedKeysAsync();
-            await RefreshWireGuardStatusAsync();
         }
         else
         {
             _file = null;
             ResetModel();
             _serverKeys = null;
-            _wireGuardStatusOutput = "WireGuard is not installed.";
         }
 
             _nfsConfiguration = await NfsService.LoadConfigurationAsync();
@@ -855,26 +832,6 @@
         _model.Endpoint = loadedModel.Endpoint;
         _model.AllowedIps = loadedModel.AllowedIps;
         _model.PersistentKeepalive = loadedModel.PersistentKeepalive;
-    }
-
-    private async Task RefreshWireGuardStatusAsync()
-    {
-        _isRefreshingStatus = true;
-
-        try
-        {
-            _wireGuardStatusOutput = _isWireGuardInstalled
-                ? await SudoService.GetWireGuardStatusAsync()
-                : "WireGuard is not installed.";
-        }
-        catch (Exception exception)
-        {
-            _wireGuardStatusOutput = exception.Message;
-        }
-        finally
-        {
-            _isRefreshingStatus = false;
-        }
     }
 
     private async Task ReloadSavedKeysAsync()

@@ -14,6 +14,12 @@ public sealed class LogsService
             cancellationToken,
             throwOnNonZero: false);
 
+        ProcessResult wireGuardStatusResult = await RunProcessAsync(
+            GlobalConstants.SudoPath,
+            ["-n", GlobalConstants.SystemctlPath, "status", VpnConstants.WireGuardServiceName, "--no-pager", "--full"],
+            cancellationToken,
+            throwOnNonZero: false);
+
         ProcessResult journalResult = await RunProcessAsync(
             GlobalConstants.SudoPath,
             ["-n", GlobalConstants.JournalctlPath, "-u", GlobalConstants.ControlWebAppServiceName, "-n", "100", "--no-pager"],
@@ -21,6 +27,7 @@ public sealed class LogsService
             throwOnNonZero: false);
 
         string statusContent = GetContentOrUnavailable(statusResult.Output);
+        string wireGuardStatusContent = GetContentOrUnavailable(wireGuardStatusResult.Output);
         string journalContent = GetContentOrUnavailable(journalResult.Output);
 
         return new ControlLogsSnapshot(
@@ -29,6 +36,11 @@ public sealed class LogsService
                 $"Live systemctl status output for {GlobalConstants.ControlWebAppServiceName}.",
                 statusContent,
                 !IsUnavailable(statusContent)),
+            new LogSectionSnapshot(
+                "WireGuard status",
+                $"Live systemctl status output for {VpnConstants.WireGuardServiceName}.",
+                wireGuardStatusContent,
+                !IsUnavailable(wireGuardStatusContent)),
             new LogSectionSnapshot(
                 "App journal",
                 $"Recent journalctl output for {GlobalConstants.ControlWebAppServiceName}.",
