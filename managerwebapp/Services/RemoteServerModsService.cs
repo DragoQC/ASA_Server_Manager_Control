@@ -166,13 +166,17 @@ public sealed class RemoteServerModsService(
             {
                 RemoteServerHubSnapshot snapshot = remoteServerHubClientService.GetSnapshot(server.Id);
 
+                if (!string.Equals(snapshot.ConnectionState, "Connected", StringComparison.Ordinal))
+                {
+                    return null;
+                }
+
                 return new PublicServerOverviewItem(
                     server.Id,
                     server.ServerName,
                     server.VpnAddress,
                     server.Port,
-                    snapshot.ConnectionState,
-                    server.ValidationStatus,
+                    snapshot.AsaStatus.DisplayText,
                     snapshot.PlayerCount.CurrentPlayers,
                     server.MaxPlayers ?? snapshot.PlayerCount.MaxPlayers,
                     server.MapName,
@@ -180,6 +184,8 @@ public sealed class RemoteServerModsService(
                         ? items
                         : []);
             })
+            .Where(item => item is not null)
+            .Select(item => item!)
             .ToList();
     }
 
@@ -193,8 +199,7 @@ public sealed class RemoteServerModsService(
                 string.IsNullOrWhiteSpace(server.ServerName)
                     ? (server.Port.HasValue ? $"{server.VpnAddress}:{server.Port.Value}" : server.VpnAddress)
                     : server.ServerName,
-                server.ConnectionState,
-                server.ValidationStatus,
+                server.StateLabel,
                 server.CurrentPlayers,
                 server.MaxPlayers,
                 mapNameService.Format(server.MapName),

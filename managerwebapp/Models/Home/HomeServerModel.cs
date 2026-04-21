@@ -5,8 +5,7 @@ namespace managerwebapp.Models.Home;
 public sealed record HomeServerModel(
     int RemoteServerId,
     string DisplayServerName,
-    string ConnectionState,
-    string ValidationStatus,
+    string StateLabel,
     int CurrentPlayers,
     int MaxPlayers,
     string FormattedMapName,

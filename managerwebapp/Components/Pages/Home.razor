@@ -4,6 +4,7 @@
 @inject managerwebapp.Services.RemoteServerInfoService RemoteServerInfoService
 @inject managerwebapp.Services.InvitationEventsService InvitationEventsService
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <PageTitle>ASA Fleet</PageTitle>
 
@@ -37,8 +38,7 @@
                             class="flex min-h-64 w-full flex-col justify-between rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 text-left shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl transition hover:border-fuchsia-300/25 hover:bg-black/30 sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.875rem)] xl:w-[calc(25%-0.9375rem)]">
                         <div class="space-y-5">
                             <div class="flex flex-wrap gap-2">
-                                <StatusTag Text="@server.ConnectionState" />
-                                <StatusTag Text="@server.ValidationStatus" />
+                                <StatusTag Text="@server.StateLabel" />
                             </div>
 
                             <div>
@@ -72,8 +72,7 @@
                 <div class="flex items-start justify-between gap-4">
                     <div class="space-y-3">
                         <div class="flex flex-wrap gap-2">
-                            <StatusTag Text="@_selectedServer.ConnectionState" />
-                            <StatusTag Text="@_selectedServer.ValidationStatus" />
+                            <StatusTag Text="@_selectedServer.StateLabel" />
                         </div>
 
                         <div>
@@ -106,29 +105,23 @@
                 }
                 else
                 {
-                    <div class="flex flex-wrap gap-4">
+                    <div class="columns-1 gap-4 sm:columns-2 xl:columns-4">
                         @foreach (managerwebapp.Models.Servers.PublicServerModItem mod in _selectedServer.Mods)
                         {
                             <button type="button"
                                     @onclick="() => OpenModPage(mod.WebsiteUrl)"
                                     disabled="@string.IsNullOrWhiteSpace(mod.WebsiteUrl)"
-                                    class="group flex min-h-[26rem] w-full flex-col overflow-hidden rounded-[1.6rem] border border-fuchsia-200/12 bg-black/40 text-left shadow-[0_0_40px_rgba(168,85,247,0.08)] backdrop-blur-md transition hover:border-fuchsia-300/20 hover:bg-black/45 disabled:cursor-default sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)] xl:w-[calc(25%-0.75rem)]">
-                                <div class="relative h-36 shrink-0 overflow-hidden border-b border-fuchsia-200/10 bg-gradient-to-br from-fuchsia-400/15 via-[#07121d] to-violet-400/10">
+                                    class="group mb-4 inline-block w-full break-inside-avoid overflow-hidden rounded-[1.6rem] border border-fuchsia-200/12 bg-black/40 text-left align-top shadow-[0_0_40px_rgba(168,85,247,0.08)] backdrop-blur-md transition hover:border-fuchsia-300/20 hover:bg-black/45 disabled:cursor-default">
+                                <div class="relative aspect-square w-full shrink-0 overflow-hidden border-b border-fuchsia-200/10 bg-gradient-to-br from-fuchsia-400/15 via-[#07121d] to-violet-400/10">
                                     @if (!string.IsNullOrWhiteSpace(mod.LogoUrl))
                                     {
-                                        <img src="@mod.LogoUrl" alt="@mod.Name" class="h-full w-full object-cover opacity-90 transition duration-300 group-hover:scale-[1.03]" />
+                                        <img src="@mod.LogoUrl" alt="@mod.Name" class="h-full w-full object-contain p-4 opacity-95 transition duration-300 group-hover:scale-[1.03]" />
                                         <div class="absolute inset-0 bg-gradient-to-t from-[#05070d] via-[#05070d]/20 to-transparent"></div>
-                                    }
-                                    else
-                                    {
-                                        <div class="absolute inset-0 flex items-center justify-center">
-                                            <div class="h-16 w-16 rounded-2xl border border-fuchsia-300/20 bg-black/25"></div>
-                                        </div>
                                     }
                                 </div>
 
-                                <div class="flex flex-1 flex-col gap-3 p-4">
-                                    <h3 class="text-lg font-semibold leading-6 text-white break-words">@mod.Name</h3>
+                                <div class="space-y-3 p-4">
+                                    <h3 class="text-base font-semibold leading-6 text-white break-words">@mod.Name</h3>
                                     <p class="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-200/75 break-all">@mod.ModId</p>
                                     <p class="text-sm leading-6 text-neutral-300 break-words">@mod.Summary</p>
                                 </div>
@@ -238,13 +231,13 @@
         _selectedServer = null;
     }
 
-    private void OpenModPage(string? websiteUrl)
+    private async Task OpenModPage(string? websiteUrl)
     {
         if (string.IsNullOrWhiteSpace(websiteUrl))
         {
             return;
         }
 
-        Navigation.NavigateTo(websiteUrl, forceLoad: true);
+        await JS.InvokeVoidAsync("open", websiteUrl, "_blank", "noopener,noreferrer");
     }
 }
