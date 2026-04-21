@@ -43,15 +43,29 @@
                 {
                     <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
                         <div class="flex flex-col gap-4">
-                            <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div class="space-y-3">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <StatusTag Text="@item.StateLabel" />
                                         <p class="text-base font-semibold text-white">@(item.Port.HasValue ? $"{item.VpnAddress}:{item.Port.Value}" : item.VpnAddress)</p>
                                     </div>
+                                    <div>
+                                        <p class="mt-1 text-sm text-neutral-300">Contact URL: @GetContactUrl(item)</p>
+                                        <p class="mt-1 text-sm text-neutral-300">VPN address: @item.VpnAddress</p>
+                                        <p class="mt-1 text-sm text-neutral-300">Port: @(item.Port?.ToString() ?? "Not set")</p>
+                                        @if (item.IsOnline)
+                                        {
+                                            <p class="mt-1 text-sm text-neutral-300">Map: @(string.IsNullOrWhiteSpace(item.MapName) ? "Unknown" : item.MapName)</p>
+                                            <p class="mt-1 text-sm text-neutral-300">Players: @item.CurrentPlayers / @(item.MaxPlayers > 0 ? item.MaxPlayers : 0)</p>
+                                        }
+                                        else
+                                        {
+                                            <p class="mt-1 text-sm text-neutral-300">Server offline</p>
+                                        }
+                                    </div>
                                 </div>
 
-                                <div class="hidden xl:flex xl:flex-wrap xl:items-center xl:justify-end xl:gap-2">
+                                <div class="hidden lg:flex lg:flex-wrap lg:items-start lg:justify-end lg:gap-2">
                                     <ActionButton Text="Edit"
                                                   Secondary="true"
                                                   OnClick="@(() => OpenEditServerDialog(item))" />
@@ -68,7 +82,7 @@
                                                   OnClick="@(() => OpenRconDialogAsync(item))" />
                                 </div>
 
-                                <div class="relative xl:hidden">
+                                <div class="relative lg:hidden self-end">
                                     <button type="button"
                                             @onclick="() => ToggleActionMenu(item.Id)"
                                             class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-lg text-neutral-200 transition hover:bg-white/10">
@@ -97,23 +111,6 @@
                                 </div>
                             </div>
 
-                            <div class="space-y-3">
-                                <div>
-                                    <p class="mt-1 text-sm text-neutral-300">Contact URL: @GetContactUrl(item)</p>
-                                    <p class="mt-1 text-sm text-neutral-300">VPN address: @item.VpnAddress</p>
-                                    <p class="mt-1 text-sm text-neutral-300">Port: @(item.Port?.ToString() ?? "Not set")</p>
-                                    @if (item.IsOnline)
-                                    {
-                                        <p class="mt-1 text-sm text-neutral-300">Map: @(string.IsNullOrWhiteSpace(item.MapName) ? "Unknown" : item.MapName)</p>
-                                        <p class="mt-1 text-sm text-neutral-300">Players: @item.CurrentPlayers / @(item.MaxPlayers > 0 ? item.MaxPlayers : 0)</p>
-                                    }
-                                    else
-                                    {
-                                        <p class="mt-1 text-sm text-neutral-300">Server offline</p>
-                                    }
-                                </div>
-                            </div>
-
                             <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                                 <div class="text-sm text-neutral-400">
                                     <p>Created: @item.CreatedAtUtc.LocalDateTime</p>
@@ -136,8 +133,9 @@
 @if (_isEditServerDialogOpen)
 {
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-6 backdrop-blur-sm">
-        <div class="w-full max-w-3xl rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 p-6 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
-            <div class="space-y-5">
+        <div class="max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
+            <div class="max-h-[90vh] overflow-y-auto p-6">
+                <div class="space-y-5">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.45em] text-fuchsia-300">Servers</p>
@@ -185,6 +183,7 @@
                         @(_isSavingServer ? "Saving..." : "Save")
                     </button>
                 </div>
+                </div>
             </div>
         </div>
     </div>
@@ -193,8 +192,9 @@
 @if (_isRconDialogOpen)
 {
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-6 backdrop-blur-sm">
-        <div class="w-full max-w-4xl rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 p-6 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
-            <div class="space-y-5">
+        <div class="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
+            <div class="max-h-[90vh] overflow-y-auto p-6">
+                <div class="space-y-5">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.45em] text-fuchsia-300">RCON</p>
@@ -234,6 +234,7 @@
                 <div>
                     <label class="mb-2 block text-sm font-medium text-neutral-300">Result</label>
                     <pre class="min-h-56 whitespace-pre-wrap rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-neutral-200">@(string.IsNullOrWhiteSpace(_rconResponse) ? "No result yet." : _rconResponse)</pre>
+                </div>
                 </div>
             </div>
         </div>
