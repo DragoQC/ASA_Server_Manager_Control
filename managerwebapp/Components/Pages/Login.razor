@@ -43,7 +43,7 @@
             </div>
         }
 
-        <form method="post" action="/auth/login" data-enhance="false" class="space-y-4">
+        <form method="post" action="/auth/login" data-enhance="false" @formname="login" class="space-y-4">
             <div>
                 <label for="username" class="mb-2 block text-sm font-medium text-neutral-300">Username or email</label>
                 <input id="username"
