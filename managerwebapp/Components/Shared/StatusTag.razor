@@ -4,7 +4,8 @@
 
     bool isOk = normalized == "OK" ||
                 normalized == "RUNNING" ||
-                normalized == "CONNECTED";
+                normalized == "CONNECTED" ||
+                normalized == "IN USE";
     bool isMissing = normalized.Contains("MISSING", StringComparison.Ordinal);
     bool isWarning = normalized.Contains("WARN", StringComparison.Ordinal) ||
                      normalized.Contains("STARTING", StringComparison.Ordinal) ||
@@ -15,6 +16,7 @@
                  normalized.Contains("FAULTED", StringComparison.Ordinal) ||
                  normalized.Contains("WRONG", StringComparison.Ordinal) ||
                  normalized.Contains("INVALID", StringComparison.Ordinal) ||
+                 normalized.Contains("UNUSED", StringComparison.Ordinal) ||
                  normalized.Contains("UNAVAILABLE", StringComparison.Ordinal);
 
     string css = isOk

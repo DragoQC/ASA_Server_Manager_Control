@@ -1,10 +1,11 @@
 namespace managerwebapp.Models.CurseForge;
 
-public sealed record CurseForgeCachedModItem(
+public sealed record CachedMod(
     long ModId,
     string Name,
     string Summary,
     string WebsiteUrl,
     string LogoUrl,
+    bool IsInUse,
     long DownloadCount,
     DateTimeOffset? DateModifiedUtc);

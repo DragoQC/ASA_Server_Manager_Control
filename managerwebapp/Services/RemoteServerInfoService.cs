@@ -75,8 +75,10 @@ public sealed class RemoteServerInfoService(
                 return;
             }
 
+            remoteServer.ServerName = response.ServerName?.Trim() ?? string.Empty;
             remoteServer.MapName = response.MapName?.Trim() ?? string.Empty;
             remoteServer.MaxPlayers = response.MaxPlayers;
+            remoteServer.GamePort = response.GamePort;
             remoteServer.ServerInfoCheckedAtUtc = response.CheckedAtUtc;
 
             await dbContext.SaveChangesAsync();

@@ -1,4 +1,7 @@
 @page "/admin/dashboard"
+@using Microsoft.EntityFrameworkCore
+@inject managerwebapp.Services.VpnService VpnService
+@inject Microsoft.EntityFrameworkCore.IDbContextFactory<managerwebapp.Data.AppDbContext> DbContextFactory
 
 <PageTitle>Manager Dashboard</PageTitle>
 
@@ -12,57 +15,100 @@
         </div>
 
         <div>
-            <h1 class="text-4xl font-semibold tracking-tight text-white">Fleet command center</h1>
+            <h1 class="text-4xl font-semibold tracking-tight text-white">Router ports</h1>
             <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
-                This is the internal manager dashboard. From here you can open server tools, VPN setup, invitations, CurseForge caching, and the local control settings.
+                Forward the control services and every server game port that is currently configured in the fleet.
             </p>
         </div>
 
-        <div class="grid gap-4 lg:grid-cols-3">
-            <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Servers</p>
-                <p class="mt-3 text-2xl font-semibold text-white">Fleet registry</p>
-                <p class="mt-2 text-sm text-neutral-300">Track accepted remote nodes, their VPN identity, and the connection state we keep for later actions.</p>
-                <a href="/admin/servers" class="mt-4 inline-flex rounded-full border border-fuchsia-300/25 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 transition hover:bg-fuchsia-400/20">
-                    Open Servers
-                </a>
+        <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
+            <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Required</p>
+            <div class="mt-4 flex flex-wrap gap-4">
+                <div class="min-w-48 flex-1 rounded-2xl border border-white/10 bg-black/20 p-4">
+                    <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">VPN</p>
+                    <p class="mt-2 text-2xl font-semibold text-white">@_vpnPort</p>
+                    <p class="mt-2 text-sm text-neutral-300">WireGuard listen port. User configurable.</p>
+                </div>
+
+                <div class="min-w-48 flex-1 rounded-2xl border border-white/10 bg-black/20 p-4">
+                    <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">Web app</p>
+                    <p class="mt-2 text-2xl font-semibold text-white">8000</p>
+                    <p class="mt-2 text-sm text-neutral-300">Remote node API / hub port.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Server game ports</p>
+                    <p class="mt-2 text-sm text-neutral-300">Loaded from cached `/api/server/me` data on the registered servers.</p>
+                </div>
             </div>
 
-            <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Cluster setup</p>
-                <p class="mt-3 text-2xl font-semibold text-white">Cluster + WireGuard</p>
-                <p class="mt-2 text-sm text-neutral-300">Manage the shared ARK cluster ID, the control node WireGuard config, key generation, activation state, and the raw file editor.</p>
-                <a href="/admin/cluster" class="mt-4 inline-flex rounded-full border border-fuchsia-300/25 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 transition hover:bg-fuchsia-400/20">
-                    Open Cluster setup
-                </a>
-            </div>
+            @if (_serverPorts.Count == 0)
+            {
+                <p class="mt-4 text-sm text-neutral-300">No servers registered yet.</p>
+            }
+            else
+            {
+                <div class="mt-4 flex flex-wrap gap-3">
+                    @foreach (ServerPortItem item in _serverPorts)
+                    {
+                        <div class="min-w-56 flex-1 rounded-2xl border border-white/10 bg-black/20 p-4">
+                            <p class="text-sm font-semibold text-white">@item.Name</p>
+                            <p class="mt-1 text-xs text-neutral-400">@item.VpnAddress</p>
+                            <p class="mt-3 text-xl font-semibold text-white">@(item.GamePort?.ToString() ?? "Missing")</p>
+                        </div>
+                    }
+                </div>
+            }
 
-            <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Invitations</p>
-                <p class="mt-3 text-2xl font-semibold text-white">Node onboarding</p>
-                <p class="mt-2 text-sm text-neutral-300">Prepare remote VPN values, send invites to new nodes, and keep the accepted invitation history in the local database.</p>
-                <a href="/admin/invitations" class="mt-4 inline-flex rounded-full border border-fuchsia-300/25 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 transition hover:bg-fuchsia-400/20">
-                    Open Invitations
-                </a>
-            </div>
-
-            <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">CurseForge</p>
-                <p class="mt-3 text-2xl font-semibold text-white">Mod metadata cache</p>
-                <p class="mt-2 text-sm text-neutral-300">Store the API key, sync fleet mod ids, and cache the mod cards used by the public fleet overview.</p>
-                <a href="/admin/curseforge" class="mt-4 inline-flex rounded-full border border-fuchsia-300/25 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 transition hover:bg-fuchsia-400/20">
-                    Open CurseForge
-                </a>
-            </div>
-
-            <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Settings</p>
-                <p class="mt-3 text-2xl font-semibold text-white">Local control app</p>
-                <p class="mt-2 text-sm text-neutral-300">Open local manager settings and hidden account actions like the password reset flow.</p>
-                <a href="/admin/settings" class="mt-4 inline-flex rounded-full border border-fuchsia-300/25 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 transition hover:bg-fuchsia-400/20">
-                    Open Settings
-                </a>
-            </div>
+            @if (_missingServerPorts.Count > 0)
+            {
+                <div class="mt-5 rounded-2xl border border-amber-300/20 bg-amber-400/10 px-5 py-4">
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-100">Missing server game ports</p>
+                    <p class="mt-2 text-sm text-amber-50">@string.Join(", ", _missingServerPorts)</p>
+                </div>
+            }
         </div>
     </div>
 </section>
+
+@code {
+    private string _vpnPort = managerwebapp.Services.VpnService.DefaultListenPort;
+    private List<ServerPortItem> _serverPorts = [];
+    private List<string> _missingServerPorts = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        managerwebapp.Models.Vpn.VpnConfigModel vpnModel = await VpnService.LoadModelAsync();
+        _vpnPort = string.IsNullOrWhiteSpace(vpnModel.ListenPort)
+            ? managerwebapp.Services.VpnService.DefaultListenPort
+            : vpnModel.ListenPort.Trim();
+
+        await using managerwebapp.Data.AppDbContext dbContext = await DbContextFactory.CreateDbContextAsync();
+        List<managerwebapp.Data.Entities.RemoteServerEntity> servers = await dbContext.RemoteServers
+            .OrderBy(server => server.Id)
+            .ToListAsync();
+
+        _serverPorts = servers
+            .Select(server => new ServerPortItem(
+                string.IsNullOrWhiteSpace(server.ServerName) ? $"Server {server.Id}" : server.ServerName,
+                server.VpnAddress,
+                server.GamePort))
+            .ToList();
+
+        _missingServerPorts = _serverPorts
+            .Where(item => item.GamePort is null)
+            .Select(item => item.Name)
+            .ToList();
+    }
+
+    private sealed record ServerPortItem(string Name, string VpnAddress, int? GamePort);
+}

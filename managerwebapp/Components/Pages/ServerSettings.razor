@@ -1,0 +1,326 @@
+@page "/admin/server-settings"
+@inject managerwebapp.Services.EmailSettingsService EmailSettingsService
+@inject managerwebapp.Services.CurseForgeService CurseForgeService
+
+<PageTitle>Server Settings</PageTitle>
+
+<section class="rounded-b-[2rem] border-x border-b border-fuchsia-400/15 bg-gradient-to-br from-black/35 via-[#0b0612]/30 to-[#17081f]/35 p-8 shadow-[0_0_48px_rgba(168,85,247,0.16)] backdrop-blur-[2px]">
+    <div class="space-y-8">
+        <div class="flex flex-wrap items-center gap-4">
+            <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Server settings</p>
+            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                Local control app
+            </span>
+        </div>
+
+        <div>
+            <h1 class="text-4xl font-semibold tracking-tight text-white">Server Settings</h1>
+            <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
+                Local manager server integrations and provider keys.
+            </p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_message))
+        {
+            <div class="rounded-2xl border border-fuchsia-300/20 bg-fuchsia-400/10 px-5 py-4 text-sm text-fuchsia-100">
+                @_message
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="rounded-2xl border border-red-300/20 bg-red-400/10 px-5 py-4 text-sm text-red-100">
+                @_error
+            </div>
+        }
+
+        <div class="grid gap-4 lg:grid-cols-2">
+            <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
+                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">SMTP</p>
+                <p class="mt-3 text-2xl font-semibold text-white">Email delivery</p>
+                <p class="mt-2 text-sm text-neutral-300">Configure the SMTP server used by the control app for email-based flows.</p>
+
+                <div class="mt-6 space-y-5">
+                    <TextHelpField Label="SMTP host"
+                                   Value="@_model.SmtpHost"
+                                   ValueChanged="OnSmtpHostChanged"
+                                   Hint="SMTP server host."
+                                   Error="@_smtpHostError"
+                                   OnHelpClick="ShowSmtpHelpAsync" />
+
+                    <TextHelpField Label="SMTP port"
+                                   Value="@_smtpPort"
+                                   ValueChanged="OnSmtpPortChanged"
+                                   Hint="SMTP server port."
+                                   Error="@_smtpPortError"
+                                   OnHelpClick="ShowSmtpHelpAsync"
+                                   inputmode="numeric" />
+
+                    <TextHelpField Label="SMTP username"
+                                   Value="@_model.SmtpUsername"
+                                   ValueChanged="OnSmtpUsernameChanged"
+                                   Hint="SMTP account username or login email."
+                                   Error="@_smtpUsernameError"
+                                   OnHelpClick="ShowSmtpHelpAsync"
+                                   autocomplete="username" />
+
+                    <TextHelpField Label="SMTP password"
+                                   Value="@_model.SmtpPassword"
+                                   ValueChanged="OnSmtpPasswordChanged"
+                                   Hint="SMTP account password or SMTP key."
+                                   Error="@_smtpPasswordError"
+                                   OnHelpClick="ShowSmtpHelpAsync"
+                                   type="password"
+                                   autocomplete="new-password" />
+
+                    <TextHelpField Label="From email"
+                                   Value="@_model.FromEmail"
+                                   ValueChanged="OnFromEmailChanged"
+                                   Hint="Sender email address."
+                                   Error="@_fromEmailError"
+                                   OnHelpClick="ShowSmtpHelpAsync"
+                                   autocomplete="email" />
+
+                    <TextHelpField Label="From name"
+                                   Value="@_model.FromName"
+                                   ValueChanged="OnFromNameChanged"
+                                   Hint="Sender display name."
+                                   Error="@_fromNameError"
+                                   OnHelpClick="ShowSmtpHelpAsync" />
+
+                    <ActionButton Text="Save email settings" OnClick="SaveEmailSettingsAsync" />
+                </div>
+            </div>
+
+            <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
+                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">CurseForge</p>
+                <p class="mt-3 text-2xl font-semibold text-white">API key</p>
+                <p class="mt-2 text-sm text-neutral-300">Store the CurseForge API key used to cache mod metadata.</p>
+
+                <div class="mt-6 space-y-5">
+                    <TextHelpField Label="CurseForge API key"
+                                   Value="@_curseForgeSettings.ApiKey"
+                                   ValueChanged="OnCurseForgeApiKeyChanged"
+                                   Hint="Used for mod metadata requests."
+                                   Error="@_curseForgeApiKeyError"
+                                   OnHelpClick="ShowCurseForgeHelpAsync"
+                                   type="password"
+                                   autocomplete="new-password" />
+
+                    <div class="flex flex-wrap gap-3">
+                        <ActionButton Text="Save CurseForge key" OnClick="SaveCurseForgeSettingsAsync" />
+                        <ActionButton Text="@(_isTestingCurseForge ? "Testing..." : "Test key")"
+                                      OnClick="TestCurseForgeSettingsAsync"
+                                      Disabled="@_isTestingCurseForge"
+                                      Secondary="true" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private managerwebapp.Models.Settings.EmailSettingsModel _model = new();
+    private managerwebapp.Models.CurseForge.CurseForgeApiSettingsModel _curseForgeSettings = new();
+    private string _smtpPort = string.Empty;
+    private string? _message;
+    private string? _error;
+    private string? _smtpHostError;
+    private string? _smtpPortError;
+    private string? _smtpUsernameError;
+    private string? _smtpPasswordError;
+    private string? _fromEmailError;
+    private string? _fromNameError;
+    private string? _curseForgeApiKeyError;
+    private bool _isTestingCurseForge;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _model = await EmailSettingsService.LoadAsync();
+        _curseForgeSettings = await CurseForgeService.LoadApiSettingsAsync();
+        _smtpPort = _model.SmtpPort.ToString();
+    }
+
+    private async Task SaveEmailSettingsAsync()
+    {
+        _message = null;
+        _error = null;
+        ClearValidationErrors();
+
+        if (!Validate())
+        {
+            _error = "Fix the email settings fields before saving.";
+            return;
+        }
+
+        await EmailSettingsService.SaveAsync(_model);
+        _message = "Email settings saved.";
+    }
+
+    private Task ShowSmtpHelpAsync()
+    {
+        _message = "Fill the SMTP host, port, credentials, and sender values for your mail provider.";
+        return Task.CompletedTask;
+    }
+
+    private Task ShowCurseForgeHelpAsync()
+    {
+        _message = "Paste the CurseForge API key used for mod metadata requests.";
+        return Task.CompletedTask;
+    }
+
+    private Task OnSmtpHostChanged(string? value)
+    {
+        _model.SmtpHost = value?.Trim() ?? string.Empty;
+        _smtpHostError = null;
+        return Task.CompletedTask;
+    }
+
+    private Task OnSmtpPortChanged(string? value)
+    {
+        _smtpPort = value?.Trim() ?? string.Empty;
+        _smtpPortError = null;
+        return Task.CompletedTask;
+    }
+
+    private Task OnSmtpUsernameChanged(string? value)
+    {
+        _model.SmtpUsername = value?.Trim() ?? string.Empty;
+        _smtpUsernameError = null;
+        return Task.CompletedTask;
+    }
+
+    private Task OnSmtpPasswordChanged(string? value)
+    {
+        _model.SmtpPassword = value?.Trim() ?? string.Empty;
+        _smtpPasswordError = null;
+        return Task.CompletedTask;
+    }
+
+    private Task OnFromEmailChanged(string? value)
+    {
+        _model.FromEmail = value?.Trim() ?? string.Empty;
+        _fromEmailError = null;
+        return Task.CompletedTask;
+    }
+
+    private Task OnFromNameChanged(string? value)
+    {
+        _model.FromName = value?.Trim() ?? string.Empty;
+        _fromNameError = null;
+        return Task.CompletedTask;
+    }
+
+    private Task OnCurseForgeApiKeyChanged(string? value)
+    {
+        _curseForgeSettings.ApiKey = value?.Trim() ?? string.Empty;
+        _curseForgeApiKeyError = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task SaveCurseForgeSettingsAsync()
+    {
+        _message = null;
+        _error = null;
+        _curseForgeApiKeyError = null;
+
+        if (string.IsNullOrWhiteSpace(_curseForgeSettings.ApiKey))
+        {
+            _curseForgeApiKeyError = "CurseForge API key is required.";
+            _error = "Fix the CurseForge field before saving.";
+            return;
+        }
+
+        await CurseForgeService.SaveSettingsAsync(_curseForgeSettings);
+        _message = "CurseForge API key saved.";
+    }
+
+    private async Task TestCurseForgeSettingsAsync()
+    {
+        _message = null;
+        _error = null;
+        _curseForgeApiKeyError = null;
+
+        if (string.IsNullOrWhiteSpace(_curseForgeSettings.ApiKey))
+        {
+            _curseForgeApiKeyError = "CurseForge API key is required.";
+            _error = "Fix the CurseForge field before testing.";
+            return;
+        }
+
+        _isTestingCurseForge = true;
+
+        try
+        {
+            await CurseForgeService.TestApiKeyAsync(_curseForgeSettings.ApiKey);
+            _message = "CurseForge API key test succeeded.";
+        }
+        catch (Exception exception)
+        {
+            _error = $"CurseForge API key test failed. {exception.Message}";
+        }
+        finally
+        {
+            _isTestingCurseForge = false;
+        }
+    }
+
+    private bool Validate()
+    {
+        bool isValid = true;
+
+        if (string.IsNullOrWhiteSpace(_model.SmtpHost))
+        {
+            _smtpHostError = "SMTP host is required.";
+            isValid = false;
+        }
+
+        if (!int.TryParse(_smtpPort, out int port) || port <= 0 || port > 65535)
+        {
+            _smtpPortError = "SMTP port must be between 1 and 65535.";
+            isValid = false;
+        }
+        else
+        {
+            _model.SmtpPort = port;
+        }
+
+        if (string.IsNullOrWhiteSpace(_model.SmtpUsername))
+        {
+            _smtpUsernameError = "SMTP username is required.";
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_model.SmtpPassword))
+        {
+            _smtpPasswordError = "SMTP password is required.";
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_model.FromEmail))
+        {
+            _fromEmailError = "From email is required.";
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_model.FromName))
+        {
+            _fromNameError = "From name is required.";
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    private void ClearValidationErrors()
+    {
+        _smtpHostError = null;
+        _smtpPortError = null;
+        _smtpUsernameError = null;
+        _smtpPasswordError = null;
+        _fromEmailError = null;
+        _fromNameError = null;
+        _curseForgeApiKeyError = null;
+    }
+}

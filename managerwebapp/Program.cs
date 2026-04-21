@@ -1,5 +1,8 @@
 using managerwebapp.Data;
+using managerwebapp.Data.Entities;
+using managerwebapp.Models.Settings;
 using managerwebapp.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
@@ -13,12 +16,20 @@ builder.Services.AddRazorComponents()
 builder.Services.AddControllers();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAuthorization();
+builder.Services.AddMemoryCache();
 builder.Services.AddAuthentication(options =>
     {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     })
-    .AddIdentityCookies();
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/admin/login";
+        options.LogoutPath = "/auth/logout";
+        options.AccessDeniedPath = "/admin/login";
+        options.Cookie.Name = "asa-control-auth";
+    });
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
@@ -30,33 +41,28 @@ string databasePath = Path.Combine(builder.Environment.ContentRootPath, "Data", 
 Directory.CreateDirectory(Path.GetDirectoryName(databasePath) ?? builder.Environment.ContentRootPath);
 string connectionString = $"Data Source={databasePath}";
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
+builder.Services.AddSingleton<AuditSaveChangesInterceptor>();
+builder.Services.AddDbContext<AppDbContext>((services, options) =>
+    options.UseSqlite(connectionString)
+        .AddInterceptors(services.GetRequiredService<AuditSaveChangesInterceptor>()));
 builder.Services.AddDbContextFactory<AppDbContext>(
-    options => options.UseSqlite(connectionString),
+    (services, options) => options.UseSqlite(connectionString)
+        .AddInterceptors(services.GetRequiredService<AuditSaveChangesInterceptor>()),
     ServiceLifetime.Scoped);
 
-builder.Services.AddIdentityCore<ApplicationUser>(options =>
-    {
-        options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
-        options.User.RequireUniqueEmail = true;
-        options.Password.RequireDigit = false;
-        options.Password.RequireUppercase = false;
-        options.Password.RequireLowercase = false;
-        options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequiredLength = 5;
-    })
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddSignInManager()
-    .AddDefaultTokenProviders();
-
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<EmailLoginCodeService>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<ClusterSettingsService>();
+builder.Services.AddScoped<EmailSettingsService>();
 builder.Services.AddScoped<NfsService>();
+builder.Services.AddSingleton<TotpService>();
 builder.Services.AddSingleton<InvitationEventsService>();
 builder.Services.AddHttpClient<CurseForgeService>(client =>
 {
     client.BaseAddress = new Uri("https://api.curseforge.com");
 });
+builder.Services.AddScoped<ModsService>();
 builder.Services.AddScoped<InvitationService>();
 builder.Services.AddHttpClient<RemoteAdminHttpClient>();
 builder.Services.AddScoped<RemoteClusterService>();
@@ -98,27 +104,47 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapPost("/auth/login",
-    async ([FromForm] LoginRequest request, SignInManager<ApplicationUser> signInManager, AuthService authService) =>
+    async ([FromForm] LoginRequest request, HttpContext httpContext, AuthService authService) =>
     {
-        Microsoft.AspNetCore.Identity.SignInResult result = await signInManager.PasswordSignInAsync(
-            request.Username ?? string.Empty,
-            request.Password ?? string.Empty,
-            isPersistent: true,
-            lockoutOnFailure: false);
+        string identifier = request.Username ?? string.Empty;
+        string action = request.Action?.Trim() ?? "password";
 
-        bool mustChangePassword = result.Succeeded &&
-                                  await authService.MustChangePasswordAsync(request.Username);
+        if (action == "email-request")
+        {
+            IdentityResult requestResult = await authService.RequestEmailLoginCodeAsync(identifier, httpContext.RequestAborted);
+            if (!requestResult.Succeeded)
+            {
+                string requestError = Uri.EscapeDataString(string.Join(' ', requestResult.Errors.Select(error => error.Description)));
+                return Results.LocalRedirect($"/admin/login?error={requestError}");
+            }
 
-        return result.Succeeded
-            ? Results.LocalRedirect(mustChangePassword ? "/admin/reset-password?firstLogin=true" : "/admin/dashboard")
-            : Results.LocalRedirect("/admin/login?error=Invalid%20username%20or%20password.");
+            return Results.LocalRedirect("/admin/login?message=If%20email%20login%20is%20enabled,%20a%20code%20was%20sent.");
+        }
+
+        User? user = action switch
+        {
+            "email" => await authService.AuthenticateWithEmailCodeAsync(identifier, request.EmailCode ?? string.Empty, httpContext.RequestAborted),
+            "totp" => await authService.AuthenticateWithTwoFactorAsync(identifier, request.TwoFactorCode ?? string.Empty, httpContext.RequestAborted),
+            _ => await authService.AuthenticateAsync(identifier, request.Password ?? string.Empty, httpContext.RequestAborted)
+        };
+
+        if (user is null)
+        {
+            return Results.LocalRedirect("/admin/login?error=Login%20failed.");
+        }
+
+        await authService.SignInAsync(httpContext, user, isPersistent: true, httpContext.RequestAborted);
+
+        bool mustChangePassword = await authService.MustChangePasswordAsync(user.UserName);
+
+        return Results.LocalRedirect(mustChangePassword ? "/admin/reset-password?firstLogin=true" : "/admin/dashboard");
     })
     .DisableAntiforgery();
 
 app.MapPost("/auth/logout",
-    async (SignInManager<ApplicationUser> signInManager) =>
+    async (HttpContext httpContext, AuthService authService) =>
     {
-        await signInManager.SignOutAsync();
+        await authService.SignOutAsync(httpContext);
         return Results.LocalRedirect("/admin/login?message=Logged%20out.");
     })
     .DisableAntiforgery();
@@ -130,4 +156,4 @@ app.MapRazorComponents<App>()
 
 app.Run();
 
-internal sealed record LoginRequest(string? Username, string? Password);
+internal sealed record LoginRequest(string? Username, string? Password, string? EmailCode, string? TwoFactorCode, string? Action);

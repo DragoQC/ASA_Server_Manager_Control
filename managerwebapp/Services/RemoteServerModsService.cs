@@ -11,7 +11,7 @@ public sealed class RemoteServerModsService(
     RemoteAdminHttpClient remoteAdminHttpClient,
     RemoteServerService remoteServerService,
     RemoteServerHubClientService remoteServerHubClientService,
-    CurseForgeService curseForgeService,
+    ModsService modsService,
     ILogger<RemoteServerModsService> logger)
 {
     private readonly ConcurrentDictionary<int, SemaphoreSlim> _syncLocks = new();
@@ -66,7 +66,7 @@ public sealed class RemoteServerModsService(
                 .Distinct()
                 .ToArray();
 
-            await curseForgeService.EnsureModsCachedAsync(modIds, cancellationToken);
+            await modsService.EnsureModsCachedAsync(modIds, cancellationToken);
 
             await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
             RemoteServerEntity remoteServer = await dbContext.RemoteServers
@@ -173,6 +173,7 @@ public sealed class RemoteServerModsService(
 
                 return new PublicServerOverviewItem(
                     server.Id,
+                    server.ServerName,
                     server.VpnAddress,
                     server.Port,
                     snapshot.ConnectionState,

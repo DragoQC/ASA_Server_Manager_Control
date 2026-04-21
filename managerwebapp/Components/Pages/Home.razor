@@ -1,5 +1,6 @@
-﻿@page "/"
+@page "/"
 @inject managerwebapp.Services.RemoteServerModsService RemoteServerModsService
+@inject NavigationManager Navigation
 
 <PageTitle>ASA Fleet</PageTitle>
 
@@ -10,7 +11,7 @@
                 <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Public fleet overview</p>
                 <h1 class="mt-3 text-4xl font-semibold tracking-tight text-white">Remote ASA servers</h1>
                 <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
-                    Public status page for the ASA fleet. Expand a server to see the current player count and the locally cached mod catalog for that node.
+                    Public status page for the ASA fleet. Open a server card to see the current players and the locally cached mod catalog for that node.
                 </p>
             </div>
 
@@ -30,128 +31,125 @@
         }
         else
         {
-            <div class="space-y-4">
+            <div class="flex flex-wrap gap-5">
                 @foreach (managerwebapp.Models.Servers.PublicServerOverviewItem server in _servers)
                 {
-                    <details class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-                        <summary class="cursor-pointer list-none">
-                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                <div class="space-y-3">
-                                    <div class="flex flex-wrap gap-2">
-                                        <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                                            @server.ConnectionState
-                                        </span>
-                                        <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
-                                            @server.ValidationStatus
-                                        </span>
-                                    </div>
-
-                                    <div>
-                                        <p class="text-base font-semibold text-white">@(server.Port.HasValue ? $"{server.VpnAddress}:{server.Port.Value}" : server.VpnAddress)</p>
-                                        <p class="mt-1 text-sm text-neutral-300">VPN address: @server.VpnAddress</p>
-                                    </div>
-                                </div>
-
-                                <div class="grid gap-3 text-sm text-neutral-300 lg:grid-cols-3 lg:text-right">
-                                    <div>
-                                        <p class="text-[0.65rem] uppercase tracking-[0.24em] text-fuchsia-200/70">Players</p>
-                                        <p class="mt-1 font-semibold text-white">@server.CurrentPlayers / @server.MaxPlayers</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-[0.65rem] uppercase tracking-[0.24em] text-fuchsia-200/70">Map</p>
-                                        <p class="mt-1 font-semibold text-white">@FormatMapName(server.MapName)</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-[0.65rem] uppercase tracking-[0.24em] text-fuchsia-200/70">Mods</p>
-                                        <p class="mt-1 font-semibold text-white">@server.Mods.Count</p>
-                                    </div>
-                                </div>
+                    <button type="button"
+                            @onclick="() => OpenServerDialog(server)"
+                            class="flex min-h-64 w-full flex-col justify-between rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 text-left shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl transition hover:border-fuchsia-300/25 hover:bg-black/30 sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.875rem)] xl:w-[calc(25%-0.9375rem)]">
+                        <div class="space-y-5">
+                            <div class="flex flex-wrap gap-2">
+                                <StatusTag Text="@server.ConnectionState" />
+                                <StatusTag Text="@server.ValidationStatus" />
                             </div>
-                        </summary>
 
-                        <div class="mt-6 border-t border-fuchsia-300/10 pt-6">
-                            @if (server.Mods.Count == 0)
-                            {
-                                <p class="text-sm text-neutral-300">No mods cached for this server yet.</p>
-                            }
-                            else
-                            {
-                                <div class="grid gap-4 lg:grid-cols-3">
-                                    @foreach (managerwebapp.Models.Servers.PublicServerModItem mod in server.Mods)
-                                    {
-                                        <article class="group overflow-hidden rounded-[1.6rem] border border-fuchsia-200/12 bg-black/40 shadow-[0_0_40px_rgba(168,85,247,0.08)] backdrop-blur-md">
-                                            @if (!string.IsNullOrWhiteSpace(mod.WebsiteUrl))
-                                            {
-                                                <a href="@mod.WebsiteUrl"
-                                                   target="_blank"
-                                                   rel="noopener noreferrer"
-                                                   class="block">
-                                                    <div class="relative h-32 overflow-hidden border-b border-fuchsia-200/10 bg-gradient-to-br from-fuchsia-400/15 via-[#07121d] to-violet-400/10">
-                                                        @if (!string.IsNullOrWhiteSpace(mod.LogoUrl))
-                                                        {
-                                                            <img src="@mod.LogoUrl" alt="@mod.Name" class="h-full w-full object-cover opacity-90 transition duration-300 group-hover:scale-[1.03]" />
-                                                            <div class="absolute inset-0 bg-gradient-to-t from-[#05070d] via-[#05070d]/20 to-transparent"></div>
-                                                        }
-                                                        else
-                                                        {
-                                                            <div class="absolute inset-0 flex items-center justify-center">
-                                                                <div class="h-14 w-14 rounded-2xl border border-fuchsia-300/20 bg-black/25"></div>
-                                                            </div>
-                                                        }
-                                                    </div>
-                                                </a>
-                                            }
-                                            else
-                                            {
-                                                <div class="relative h-32 overflow-hidden border-b border-fuchsia-200/10 bg-gradient-to-br from-fuchsia-400/15 via-[#07121d] to-violet-400/10">
-                                                    @if (!string.IsNullOrWhiteSpace(mod.LogoUrl))
-                                                    {
-                                                        <img src="@mod.LogoUrl" alt="@mod.Name" class="h-full w-full object-cover opacity-90 transition duration-300 group-hover:scale-[1.03]" />
-                                                        <div class="absolute inset-0 bg-gradient-to-t from-[#05070d] via-[#05070d]/20 to-transparent"></div>
-                                                    }
-                                                    else
-                                                    {
-                                                        <div class="absolute inset-0 flex items-center justify-center">
-                                                            <div class="h-14 w-14 rounded-2xl border border-fuchsia-300/20 bg-black/25"></div>
-                                                        </div>
-                                                    }
-                                                </div>
-                                            }
-
-                                            <div class="space-y-4 p-5">
-                                                <div class="flex items-start justify-between gap-3">
-                                                    <div>
-                                                        <p class="text-xs uppercase tracking-[0.3em] text-fuchsia-200/70">Mod</p>
-                                                        <h3 class="mt-2 text-xl font-semibold text-white">@mod.Name</h3>
-                                                    </div>
-                                                    <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                                                        @mod.ModId
-                                                    </span>
-                                                </div>
-
-                                                <p class="text-sm leading-6 text-neutral-300">@mod.Summary</p>
-
-                                                @if (!string.IsNullOrWhiteSpace(mod.WebsiteUrl))
-                                                {
-                                                    <ActionButton Text="CurseForge"
-                                                                  Href="@mod.WebsiteUrl"
-                                                                  Target="_blank" />
-                                                }
-                                            </div>
-                                        </article>
-                                    }
-                                </div>
-                            }
+                            <div>
+                                <h2 class="text-2xl font-semibold leading-tight text-white">@GetDisplayServerName(server)</h2>
+                                <p class="mt-2 text-sm text-fuchsia-200/80">@FormatMapName(server.MapName)</p>
+                            </div>
                         </div>
-                    </details>
+
+                        <div class="space-y-3 pt-6">
+                            <div class="flex items-center justify-between gap-4 text-sm text-neutral-300">
+                                <span>Players</span>
+                                <span class="font-semibold text-white">@server.CurrentPlayers / @server.MaxPlayers</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-4 text-sm text-neutral-300">
+                                <span>Mods</span>
+                                <span class="font-semibold text-white">@server.Mods.Count</span>
+                            </div>
+                        </div>
+                    </button>
                 }
             </div>
         }
     </div>
 </section>
 
+@if (_selectedServer is not null)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-6 backdrop-blur-sm">
+        <div class="w-full max-w-7xl rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 p-6 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
+            <div class="space-y-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="space-y-3">
+                        <div class="flex flex-wrap gap-2">
+                            <StatusTag Text="@_selectedServer.ConnectionState" />
+                            <StatusTag Text="@_selectedServer.ValidationStatus" />
+                        </div>
+
+                        <div>
+                            <h2 class="text-3xl font-semibold text-white">@GetDisplayServerName(_selectedServer)</h2>
+                            <p class="mt-2 text-base text-fuchsia-200/80">@FormatMapName(_selectedServer.MapName)</p>
+                        </div>
+                    </div>
+
+                    <ActionButton Text="Close"
+                                  Secondary="true"
+                                  OnClick="CloseServerDialog" />
+                </div>
+
+                <section class="rounded-[1.6rem] border border-white/10 bg-black/20 p-5">
+                    <div class="flex flex-wrap gap-6">
+                        <div class="min-w-40">
+                            <p class="text-[0.65rem] uppercase tracking-[0.24em] text-fuchsia-200/70">Players</p>
+                            <p class="mt-2 text-lg font-semibold text-white">@_selectedServer.CurrentPlayers / @_selectedServer.MaxPlayers</p>
+                        </div>
+                        <div class="min-w-40">
+                            <p class="text-[0.65rem] uppercase tracking-[0.24em] text-fuchsia-200/70">Mods</p>
+                            <p class="mt-2 text-lg font-semibold text-white">@_selectedServer.Mods.Count</p>
+                        </div>
+                        <div class="min-w-64">
+                            <p class="text-[0.65rem] uppercase tracking-[0.24em] text-fuchsia-200/70">VPN address</p>
+                            <p class="mt-2 text-lg font-semibold text-white">@( _selectedServer.Port.HasValue ? $"{_selectedServer.VpnAddress}:{_selectedServer.Port.Value}" : _selectedServer.VpnAddress)</p>
+                        </div>
+                    </div>
+                </section>
+
+                @if (_selectedServer.Mods.Count == 0)
+                {
+                    <p class="text-sm text-neutral-300">No mods cached for this server yet.</p>
+                }
+                else
+                {
+                    <div class="flex flex-wrap gap-4">
+                        @foreach (managerwebapp.Models.Servers.PublicServerModItem mod in _selectedServer.Mods)
+                        {
+                            <button type="button"
+                                    @onclick="() => OpenModPage(mod.WebsiteUrl)"
+                                    disabled="@string.IsNullOrWhiteSpace(mod.WebsiteUrl)"
+                                    class="group flex min-h-[26rem] w-full flex-col overflow-hidden rounded-[1.6rem] border border-fuchsia-200/12 bg-black/40 text-left shadow-[0_0_40px_rgba(168,85,247,0.08)] backdrop-blur-md transition hover:border-fuchsia-300/20 hover:bg-black/45 disabled:cursor-default sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)] xl:w-[calc(25%-0.75rem)]">
+                                <div class="relative h-36 shrink-0 overflow-hidden border-b border-fuchsia-200/10 bg-gradient-to-br from-fuchsia-400/15 via-[#07121d] to-violet-400/10">
+                                    @if (!string.IsNullOrWhiteSpace(mod.LogoUrl))
+                                    {
+                                        <img src="@mod.LogoUrl" alt="@mod.Name" class="h-full w-full object-cover opacity-90 transition duration-300 group-hover:scale-[1.03]" />
+                                        <div class="absolute inset-0 bg-gradient-to-t from-[#05070d] via-[#05070d]/20 to-transparent"></div>
+                                    }
+                                    else
+                                    {
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <div class="h-16 w-16 rounded-2xl border border-fuchsia-300/20 bg-black/25"></div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="flex flex-1 flex-col gap-3 p-4">
+                                    <h3 class="text-lg font-semibold leading-6 text-white break-words">@mod.Name</h3>
+                                    <p class="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-200/75 break-all">@mod.ModId</p>
+                                    <p class="text-sm leading-6 text-neutral-300 break-words">@mod.Summary</p>
+                                </div>
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private IReadOnlyList<managerwebapp.Models.Servers.PublicServerOverviewItem> _servers = [];
+    private managerwebapp.Models.Servers.PublicServerOverviewItem? _selectedServer;
     private bool _isRefreshing;
 
     protected override async Task OnInitializedAsync()
@@ -166,11 +164,42 @@
         try
         {
             _servers = await RemoteServerModsService.LoadOverviewAsync();
+            if (_selectedServer is not null)
+            {
+                _selectedServer = _servers.FirstOrDefault(server => server.RemoteServerId == _selectedServer.RemoteServerId);
+            }
         }
         finally
         {
             _isRefreshing = false;
         }
+    }
+
+    private void OpenServerDialog(managerwebapp.Models.Servers.PublicServerOverviewItem server)
+    {
+        _selectedServer = server;
+    }
+
+    private void CloseServerDialog()
+    {
+        _selectedServer = null;
+    }
+
+    private void OpenModPage(string? websiteUrl)
+    {
+        if (string.IsNullOrWhiteSpace(websiteUrl))
+        {
+            return;
+        }
+
+        Navigation.NavigateTo(websiteUrl, forceLoad: true);
+    }
+
+    private static string GetDisplayServerName(managerwebapp.Models.Servers.PublicServerOverviewItem server)
+    {
+        return string.IsNullOrWhiteSpace(server.ServerName)
+            ? (server.Port.HasValue ? $"{server.VpnAddress}:{server.Port.Value}" : server.VpnAddress)
+            : server.ServerName;
     }
 
     private static string FormatMapName(string? mapName)

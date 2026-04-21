@@ -37,11 +37,18 @@ public sealed class RemoteServerEntityConfiguration : IEntityTypeConfiguration<R
 
         builder.Property(remoteServer => remoteServer.LastSeenAtUtc);
 
+        builder.Property(remoteServer => remoteServer.ServerName)
+            .HasMaxLength(256)
+            .IsRequired();
+
         builder.Property(remoteServer => remoteServer.MapName)
             .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(remoteServer => remoteServer.MaxPlayers)
+            .IsRequired(false);
+
+        builder.Property(remoteServer => remoteServer.GamePort)
             .IsRequired(false);
 
         builder.Property(remoteServer => remoteServer.ServerInfoCheckedAtUtc);
