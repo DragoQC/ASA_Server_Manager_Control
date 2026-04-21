@@ -56,6 +56,7 @@ builder.Services.AddScoped<EmailLoginCodeService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<ClusterSettingsService>();
 builder.Services.AddScoped<EmailSettingsService>();
+builder.Services.AddScoped<LogsService>();
 builder.Services.AddScoped<MapNameService>();
 builder.Services.AddScoped<NfsService>();
 builder.Services.AddSingleton<TotpService>();
