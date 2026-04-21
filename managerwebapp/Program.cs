@@ -1,5 +1,6 @@
 using managerwebapp.Data;
 using managerwebapp.Data.Entities;
+using managerwebapp.Models.Auth;
 using managerwebapp.Models.Settings;
 using managerwebapp.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -156,5 +157,3 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
-
-internal sealed record LoginRequest(string? Username, string? Password, string? EmailCode, string? TwoFactorCode, string? Action);
