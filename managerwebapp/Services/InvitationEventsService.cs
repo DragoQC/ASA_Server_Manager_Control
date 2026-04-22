@@ -2,24 +2,24 @@ namespace managerwebapp.Services;
 
 public sealed class InvitationEventsService(ILogger<InvitationEventsService> logger)
 {
-    public event Func<Task>? Changed;
+    public event Action? Changed;
 
-    public async Task NotifyChangedAsync()
+    public void NotifyChanged()
     {
         if (Changed is null)
         {
             return;
         }
 
-        IEnumerable<Func<Task>> handlers = Changed
+        IEnumerable<Action> handlers = Changed
             .GetInvocationList()
-            .Cast<Func<Task>>();
+            .Cast<Action>();
 
-        foreach (Func<Task> handler in handlers)
+        foreach (Action handler in handlers)
         {
             try
             {
-                await handler();
+                handler();
             }
             catch (Exception exception)
             {

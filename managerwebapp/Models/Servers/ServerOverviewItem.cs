@@ -1,6 +1,6 @@
 namespace managerwebapp.Models.Servers;
 
-public sealed record PublicServerOverviewItem(
+public sealed record ServerOverviewItem(
     int RemoteServerId,
     string ServerName,
     string VpnAddress,

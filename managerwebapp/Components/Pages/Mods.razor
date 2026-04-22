@@ -137,16 +137,16 @@
     private bool _isRefreshingMods;
     private string? _statusMessage;
 
-    protected override async Task OnInitializedAsync()
-    {
-        ModsEventsService.Changed += OnModsChangedAsync;
-        await LoadAsync();
-    }
+	protected override async Task OnInitializedAsync()
+	{
+		ModsEventsService.Changed += OnModsChanged;
+		await LoadAsync();
+	}
 
-    public void Dispose()
-    {
-        ModsEventsService.Changed -= OnModsChangedAsync;
-    }
+	public void Dispose()
+	{
+		ModsEventsService.Changed -= OnModsChanged;
+	}
 
     private async Task LoadAsync()
     {
@@ -180,12 +180,12 @@
         }
     }
 
-    private Task OnModsChangedAsync()
-    {
-        return InvokeAsync(async () =>
-        {
-            await LoadAsync();
-            StateHasChanged();
-        });
-    }
+	private void OnModsChanged()
+	{
+		_ = InvokeAsync(async () =>
+		{
+			await LoadAsync();
+			StateHasChanged();
+		});
+	}
 }

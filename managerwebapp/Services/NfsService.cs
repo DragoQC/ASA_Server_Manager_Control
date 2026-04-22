@@ -214,7 +214,7 @@ public sealed class NfsService(
 
         invite.UsedAtUtc = DateTimeOffset.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
-        await invitationEventsService.NotifyChangedAsync();
+        invitationEventsService.NotifyChanged();
 
         NfsConfigurationModel configuration = await LoadConfigurationAsync(cancellationToken);
         return new NfsShareInviteResponse(

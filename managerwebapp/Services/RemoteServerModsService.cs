@@ -126,7 +126,7 @@ public sealed class RemoteServerModsService(
         }
     }
 
-    public async Task<IReadOnlyList<PublicServerOverviewItem>> LoadOverviewAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ServerOverviewItem>> LoadOverviewAsync(CancellationToken cancellationToken = default)
     {
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -171,7 +171,7 @@ public sealed class RemoteServerModsService(
                     return null;
                 }
 
-                return new PublicServerOverviewItem(
+                return new ServerOverviewItem(
                     server.Id,
                     server.ServerName,
                     server.VpnAddress,
@@ -189,9 +189,9 @@ public sealed class RemoteServerModsService(
             .ToList();
     }
 
-    public async Task<HomePageModel> LoadHomeModelAsync(CancellationToken cancellationToken = default)
+    public async Task<ServerDisplay> LoadServerDisplayAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<PublicServerOverviewItem> overview = await LoadOverviewAsync(cancellationToken);
+        IReadOnlyList<ServerOverviewItem> overview = await LoadOverviewAsync(cancellationToken);
 
         IReadOnlyList<HomeServerModel> servers = overview
             .Select(server => new HomeServerModel(
@@ -206,6 +206,6 @@ public sealed class RemoteServerModsService(
                 server.Mods))
             .ToList();
 
-        return new HomePageModel(servers);
+        return new ServerDisplay(servers);
     }
 }

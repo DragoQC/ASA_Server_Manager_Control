@@ -79,7 +79,7 @@ public sealed class ModsService(
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
-            await modsEventsService.NotifyChangedAsync();
+            modsEventsService.NotifyChanged();
             return;
         }
 
@@ -98,7 +98,7 @@ public sealed class ModsService(
 
         if (changed)
         {
-            await modsEventsService.NotifyChangedAsync();
+            modsEventsService.NotifyChanged();
         }
     }
 
@@ -115,7 +115,7 @@ public sealed class ModsService(
             await RefreshModAsync(modId, cancellationToken);
         }
 
-        await modsEventsService.NotifyChangedAsync();
+        modsEventsService.NotifyChanged();
     }
 
     public async Task<bool> RefreshUnresolvedCachedModsAsync(CancellationToken cancellationToken = default)
@@ -147,7 +147,7 @@ public sealed class ModsService(
             await RefreshModAsync(modId, cancellationToken);
         }
 
-        await modsEventsService.NotifyChangedAsync();
+        modsEventsService.NotifyChanged();
         return true;
     }
 

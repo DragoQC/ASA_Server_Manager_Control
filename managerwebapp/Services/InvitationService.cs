@@ -235,7 +235,7 @@ public sealed class InvitationService(
         invitation.RemoteServer.InviteStatus = "Accepted";
         invitation.RemoteServer.ValidationStatus = "Unknown";
         await dbContext.SaveChangesAsync(cancellationToken);
-        await invitationEventsService.NotifyChangedAsync();
+        invitationEventsService.NotifyChanged();
 
         return BuildInviteRequest(invitation, vpnConfig, clientPrivateKey, invitationConfigContent, serverKeys);
     }
@@ -258,7 +258,7 @@ public sealed class InvitationService(
         await vpnService.DeleteInvitationFilesAsync(invitationId, cancellationToken);
         await RebuildServerConfigAsync(cancellationToken);
         await RestartWireGuardIfActiveAsync(cancellationToken);
-        await invitationEventsService.NotifyChangedAsync();
+        invitationEventsService.NotifyChanged();
     }
 
     public async Task<string> LoadInvitationConfigAsync(int invitationId, CancellationToken cancellationToken = default)

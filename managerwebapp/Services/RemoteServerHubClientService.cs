@@ -11,8 +11,7 @@ public sealed class RemoteServerHubClientService(
 {
     private readonly ConcurrentDictionary<int, RemoteHubRegistration> _connections = new();
     private readonly ConcurrentDictionary<int, RemoteServerHubSnapshot> _snapshots = new();
-    public event Func<int, RemoteAsaServiceStatus, Task>? StatusUpdated;
-    public event Func<int, Task>? SnapshotUpdated;
+    public event Action<int>? Changed;
 
     public IReadOnlyDictionary<int, RemoteServerHubSnapshot> GetSnapshots()
     {
@@ -117,8 +116,7 @@ public sealed class RemoteServerHubClientService(
                     UpdatedAtUtc = DateTimeOffset.UtcNow
                 });
 
-            _ = NotifyStatusUpdatedAsync(server.Id, status);
-            _ = NotifySnapshotUpdatedAsync(server.Id);
+            NotifyChanged(server.Id);
         });
 
         connection.On<int>(AsaStateHubConstants.PlayerCountUpdatedMethod, currentPlayers =>
@@ -147,7 +145,7 @@ public sealed class RemoteServerHubClientService(
                     UpdatedAtUtc = DateTimeOffset.UtcNow
                 });
 
-            _ = NotifySnapshotUpdatedAsync(server.Id);
+            NotifyChanged(server.Id);
         });
 
         connection.On<bool>(AsaStateHubConstants.CanSendRconCommandUpdatedMethod, canSendRconCommand =>
@@ -168,7 +166,7 @@ public sealed class RemoteServerHubClientService(
                     UpdatedAtUtc = DateTimeOffset.UtcNow
                 });
 
-            _ = NotifySnapshotUpdatedAsync(server.Id);
+            NotifyChanged(server.Id);
         });
 
         connection.Reconnecting += error =>
@@ -236,7 +234,7 @@ public sealed class RemoteServerHubClientService(
                 UpdatedAtUtc = DateTimeOffset.UtcNow
             });
 
-        _ = NotifySnapshotUpdatedAsync(remoteServerId);
+        NotifyChanged(remoteServerId);
     }
 
     private static async Task DisposeConnectionAsync(HubConnection connection)
@@ -250,44 +248,23 @@ public sealed class RemoteServerHubClientService(
         }
     }
 
-    private async Task NotifyStatusUpdatedAsync(int remoteServerId, RemoteAsaServiceStatus status)
+    private void NotifyChanged(int remoteServerId)
     {
-        Func<int, RemoteAsaServiceStatus, Task>? handlers = StatusUpdated;
+        Action<int>? handlers = Changed;
         if (handlers is null)
         {
             return;
         }
 
-        foreach (Func<int, RemoteAsaServiceStatus, Task> handler in handlers.GetInvocationList().Cast<Func<int, RemoteAsaServiceStatus, Task>>())
+        foreach (Action<int> handler in handlers.GetInvocationList().Cast<Action<int>>())
         {
             try
             {
-                await handler(remoteServerId, status);
+                handler(remoteServerId);
             }
             catch (Exception exception)
             {
-                logger.LogWarning(exception, "Remote hub status subscriber failed for server {RemoteServerId}.", remoteServerId);
-            }
-        }
-    }
-
-    private async Task NotifySnapshotUpdatedAsync(int remoteServerId)
-    {
-        Func<int, Task>? handlers = SnapshotUpdated;
-        if (handlers is null)
-        {
-            return;
-        }
-
-        foreach (Func<int, Task> handler in handlers.GetInvocationList().Cast<Func<int, Task>>())
-        {
-            try
-            {
-                await handler(remoteServerId);
-            }
-            catch (Exception exception)
-            {
-                logger.LogWarning(exception, "Remote hub snapshot subscriber failed for server {RemoteServerId}.", remoteServerId);
+                logger.LogWarning(exception, "Remote hub change subscriber failed for server {RemoteServerId}.", remoteServerId);
             }
         }
     }

@@ -513,19 +513,19 @@
         }
     }
 
-    private Task OnInvitationChangedAsync()
-    {
-        if (_isRefreshing || _isSending || _isSendingNfs || _isInvitationConfigDialogOpen)
-        {
-            return Task.CompletedTask;
-        }
+	private void OnInvitationChangedAsync()
+	{
+		if (_isRefreshing || _isSending || _isSendingNfs || _isInvitationConfigDialogOpen)
+		{
+			return;
+		}
 
-        return InvokeAsync(async () =>
-        {
-            await RefreshAsync(includeDefaults: false, showErrors: false);
-            StateHasChanged();
-        });
-    }
+		_ = InvokeAsync(async () =>
+		{
+			await RefreshAsync(includeDefaults: false, showErrors: false);
+			StateHasChanged();
+		});
+	}
 
     private async Task OpenInvitationConfigAsync(int invitationId)
     {

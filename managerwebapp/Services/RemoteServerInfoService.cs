@@ -13,33 +13,33 @@ public sealed class RemoteServerInfoService(
 {
     private readonly ConcurrentDictionary<int, string> _lastActiveStateByServerId = new();
 
-    public event Func<int, Task>? InfoUpdated;
+    public event Action<int>? InfoUpdated;
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        remoteServerHubClientService.StatusUpdated += OnStatusUpdatedAsync;
+        remoteServerHubClientService.Changed += OnServerChanged;
 
         return WaitForStopAsync(stoppingToken);
     }
 
     public override Task StopAsync(CancellationToken cancellationToken)
     {
-        remoteServerHubClientService.StatusUpdated -= OnStatusUpdatedAsync;
+        remoteServerHubClientService.Changed -= OnServerChanged;
         return base.StopAsync(cancellationToken);
     }
 
-    private Task OnStatusUpdatedAsync(int remoteServerId, RemoteAsaServiceStatus status)
+    private void OnServerChanged(int remoteServerId)
     {
+        RemoteAsaServiceStatus status = remoteServerHubClientService.GetSnapshot(remoteServerId).AsaStatus;
         _lastActiveStateByServerId.TryGetValue(remoteServerId, out string? previousActiveState);
         _lastActiveStateByServerId[remoteServerId] = status.ActiveState;
 
         if (!status.IsRunning || string.Equals(previousActiveState, status.ActiveState, StringComparison.Ordinal))
         {
-            return Task.CompletedTask;
+            return;
         }
 
         _ = RefreshInBackgroundAsync(remoteServerId);
-        return Task.CompletedTask;
     }
 
     private async Task RefreshInBackgroundAsync(int remoteServerId)
@@ -84,7 +84,7 @@ public sealed class RemoteServerInfoService(
 
             await dbContext.SaveChangesAsync();
             await remoteServerModsService.SyncRemoteServerAsync(remoteServerId, response.ModIds, CancellationToken.None);
-            await NotifyInfoUpdatedAsync(remoteServerId);
+            NotifyInfoUpdated(remoteServerId);
         }
         catch (Exception exception)
         {
@@ -92,19 +92,19 @@ public sealed class RemoteServerInfoService(
         }
     }
 
-    private async Task NotifyInfoUpdatedAsync(int remoteServerId)
+    private void NotifyInfoUpdated(int remoteServerId)
     {
-        Func<int, Task>? handlers = InfoUpdated;
+        Action<int>? handlers = InfoUpdated;
         if (handlers is null)
         {
             return;
         }
 
-        foreach (Func<int, Task> handler in handlers.GetInvocationList().Cast<Func<int, Task>>())
+        foreach (Action<int> handler in handlers.GetInvocationList().Cast<Action<int>>())
         {
             try
             {
-                await handler(remoteServerId);
+                handler(remoteServerId);
             }
             catch (Exception exception)
             {

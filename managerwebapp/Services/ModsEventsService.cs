@@ -2,20 +2,20 @@ namespace managerwebapp.Services;
 
 public sealed class ModsEventsService(ILogger<ModsEventsService> logger)
 {
-    public event Func<Task>? Changed;
+    public event Action? Changed;
 
-    public async Task NotifyChangedAsync()
+    public void NotifyChanged()
     {
         if (Changed is null)
         {
             return;
         }
 
-        foreach (Func<Task> handler in Changed.GetInvocationList().Cast<Func<Task>>())
+        foreach (Action handler in Changed.GetInvocationList().Cast<Action>())
         {
             try
             {
-                await handler();
+                handler();
             }
             catch (Exception exception)
             {
