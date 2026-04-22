@@ -25,20 +25,18 @@
         <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
             <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Required</p>
             <div class="mt-4 flex flex-wrap gap-4">
-                <div class="min-w-48 flex-1 rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <div class="flex items-center gap-2">
-                        <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">VPN</p>
-                        <InlineHelpButton OnClick="@(() => OpenHelpDialog("VPN port", "This port belongs to the control machine. It must be forwarded from your router to the controller so remote nodes can join the VPN."))" />
-                    </div>
+                <div class="relative min-w-48 flex-1 rounded-2xl border border-white/10 bg-black/20 p-4 pr-16">
+                    <InlineHelpButton OnClick="@(() => OpenHelpDialog("VPN port", "This port belongs to the control machine. It must be forwarded from your router to the controller so remote nodes can join the VPN."))"
+                                      Class="absolute right-4 top-4" />
+                    <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">VPN</p>
                     <p class="mt-2 text-2xl font-semibold text-white">@_vpnPort</p>
                     <p class="mt-2 text-sm text-neutral-300">WireGuard listen port. User configurable.</p>
                 </div>
 
-                <div class="min-w-48 flex-1 rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <div class="flex items-center gap-2">
-                        <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">Web app</p>
-                        <InlineHelpButton OnClick="@(() => OpenHelpDialog("Control web app", "This port belongs to the control machine too. Forward it from your router to the controller if you want the control web app reachable from outside."))" />
-                    </div>
+                <div class="relative min-w-48 flex-1 rounded-2xl border border-white/10 bg-black/20 p-4 pr-16">
+                    <InlineHelpButton OnClick="@(() => OpenHelpDialog("Control web app", "This port belongs to the control machine too. Forward it from your router to the controller if you want the control web app reachable from outside."))"
+                                      Class="absolute right-4 top-4" />
+                    <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">Web app</p>
                     <p class="mt-2 text-2xl font-semibold text-white">8010</p>
                     <p class="mt-2 text-sm text-neutral-300">Control web app port.</p>
                 </div>
@@ -49,14 +47,14 @@
             </div>
         </div>
 
-        <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
-            <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="relative rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 pr-20 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
+            <InlineHelpButton OnClick="@(() => OpenHelpDialog("Server game port", "This port belongs to the remote game server itself. It must be reachable for players to join that specific server. If you are not using the main VPN capabilities for remote API access, each remote machine needs its own extra exposure setup and this dashboard does not manage that edge case."))"
+                              Class="absolute right-6 top-6" />
+            <div class="flex flex-wrap items-center gap-3">
                 <div>
                     <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Server game ports</p>
                     <p class="mt-2 text-sm text-neutral-300">Loaded from cached `/api/server/me` data on the registered servers.</p>
                 </div>
-
-                <InlineHelpButton OnClick="@(() => OpenHelpDialog("Server game port", "This port belongs to the remote game server itself. It must be reachable for players to join that specific server. If you are not using the main VPN capabilities for remote API access, each remote machine needs its own extra exposure setup and this dashboard does not manage that edge case."))" />
             </div>
 
             @if (_serverPorts.Count == 0)
