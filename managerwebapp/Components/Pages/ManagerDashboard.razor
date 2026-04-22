@@ -55,6 +55,8 @@
                     <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Server game ports</p>
                     <p class="mt-2 text-sm text-neutral-300">Loaded from cached `/api/server/me` data on the registered servers.</p>
                 </div>
+
+                <InlineHelpButton OnClick="@(() => OpenHelpDialog("Server game port", "This port belongs to the remote game server itself. It must be reachable for players to join that specific server. If you are not using the main VPN capabilities for remote API access, each remote machine needs its own extra exposure setup and this dashboard does not manage that edge case."))" />
             </div>
 
             @if (_serverPorts.Count == 0)
@@ -67,10 +69,7 @@
                     @foreach (managerwebapp.Models.Servers.GameServerPortInfo item in _serverPorts)
                     {
                         <div class="min-w-56 flex-1 rounded-2xl border border-white/10 bg-black/20 p-4">
-                            <div class="flex items-center gap-2">
-                                <p class="text-sm font-semibold text-white">@item.Name</p>
-                                <InlineHelpButton OnClick="@(() => OpenHelpDialog("Server game port", "This port belongs to the remote game server itself. It must be reachable for players to join that specific server. If you are not using the main VPN capabilities for remote API access, each remote machine needs its own extra exposure setup and this dashboard does not manage that edge case."))" />
-                            </div>
+                            <p class="text-sm font-semibold text-white">@item.Name</p>
                             <p class="mt-1 text-xs text-neutral-400">@item.VpnAddress</p>
                             <p class="mt-3 text-xl font-semibold text-white">@(item.GamePort?.ToString() ?? "Missing")</p>
                         </div>

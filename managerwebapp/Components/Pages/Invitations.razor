@@ -2,6 +2,7 @@
 @inject InvitationService InvitationService
 @inject InvitationEventsService InvitationEventsService
 @inject NfsService NfsService
+@inject VpnService VpnService
 @inject IJSRuntime JS
 @using managerwebapp.Models.Cluster
 @using managerwebapp.Models.Invitations
@@ -38,27 +39,20 @@
             <section class="rounded-[1.8rem] border border-fuchsia-400/15 bg-black/30 p-6 shadow-[0_0_30px_rgba(192,132,252,0.12)] backdrop-blur">
                 <div class="space-y-4">
                     <div class="flex flex-wrap items-center gap-3">
-                        <h2 class="text-2xl font-semibold text-white">Invitation setup required</h2>
+                        <h2 class="text-2xl font-semibold text-white">@GetSetupNoticeTitle()</h2>
                         <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
                             Cluster setup
                         </span>
                     </div>
 
                     <p class="max-w-3xl text-sm leading-6 text-neutral-300">
-                        Finish the Cluster setup before creating new VPN or NFS invitation links.
+                        @GetSetupNoticeDescription()
                     </p>
 
-                    <div class="space-y-2 text-sm text-neutral-300">
-                        @if (!_vpnForm.IsReady && !string.IsNullOrWhiteSpace(_vpnForm.StatusMessage))
-                        {
-                            <p>@_vpnForm.StatusMessage</p>
-                        }
-
-                        @if (!_nfsForm.IsReady && !string.IsNullOrWhiteSpace(_nfsForm.StatusMessage))
-                        {
-                            <p>@_nfsForm.StatusMessage</p>
-                        }
-                    </div>
+                    @if (!string.IsNullOrWhiteSpace(GetSetupNoticeMessage()))
+                    {
+                        <p class="text-sm text-neutral-300">@GetSetupNoticeMessage()</p>
+                    }
 
                     <a href="/admin/cluster"
                        class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25">
@@ -396,6 +390,7 @@
     protected override async Task OnInitializedAsync()
     {
         InvitationEventsService.Changed += OnInvitationChangedAsync;
+        VpnService.StateChanged += OnVpnStateChanged;
         await RefreshAsync();
     }
 
@@ -593,7 +588,52 @@
         _previewPayload = await InvitationService.BuildVpnPreviewAsync(_form);
     }
 
-	private void OnInvitationChangedAsync()
+    private string GetSetupNoticeTitle()
+    {
+        if (!_vpnForm.IsVpnInstalled)
+        {
+            return "WireGuard required";
+        }
+
+        if (!_vpnForm.IsReady)
+        {
+            return "VPN setup required";
+        }
+
+        return "NFS setup required";
+    }
+
+    private string GetSetupNoticeDescription()
+    {
+        if (!_vpnForm.IsVpnInstalled)
+        {
+            return "Install WireGuard on the Cluster setup page before creating VPN or NFS invitation links.";
+        }
+
+        if (!_vpnForm.IsReady)
+        {
+            return "Finish the VPN setup on the Cluster setup page before creating VPN or NFS invitation links.";
+        }
+
+        return "VPN invitations are ready. Finish the NFS setup on the Cluster setup page to unlock NFS invitation links.";
+    }
+
+    private string? GetSetupNoticeMessage()
+    {
+        if (!_vpnForm.IsReady)
+        {
+            return _vpnForm.StatusMessage;
+        }
+
+        if (!_nfsForm.IsReady)
+        {
+            return _nfsForm.StatusMessage;
+        }
+
+        return null;
+    }
+
+    private void OnInvitationChangedAsync()
 	{
 		if (_isRefreshing || _isSending || _isSendingNfs || _isInvitationConfigDialogOpen)
 		{
@@ -606,6 +646,15 @@
 			StateHasChanged();
 		});
 	}
+
+    private void OnVpnStateChanged()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await RefreshAsync(showErrors: false);
+            StateHasChanged();
+        });
+    }
 
     private async Task OpenInvitationConfigAsync(int invitationId)
     {
@@ -745,6 +794,7 @@
     public ValueTask DisposeAsync()
     {
         InvitationEventsService.Changed -= OnInvitationChangedAsync;
+        VpnService.StateChanged -= OnVpnStateChanged;
         return ValueTask.CompletedTask;
     }
 }

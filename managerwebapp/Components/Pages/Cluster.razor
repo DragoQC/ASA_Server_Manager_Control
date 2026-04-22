@@ -256,7 +256,7 @@
                     <div class="flex flex-wrap gap-3">
                         <button type="button"
                                 @onclick="SaveFieldsAsync"
-                                disabled="@_isSavingFields"
+                                disabled="@IsSaveFieldsDisabled()"
                                 class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
                             @(_isSavingFields ? "Saving..." : "Save")
                         </button>
@@ -871,6 +871,16 @@
         {
             _fieldErrors[fieldName] = message;
         }
+    }
+
+    private bool IsSaveFieldsDisabled()
+    {
+        return _isSavingFields ||
+            string.IsNullOrWhiteSpace(_model.PrivateKey) ||
+            string.IsNullOrWhiteSpace(_model.Address) ||
+            string.IsNullOrWhiteSpace(_model.ListenPort) ||
+            string.IsNullOrWhiteSpace(_model.Endpoint) ||
+            string.IsNullOrWhiteSpace(_model.AllowedIps);
     }
 
     private string? GetFieldError(string fieldName)
