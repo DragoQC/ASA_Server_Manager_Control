@@ -140,25 +140,30 @@
 
 @if (_isEditServerDialogOpen)
 {
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-6 backdrop-blur-sm">
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6">
 		<div
-			class="max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
-			<div class="max-h-[90vh] overflow-y-auto p-6">
-				<div class="space-y-5">
-					<div class="flex items-start justify-between gap-4">
-						<div>
-							<p class="text-xs font-semibold uppercase tracking-[0.45em] text-fuchsia-300">Servers</p>
-							<h2 class="mt-3 text-3xl font-semibold text-white">Edit remote server</h2>
-							<p class="mt-3 text-sm leading-6 text-neutral-300">Adjust the VPN address or the remote web app port used by
-								the control app.</p>
-						</div>
-
-						<button type="button" @onclick="CloseEditServerDialog"
-							class="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10">
-							Cancel
-						</button>
+			class="flex h-[min(92vh,72rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
+			<div class="relative shrink-0 border-b border-white/10 px-5 py-5 pr-20 sm:px-6">
+				<div>
+					<div class="flex flex-wrap items-center gap-3">
+						<p class="text-xs font-semibold uppercase tracking-[0.45em] text-fuchsia-300">Servers</p>
+						<span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+							Edit
+						</span>
 					</div>
+					<h2 class="mt-3 text-3xl font-semibold text-white">Edit remote server</h2>
+					<p class="mt-3 text-sm leading-6 text-neutral-300">Adjust the VPN address or the remote web app port used by
+						the control app.</p>
+				</div>
 
+				<button type="button" @onclick="CloseEditServerDialog"
+					class="absolute right-5 top-5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-lg text-neutral-200 transition hover:bg-white/10 sm:right-6">
+					&#10005;
+				</button>
+			</div>
+
+			<div class="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
+				<div class="space-y-5">
 					@if (!string.IsNullOrWhiteSpace(_dialogStatusMessage))
 					{
 						<div class="@GetDialogStatusMessageClass()">
@@ -173,18 +178,20 @@
 						<TextField Label="Port" @bind-Value="_selectedPort"
 							Hint="Optional. Default node web app port is usually 8000." autocomplete="off" />
 					</div>
+				</div>
+			</div>
 
-					<div class="flex justify-end gap-3 pt-2">
-						<button type="button" @onclick="CloseEditServerDialog"
-							class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10">
-							Cancel
-						</button>
+			<div class="shrink-0 border-t border-white/10 px-5 py-4 sm:px-6">
+				<div class="flex justify-end gap-3">
+					<button type="button" @onclick="CloseEditServerDialog"
+						class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10">
+						Close
+					</button>
 
-						<button type="button" @onclick="SaveServerAsync" disabled="@_isSavingServer"
-							class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
-							@(_isSavingServer ? "Saving..." : "Save")
-						</button>
-					</div>
+					<button type="button" @onclick="SaveServerAsync" disabled="@_isSavingServer"
+						class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
+						@(_isSavingServer ? "Saving..." : "Save")
+					</button>
 				</div>
 			</div>
 		</div>
@@ -193,25 +200,30 @@
 
 @if (_isRconDialogOpen)
 {
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-6 backdrop-blur-sm">
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6">
 		<div
-			class="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
-			<div class="max-h-[90vh] overflow-y-auto p-6">
-				<div class="space-y-5">
-					<div class="flex items-start justify-between gap-4">
-						<div>
-							<p class="text-xs font-semibold uppercase tracking-[0.45em] text-fuchsia-300">RCON</p>
-							<h2 class="mt-3 text-3xl font-semibold text-white">Send remote command</h2>
-							<p class="mt-3 text-sm leading-6 text-neutral-300">Posting to <code
-								class="rounded bg-white/10 px-2 py-1 text-neutral-100">@_rconEndpointUrl</code></p>
-						</div>
-
-						<button type="button" @onclick="CloseRconDialog"
-							class="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10">
-							Close
-						</button>
+			class="flex h-[min(92vh,72rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
+			<div class="relative shrink-0 border-b border-white/10 px-5 py-5 pr-20 sm:px-6">
+				<div>
+					<div class="flex flex-wrap items-center gap-3">
+						<p class="text-xs font-semibold uppercase tracking-[0.45em] text-fuchsia-300">RCON</p>
+						<span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+							Command
+						</span>
 					</div>
+					<h2 class="mt-3 text-3xl font-semibold text-white">Send remote command</h2>
+					<p class="mt-3 text-sm leading-6 text-neutral-300">Posting to <code
+						class="rounded bg-white/10 px-2 py-1 text-neutral-100">@_rconEndpointUrl</code></p>
+				</div>
 
+				<button type="button" @onclick="CloseRconDialog"
+					class="absolute right-5 top-5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-lg text-neutral-200 transition hover:bg-white/10 sm:right-6">
+					&#10005;
+				</button>
+			</div>
+
+			<div class="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
+				<div class="space-y-5">
 					@if (!string.IsNullOrWhiteSpace(_rconStatusMessage))
 					{
 						<div
@@ -224,16 +236,18 @@
 
 					<TextField Label="Command" @bind-Value="_rconCommand" Hint="Example: ListPlayers" />
 
-					<div class="flex justify-end gap-3">
-						<ActionButton Text="Send" Disabled="@(_isSendingRcon || !_canSendRconCommand)" OnClick="SendRconAsync" />
-						<ActionButton Text="Close" Secondary="true" OnClick="CloseRconDialog" />
-					</div>
-
 					<div>
 						<label class="mb-2 block text-sm font-medium text-neutral-300">Result</label>
 						<pre
 							class="min-h-56 whitespace-pre-wrap rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-neutral-200">@(string.IsNullOrWhiteSpace(_rconResponse) ? "No result yet." : _rconResponse)</pre>
 					</div>
+				</div>
+			</div>
+
+			<div class="shrink-0 border-t border-white/10 px-5 py-4 sm:px-6">
+				<div class="flex justify-end gap-3">
+					<ActionButton Text="Close" Secondary="true" OnClick="CloseRconDialog" />
+					<ActionButton Text="Send" Disabled="@(_isSendingRcon || !_canSendRconCommand)" OnClick="SendRconAsync" />
 				</div>
 			</div>
 		</div>

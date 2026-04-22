@@ -132,7 +132,7 @@ public sealed class ModsService(
                 string.IsNullOrWhiteSpace(mod.WebsiteUrl) ||
                 string.IsNullOrWhiteSpace(mod.LogoUrl) ||
                 string.IsNullOrWhiteSpace(mod.Summary) ||
-                (mod.Name.StartsWith("Mod ", StringComparison.Ordinal) && mod.DownloadCount == 0))
+                (EF.Functions.Like(mod.Name, "Mod %") && mod.DownloadCount == 0))
             .OrderBy(mod => mod.CurseForgeModId)
             .Select(mod => mod.CurseForgeModId)
             .ToArrayAsync(cancellationToken);

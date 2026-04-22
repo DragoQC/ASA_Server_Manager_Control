@@ -345,11 +345,12 @@
 
 @if (_file is not null && _isEditorOpen)
 {
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-6 backdrop-blur-sm">
-        <div class="flex h-[min(88vh,72rem)] w-full max-w-6xl flex-col rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/92 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
-            <div class="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-6 py-5">
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6">
+        <div class="flex h-[min(92vh,72rem)] w-full max-w-6xl flex-col rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/92 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
+            <div class="relative shrink-0 border-b border-white/10 px-5 py-5 pr-20 sm:px-6">
                 <div class="space-y-2">
                     <div class="flex flex-wrap items-center gap-3">
+                        <p class="text-xs font-semibold uppercase tracking-[0.45em] text-fuchsia-300">File editor</p>
                         <h2 class="text-3xl font-semibold text-white">@_file.Title</h2>
                         <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
                             @_file.StateLabel
@@ -359,33 +360,44 @@
                     <p class="text-xs uppercase tracking-[0.28em] text-neutral-500">@_file.FilePath</p>
                 </div>
 
-                <div class="flex flex-wrap gap-3">
-                    <button type="button"
-                            @onclick="SaveEditorAsync"
-                            disabled="@_isSavingEditor"
-                            class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.3)] transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
-                        @(_isSavingEditor ? "Saving..." : "Save")
-                    </button>
-                    <button type="button"
-                            @onclick="CloseEditor"
-                            class="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10">
-                        Cancel
-                    </button>
+                <button type="button"
+                        @onclick="CloseEditor"
+                        class="absolute right-5 top-5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-lg text-neutral-200 transition hover:bg-white/10 sm:right-6">
+                    &#10005;
+                </button>
+            </div>
+
+            <div class="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
+                @if (!string.IsNullOrWhiteSpace(_editorMessage))
+                {
+                    <div class="@GetEditorMessageClass()">
+                        @_editorMessage
+                    </div>
+                }
+
+                <div class="mt-5 flex h-full flex-col gap-5">
+                    <textarea @bind="_editorContent"
+                              @bind:event="oninput"
+                              spellcheck="false"
+                              class="min-h-[32rem] w-full flex-1 rounded-[1.3rem] border border-white/10 bg-black/40 p-4 font-mono text-sm leading-6 text-fuchsia-100 outline-none"></textarea>
                 </div>
             </div>
 
-            @if (!string.IsNullOrWhiteSpace(_editorMessage))
-            {
-                <div class="@GetEditorMessageClass()">
-                    @_editorMessage
-                </div>
-            }
+            <div class="shrink-0 border-t border-white/10 px-5 py-4 sm:px-6">
+                <div class="flex justify-end gap-3">
+                    <button type="button"
+                            @onclick="CloseEditor"
+                            class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10">
+                        Close
+                    </button>
 
-            <div class="flex-1 p-6">
-                <textarea @bind="_editorContent"
-                          @bind:event="oninput"
-                          spellcheck="false"
-                          class="h-full min-h-[32rem] w-full rounded-[1.3rem] border border-white/10 bg-black/40 p-4 font-mono text-sm leading-6 text-fuchsia-100 outline-none"></textarea>
+                    <button type="button"
+                            @onclick="SaveEditorAsync"
+                            disabled="@_isSavingEditor"
+                            class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.3)] transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
+                        @(_isSavingEditor ? "Saving..." : "Save")
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -395,11 +407,15 @@
             Eyebrow="Field help"
             Title="@_helpDialogTitle"
             Message="@_helpDialogMessage"
+            PillText="Help"
+            ShowFooterClose="true"
             OnClose="CloseHelpDialog" />
 
 <InfoDialog IsOpen="@_showGeneratedKeysDialog"
             Eyebrow="@_generatedKeysEyebrow"
             Title="@_generatedKeysTitle"
+            PillText="Keys"
+            ShowFooterClose="true"
             OnClose="CloseGeneratedKeysDialog">
     <p>@_generatedKeysMessage</p>
 

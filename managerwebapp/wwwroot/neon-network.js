@@ -10,6 +10,7 @@
     }
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isCoarsePointer = window.matchMedia("(pointer: coarse), (hover: none)").matches;
     const mouse = {
         x: 0,
         y: 0,
@@ -27,10 +28,31 @@
         return Math.max(min, Math.min(max, value));
     }
 
-    function resize() {
-        viewportWidth = window.innerWidth;
-        viewportHeight = window.innerHeight;
-        deviceScale = Math.min(window.devicePixelRatio || 1, 2);
+    function getViewportSize() {
+        const width = window.innerWidth;
+        const screenHeight = Math.max(window.screen.height || 0, window.screen.availHeight || 0);
+        const height = isCoarsePointer
+            ? Math.max(window.innerHeight, screenHeight)
+            : window.innerHeight;
+        return { width, height };
+    }
+
+    function resize(force = false) {
+        const nextViewport = getViewportSize();
+
+        if (!force && isCoarsePointer) {
+            const widthChanged = nextViewport.width !== viewportWidth;
+            const heightDelta = Math.abs(nextViewport.height - viewportHeight);
+
+            // Ignore small mobile viewport height changes caused by browser chrome while scrolling.
+            if (!widthChanged && heightDelta < 160) {
+                return;
+            }
+        }
+
+        viewportWidth = nextViewport.width;
+        viewportHeight = nextViewport.height;
+        deviceScale = Math.min(window.devicePixelRatio || 1, isCoarsePointer ? 1.25 : 2);
 
         canvas.width = Math.floor(viewportWidth * deviceScale);
         canvas.height = Math.floor(viewportHeight * deviceScale);
@@ -43,12 +65,15 @@
     }
 
     function createParticles() {
-        const particleCount = clamp(Math.floor((viewportWidth * viewportHeight) / 14000), 64, 150);
+        const particleCount = isCoarsePointer
+            ? clamp(Math.floor((viewportWidth * viewportHeight) / 22000), 38, 80)
+            : clamp(Math.floor((viewportWidth * viewportHeight) / 14000), 64, 150);
+
         particles = Array.from({ length: particleCount }, () => ({
             x: Math.random() * viewportWidth,
             y: Math.random() * viewportHeight,
-            vx: (Math.random() - 0.5) * (prefersReducedMotion ? 0.08 : 0.3),
-            vy: (Math.random() - 0.5) * (prefersReducedMotion ? 0.08 : 0.3),
+            vx: (Math.random() - 0.5) * (prefersReducedMotion ? 0.08 : isCoarsePointer ? 0.16 : 0.3),
+            vy: (Math.random() - 0.5) * (prefersReducedMotion ? 0.08 : isCoarsePointer ? 0.16 : 0.3),
             radius: 1 + Math.random() * 2.4
         }));
     }
@@ -75,7 +100,9 @@
 
         context.clearRect(0, 0, viewportWidth, viewportHeight);
 
-        const connectionDistance = Math.min(210, Math.max(130, viewportWidth * 0.125));
+        const connectionDistance = isCoarsePointer
+            ? Math.min(170, Math.max(110, viewportWidth * 0.105))
+            : Math.min(210, Math.max(130, viewportWidth * 0.125));
         const mouseDistance = 200;
 
         for (let i = 0; i < particles.length; i++) {
@@ -102,7 +129,7 @@
 
             let glowBoost = 0;
 
-            if (mouse.active) {
+            if (!isCoarsePointer && mouse.active) {
                 const mouseDx = mouse.x - particle.x;
                 const mouseDy = mouse.y - particle.y;
                 const mouseRange = Math.hypot(mouseDx, mouseDy);
@@ -148,12 +175,16 @@
         mouse.active = false;
     }
 
-    window.addEventListener("resize", resize);
-    window.addEventListener("mousemove", handleMouseMove, { passive: true });
-    window.addEventListener("mouseleave", handleMouseLeave, { passive: true });
-    window.addEventListener("blur", handleMouseLeave, { passive: true });
+    window.addEventListener("resize", () => resize(false));
+    window.addEventListener("orientationchange", () => resize(true));
 
-    resize();
+    if (!isCoarsePointer) {
+        window.addEventListener("mousemove", handleMouseMove, { passive: true });
+        window.addEventListener("mouseleave", handleMouseLeave, { passive: true });
+        window.addEventListener("blur", handleMouseLeave, { passive: true });
+    }
+
+    resize(true);
     animationFrameId = window.requestAnimationFrame(tick);
 
     document.addEventListener("visibilitychange", () => {
