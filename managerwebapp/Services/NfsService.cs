@@ -102,6 +102,44 @@ public sealed class NfsService(
         }
     }
 
+    public async Task<bool> IsConfiguredAsync(CancellationToken cancellationToken = default)
+    {
+        if (!await vpnService.IsConfiguredAsync(cancellationToken))
+        {
+            return false;
+        }
+
+        return Directory.Exists(ClusterShareConstants.ClusterDirectoryPath) &&
+            File.Exists(ClusterShareConstants.ServerConfigFilePath) &&
+            File.Exists(ClusterShareConstants.ClientConfigFilePath);
+    }
+
+    public async Task<NfsInviteFormModel> LoadNfsFormAsync(CancellationToken cancellationToken = default)
+    {
+        if (!await vpnService.IsConfiguredAsync(cancellationToken))
+        {
+            return new NfsInviteFormModel
+            {
+                IsReady = false,
+                StatusMessage = "Finish the VPN setup on the Cluster setup page before creating NFS invitations."
+            };
+        }
+
+        if (!await IsConfiguredAsync(cancellationToken))
+        {
+            return new NfsInviteFormModel
+            {
+                IsReady = false,
+                StatusMessage = "Save the NFS configuration on the Cluster setup page before creating NFS invitations."
+            };
+        }
+
+        return new NfsInviteFormModel
+        {
+            IsReady = true
+        };
+    }
+
     public async Task<IReadOnlyList<NfsShareInviteServerOption>> LoadTargetServersAsync(CancellationToken cancellationToken = default)
     {
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -135,8 +173,14 @@ public sealed class NfsService(
             .ToList();
     }
 
-    public async Task<NfsShareInviteResponse> BuildPreviewAsync(int remoteServerId, CancellationToken cancellationToken = default)
+    public async Task<NfsShareInviteResponse> BuildNfsPreviewAsync(int remoteServerId, CancellationToken cancellationToken = default)
     {
+        NfsInviteFormModel form = await LoadNfsFormAsync(cancellationToken);
+        if (!form.IsReady)
+        {
+            throw new InvalidOperationException(form.StatusMessage ?? "NFS invitations are not ready.");
+        }
+
         if (remoteServerId <= 0)
         {
             throw new InvalidOperationException("Remote server is required.");
@@ -158,8 +202,14 @@ public sealed class NfsService(
             configuration.ClientConfigContent);
     }
 
-    public async Task<string> CreateInviteLinkAsync(int remoteServerId, CancellationToken cancellationToken = default)
+    public async Task<string> CreateNfsInvitationLinkAsync(int remoteServerId, CancellationToken cancellationToken = default)
     {
+        NfsInviteFormModel form = await LoadNfsFormAsync(cancellationToken);
+        if (!form.IsReady)
+        {
+            throw new InvalidOperationException(form.StatusMessage ?? "NFS invitations are not ready.");
+        }
+
         if (remoteServerId <= 0)
         {
             throw new InvalidOperationException("Remote server is required.");

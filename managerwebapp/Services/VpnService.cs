@@ -265,9 +265,19 @@ public sealed class VpnService(
         await File.WriteAllTextAsync(filePath, normalizedContent, cancellationToken);
     }
 
+    public string GetInvitationDirectoryPath(string invitationKey)
+    {
+        return Path.Combine(VpnConstants.InvitationDirectoryPath, invitationKey);
+    }
+
     public string GetInvitationDirectoryPath(int invitationId)
     {
         return Path.Combine(VpnConstants.InvitationDirectoryPath, invitationId.ToString());
+    }
+
+    public string GetInvitationConfigFilePath(string invitationKey)
+    {
+        return Path.Combine(GetInvitationDirectoryPath(invitationKey), "wg0.conf");
     }
 
     public string GetInvitationConfigFilePath(int invitationId)
@@ -275,9 +285,19 @@ public sealed class VpnService(
         return Path.Combine(GetInvitationDirectoryPath(invitationId), "wg0.conf");
     }
 
+    public string GetInvitationClientPrivateKeyFilePath(string invitationKey)
+    {
+        return Path.Combine(GetInvitationDirectoryPath(invitationKey), "client.key");
+    }
+
     public string GetInvitationClientPrivateKeyFilePath(int invitationId)
     {
         return Path.Combine(GetInvitationDirectoryPath(invitationId), "client.key");
+    }
+
+    public string GetInvitationClientPublicKeyFilePath(string invitationKey)
+    {
+        return Path.Combine(GetInvitationDirectoryPath(invitationKey), "client.pub");
     }
 
     public string GetInvitationClientPublicKeyFilePath(int invitationId)
@@ -286,7 +306,7 @@ public sealed class VpnService(
     }
 
     public async Task SaveInvitationFilesAsync(
-        int invitationId,
+        string invitationKey,
         VpnConfigModel model,
         string vpnAddress,
         string clientPrivateKey,
@@ -294,37 +314,58 @@ public sealed class VpnService(
         string serverPublicKey,
         CancellationToken cancellationToken = default)
     {
-        string invitationDirectoryPath = GetInvitationDirectoryPath(invitationId);
+        string invitationDirectoryPath = GetInvitationDirectoryPath(invitationKey);
         Directory.CreateDirectory(invitationDirectoryPath);
 
-        await File.WriteAllTextAsync(GetInvitationClientPrivateKeyFilePath(invitationId), NormalizeContent(clientPrivateKey.Trim() + "\n"), cancellationToken);
-        await File.WriteAllTextAsync(GetInvitationClientPublicKeyFilePath(invitationId), NormalizeContent(clientPublicKey.Trim() + "\n"), cancellationToken);
+        await File.WriteAllTextAsync(GetInvitationClientPrivateKeyFilePath(invitationKey), NormalizeContent(clientPrivateKey.Trim() + "\n"), cancellationToken);
+        await File.WriteAllTextAsync(GetInvitationClientPublicKeyFilePath(invitationKey), NormalizeContent(clientPublicKey.Trim() + "\n"), cancellationToken);
 
         string invitationConfigContent = BuildInvitationConfigContent(model, vpnAddress, clientPrivateKey, serverPublicKey);
-        await File.WriteAllTextAsync(GetInvitationConfigFilePath(invitationId), invitationConfigContent, cancellationToken);
+        await File.WriteAllTextAsync(GetInvitationConfigFilePath(invitationKey), invitationConfigContent, cancellationToken);
     }
 
-    public Task DeleteInvitationFilesAsync(int invitationId, CancellationToken cancellationToken = default)
+    public Task DeleteInvitationFilesAsync(string invitationKey, int? legacyInvitationId = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        string invitationDirectoryPath = GetInvitationDirectoryPath(invitationId);
+        string invitationDirectoryPath = GetInvitationDirectoryPath(invitationKey);
         if (Directory.Exists(invitationDirectoryPath))
         {
             Directory.Delete(invitationDirectoryPath, recursive: true);
+            return Task.CompletedTask;
+        }
+
+        if (legacyInvitationId.HasValue)
+        {
+            string legacyInvitationDirectoryPath = GetInvitationDirectoryPath(legacyInvitationId.Value);
+            if (Directory.Exists(legacyInvitationDirectoryPath))
+            {
+                Directory.Delete(legacyInvitationDirectoryPath, recursive: true);
+            }
         }
 
         return Task.CompletedTask;
     }
 
-    public Task<string> LoadInvitationConfigContentAsync(int invitationId, CancellationToken cancellationToken = default)
+    public Task<string> LoadInvitationConfigContentAsync(string invitationKey, int? legacyInvitationId = null, CancellationToken cancellationToken = default)
     {
-        return LoadEditorContentAsync(GetInvitationConfigFilePath(invitationId), cancellationToken);
+        string filePath = GetInvitationConfigFilePath(invitationKey);
+        if (!File.Exists(filePath) && legacyInvitationId.HasValue)
+        {
+            filePath = GetInvitationConfigFilePath(legacyInvitationId.Value);
+        }
+
+        return LoadEditorContentAsync(filePath, cancellationToken);
     }
 
-    public async Task<string?> LoadInvitationClientPublicKeyAsync(int invitationId, CancellationToken cancellationToken = default)
+    public async Task<string?> LoadInvitationClientPublicKeyAsync(string invitationKey, int? legacyInvitationId = null, CancellationToken cancellationToken = default)
     {
-        string filePath = GetInvitationClientPublicKeyFilePath(invitationId);
+        string filePath = GetInvitationClientPublicKeyFilePath(invitationKey);
+        if (!File.Exists(filePath) && legacyInvitationId.HasValue)
+        {
+            filePath = GetInvitationClientPublicKeyFilePath(legacyInvitationId.Value);
+        }
+
         if (!File.Exists(filePath))
         {
             return null;
