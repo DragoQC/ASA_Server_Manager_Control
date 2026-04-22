@@ -72,7 +72,7 @@
 	@if (_selectedServer is not null)
 	{
 		<InfoDialog IsOpen="true" Eyebrow="Server" Title="@_selectedServer.DisplayServerName"
-								Message="@_selectedServer.FormattedMapName" CloseText="Close" PillText="Details" ShowFooterClose="true" MaxWidthClass="max-w-7xl" OnClose="CloseServerDialog">
+								Message="@_selectedServer.FormattedMapName" CloseText="Close" PillText="Details" MaxWidthClass="max-w-7xl" OnClose="CloseServerDialog">
 			<div class="space-y-6">
 				<div class="flex flex-wrap gap-2">
 					<StatusTag Text="@_selectedServer.StateLabel" />

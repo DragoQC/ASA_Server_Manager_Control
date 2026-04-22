@@ -345,8 +345,10 @@
 
 @if (_file is not null && _isEditorOpen)
 {
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6">
-        <div class="flex h-[min(92vh,72rem)] w-full max-w-6xl flex-col rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/92 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6"
+         @onclick="CloseEditor">
+        <div class="flex h-[min(92vh,72rem)] w-full max-w-6xl flex-col rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/92 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl"
+             @onclick:stopPropagation="true">
             <div class="relative shrink-0 border-b border-white/10 px-5 py-5 pr-20 sm:px-6">
                 <div class="space-y-2">
                     <div class="flex flex-wrap items-center gap-3">
@@ -380,23 +382,21 @@
                               @bind:event="oninput"
                               spellcheck="false"
                               class="min-h-[32rem] w-full flex-1 rounded-[1.3rem] border border-white/10 bg-black/40 p-4 font-mono text-sm leading-6 text-fuchsia-100 outline-none"></textarea>
-                </div>
-            </div>
 
-            <div class="shrink-0 border-t border-white/10 px-5 py-4 sm:px-6">
-                <div class="flex justify-end gap-3">
-                    <button type="button"
-                            @onclick="CloseEditor"
-                            class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10">
-                        Close
-                    </button>
+                    <div class="flex justify-end gap-3">
+                        <button type="button"
+                                @onclick="CloseEditor"
+                                class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10">
+                            Close
+                        </button>
 
-                    <button type="button"
-                            @onclick="SaveEditorAsync"
-                            disabled="@_isSavingEditor"
-                            class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.3)] transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
-                        @(_isSavingEditor ? "Saving..." : "Save")
-                    </button>
+                        <button type="button"
+                                @onclick="SaveEditorAsync"
+                                disabled="@_isSavingEditor"
+                                class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.3)] transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
+                            @(_isSavingEditor ? "Saving..." : "Save")
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -414,7 +414,6 @@
             Eyebrow="@_generatedKeysEyebrow"
             Title="@_generatedKeysTitle"
             PillText="Keys"
-            ShowFooterClose="true"
             OnClose="CloseGeneratedKeysDialog">
     <p>@_generatedKeysMessage</p>
 

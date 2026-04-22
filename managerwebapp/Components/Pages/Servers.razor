@@ -140,9 +140,11 @@
 
 @if (_isEditServerDialogOpen)
 {
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6">
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6"
+		 @onclick="CloseEditServerDialog">
 		<div
-			class="flex h-[min(92vh,72rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
+			class="flex h-[min(92vh,72rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl"
+			@onclick:stopPropagation="true">
 			<div class="relative shrink-0 border-b border-white/10 px-5 py-5 pr-20 sm:px-6">
 				<div>
 					<div class="flex flex-wrap items-center gap-3">
@@ -178,11 +180,8 @@
 						<TextField Label="Port" @bind-Value="_selectedPort"
 							Hint="Optional. Default node web app port is usually 8000." autocomplete="off" />
 					</div>
-				</div>
-			</div>
 
-			<div class="shrink-0 border-t border-white/10 px-5 py-4 sm:px-6">
-				<div class="flex justify-end gap-3">
+					<div class="flex justify-end gap-3 pt-2">
 					<button type="button" @onclick="CloseEditServerDialog"
 						class="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-white/10">
 						Close
@@ -194,15 +193,18 @@
 					</button>
 				</div>
 			</div>
+			</div>
 		</div>
 	</div>
 }
 
 @if (_isRconDialogOpen)
 {
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6">
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6"
+		 @onclick="CloseRconDialog">
 		<div
-			class="flex h-[min(92vh,72rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl">
+			class="flex h-[min(92vh,72rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[1.8rem] border border-fuchsia-400/15 bg-[#05070d]/94 shadow-[0_0_80px_rgba(168,85,247,0.18)] backdrop-blur-xl"
+			@onclick:stopPropagation="true">
 			<div class="relative shrink-0 border-b border-white/10 px-5 py-5 pr-20 sm:px-6">
 				<div>
 					<div class="flex flex-wrap items-center gap-3">
@@ -234,20 +236,30 @@
 						</div>
 					}
 
-					<TextField Label="Command" @bind-Value="_rconCommand" Hint="Example: ListPlayers" />
+					<div>
+						<label class="mb-2 block text-sm font-medium text-neutral-300">Command</label>
+						<div class="relative">
+							<input value="@_rconCommand"
+								   @oninput="OnRconCommandChanged"
+								   placeholder="Example: ListPlayers"
+								   class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 pr-16 text-white outline-none" />
+							<button type="button"
+									@onclick="SendRconAsync"
+									disabled="@IsRconSendDisabled()"
+									class="absolute right-2 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+									<path d="M3.105 3.105a.75.75 0 0 1 .826-.164l12.25 5.25a.75.75 0 0 1 0 1.378l-12.25 5.25A.75.75 0 0 1 2.9 14.13L4.12 10 2.9 5.87a.75.75 0 0 1 .205-.765Z" />
+								</svg>
+							</button>
+						</div>
+						<p class="mt-2 text-sm text-neutral-400">Example: ListPlayers</p>
+					</div>
 
 					<div>
 						<label class="mb-2 block text-sm font-medium text-neutral-300">Result</label>
 						<pre
 							class="min-h-56 whitespace-pre-wrap rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-neutral-200">@(string.IsNullOrWhiteSpace(_rconResponse) ? "No result yet." : _rconResponse)</pre>
 					</div>
-				</div>
-			</div>
-
-			<div class="shrink-0 border-t border-white/10 px-5 py-4 sm:px-6">
-				<div class="flex justify-end gap-3">
-					<ActionButton Text="Close" Secondary="true" OnClick="CloseRconDialog" />
-					<ActionButton Text="Send" Disabled="@(_isSendingRcon || !_canSendRconCommand)" OnClick="SendRconAsync" />
 				</div>
 			</div>
 		</div>
@@ -449,6 +461,17 @@
 		_rconStatusMessage = null;
 		_rconStatusIsError = false;
 		_canSendRconCommand = false;
+	}
+
+	private Task OnRconCommandChanged(ChangeEventArgs eventArgs)
+	{
+		_rconCommand = eventArgs.Value?.ToString();
+		return Task.CompletedTask;
+	}
+
+	private bool IsRconSendDisabled()
+	{
+		return _isSendingRcon || !_canSendRconCommand || string.IsNullOrWhiteSpace(_rconCommand);
 	}
 
 	private async Task SendRconAsync()
