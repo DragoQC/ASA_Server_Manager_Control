@@ -19,6 +19,55 @@
   One central panel. Multiple remote server panels. API + WebSocket state tracking.
 </p>
 
+<p align="center">
+  <img alt="System Requirements" src="https://img.shields.io/badge/IMPORTANT-System_Requirements-cb2027?style=for-the-badge&logoColor=white" />
+</p>
+
+## System Requirements
+
+This app is intended to run on one dedicated Debian machine.
+
+Required:
+
+- Debian `13`
+- `root` access to start the install script
+- a machine that is router-accessible
+- ability to expose or forward required ports if the machine sits behind NAT
+- reachable networking for the web panel
+
+Recommended minimum:
+
+- `2` CPU cores
+- `2 GB` RAM
+- `10 GB` disk
+
+Still workable:
+
+- `1` CPU core
+- `1 GB` RAM
+- `5 GB` disk
+
+Disk notes:
+
+- `10 GB` is enough
+- `10-15 GB` is a comfortable target
+- `5 GB` can still work for a very small/light setup
+
+## Proposed Setup
+
+Known-good setup used for this project:
+
+- Debian `13` LXC container
+- running on Proxmox
+- one dedicated machine/container for the control panel
+
+Short version:
+
+- install on a single Debian 13 box
+- make sure the box is reachable on your network or from the internet
+- forward the needed ports if you are behind NAT
+- run the installer as `root`
+
 ## Quick Install
 
 ```bash
