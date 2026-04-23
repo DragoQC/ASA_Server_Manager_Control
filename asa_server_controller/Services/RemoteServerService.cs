@@ -261,7 +261,7 @@ public sealed class RemoteServerService(
                 .Select(invitation => (invitation.OneTimeVpnKey, invitation.Id))
                 .ToList();
 
-            List<NfsShareInviteEntity> nfsInvites = await dbContext.NfsShareInvites
+            List<SmbShareInviteEntity> smbInvites = await dbContext.SmbShareInvites
                 .Where(invite => invite.RemoteServerId == remoteServerId)
                 .ToListAsync(cancellationToken);
 
@@ -269,7 +269,7 @@ public sealed class RemoteServerService(
                 .Where(link => link.RemoteServerId == remoteServerId)
                 .ToListAsync(cancellationToken);
 
-            dbContext.NfsShareInvites.RemoveRange(nfsInvites);
+            dbContext.SmbShareInvites.RemoveRange(smbInvites);
             dbContext.RemoteServerMods.RemoveRange(modLinks);
             dbContext.Invitations.RemoveRange(remoteServer.Invitations);
             dbContext.RemoteServers.Remove(remoteServer);

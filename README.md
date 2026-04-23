@@ -114,7 +114,7 @@ Once installed, the control app lets you:
 
 - configure the WireGuard VPN for your control node
 - create remote registration / invitation links for other ARK server nodes
-- manage NFS sharing together with the VPN setup
+- manage SMB sharing together with the VPN setup
 - start, stop, and send RCON commands to remotely connected nodes
 - save your CurseForge API key so public users can see mod information
 - cache mod metadata locally so it does not need to be refetched every time

@@ -12,7 +12,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<InvitationEntity> Invitations => Set<InvitationEntity>();
     public DbSet<LoginMethodTypeEntity> LoginMethodTypes => Set<LoginMethodTypeEntity>();
     public DbSet<ModEntity> Mods => Set<ModEntity>();
-    public DbSet<NfsShareInviteEntity> NfsShareInvites => Set<NfsShareInviteEntity>();
+    public DbSet<SmbShareInviteEntity> SmbShareInvites => Set<SmbShareInviteEntity>();
     public DbSet<RemoteServerEntity> RemoteServers => Set<RemoteServerEntity>();
     public DbSet<RemoteServerModEntity> RemoteServerMods => Set<RemoteServerModEntity>();
     public DbSet<Role> Roles => Set<Role>();
@@ -28,7 +28,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         builder.ApplyConfiguration(new InvitationEntityConfiguration());
         builder.ApplyConfiguration(new LoginMethodTypeEntityConfiguration());
         builder.ApplyConfiguration(new ModEntityConfiguration());
-        builder.ApplyConfiguration(new NfsShareInviteEntityConfiguration());
+        builder.ApplyConfiguration(new SmbShareInviteEntityConfiguration());
         builder.ApplyConfiguration(new RemoteServerEntityConfiguration());
         builder.ApplyConfiguration(new RemoteServerModEntityConfiguration());
         builder.ApplyConfiguration(new RoleConfiguration());

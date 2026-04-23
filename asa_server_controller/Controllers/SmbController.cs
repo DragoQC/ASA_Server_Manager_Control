@@ -5,15 +5,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace asa_server_controller.Controllers;
 
 [ApiController]
-[Route("api/nfs")]
-public sealed class NfsController(NfsService nfsService) : ControllerBase
+[Route("api/smb")]
+public sealed class SmbController(SmbService smbService) : ControllerBase
 {
     [HttpGet("invite/{inviteKey}")]
     public async Task<IActionResult> GetShareConfig(string inviteKey, CancellationToken cancellationToken)
     {
         try
         {
-            NfsShareInviteResponse response = await nfsService.GetShareRequestAsync(inviteKey, cancellationToken);
+            SmbShareInviteResponse response = await smbService.GetShareRequestAsync(inviteKey, cancellationToken);
             return Ok(response);
         }
         catch (InvalidOperationException exception)

@@ -56,7 +56,7 @@ builder.Services.AddScoped<ClusterSettingsService>();
 builder.Services.AddScoped<EmailSettingsService>();
 builder.Services.AddScoped<LogsService>();
 builder.Services.AddScoped<MapNameService>();
-builder.Services.AddScoped<NfsService>();
+builder.Services.AddScoped<SmbService>();
 builder.Services.AddSingleton<ModsEventsService>();
 builder.Services.AddSingleton<TotpService>();
 builder.Services.AddSingleton<InvitationEventsService>();

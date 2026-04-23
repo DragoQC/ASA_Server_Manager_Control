@@ -1,6 +1,6 @@
 @page "/admin/cluster"
 @inject asa_server_controller.Services.ClusterSettingsService ClusterSettingsService
-@inject asa_server_controller.Services.NfsService NfsService
+@inject asa_server_controller.Services.SmbService SmbService
 @inject asa_server_controller.Services.RemoteClusterService RemoteClusterService
 @inject asa_server_controller.Services.InvitationService InvitationService
 @inject asa_server_controller.Services.VpnService VpnService
@@ -18,7 +18,7 @@
             <div class="flex flex-wrap items-center gap-4">
                 <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Cluster setup</p>
                 <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                    Cluster + VPN
+                    Cluster + VPN + SMB
                 </span>
             </div>
 
@@ -272,50 +272,50 @@
                 <section class="space-y-6 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
                     <div class="space-y-3">
                         <div class="flex flex-wrap items-center gap-3">
-                            <h2 class="text-3xl font-semibold text-white">NFS Configuration</h2>
+                            <h2 class="text-3xl font-semibold text-white">SMB Configuration</h2>
                             <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
                                 Cluster share
                             </span>
                         </div>
 
                         <p class="max-w-3xl text-base leading-7 text-neutral-300">
-                            The shared cluster folder lives under the control node at <code class="rounded bg-white/10 px-2 py-1 text-neutral-100">@ClusterShareConstants.ClusterDirectoryPath</code>. Edit and save these NFS config files here, then use them as the base for node-side automatic mounting later.
+                            The shared cluster folder lives under the control node at <code class="rounded bg-white/10 px-2 py-1 text-neutral-100">@ClusterShareConstants.ClusterDirectoryPath</code>. Edit and save these SMB config files here, then use them as the base for node-side automatic mounting later.
                         </p>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3">
                         <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
-                            @(_nfsConfiguration?.ClusterFolderExists == true ? "Cluster folder ready" : "Cluster folder missing")
+                            @(_smbConfiguration?.ClusterFolderExists == true ? "Cluster folder ready" : "Cluster folder missing")
                         </span>
 
                         <button type="button"
-                                @onclick="SaveNfsConfigAsync"
-                                disabled="@(_isSavingNfsConfiguration || !_isVpnConfigured)"
+                                @onclick="SaveSmbConfigAsync"
+                                disabled="@(_isSavingSmbConfiguration || !_isVpnConfigured)"
                                 class="inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-2.5 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/25 disabled:cursor-not-allowed disabled:opacity-60">
-                            @(_isSavingNfsConfiguration ? "Saving..." : "Save")
+                            @(_isSavingSmbConfiguration ? "Saving..." : "Save SMB config")
                         </button>
                     </div>
 
                     @if (!_isVpnConfigured)
                     {
                         <p class="text-sm leading-6 text-neutral-400">
-                            Configure and save the VPN first. The NFS server/client config needs the current control VPN IP before it can be generated.
+                            Configure and save the VPN first. The SMB server/client config needs the current control VPN IP before it can be generated.
                         </p>
                     }
 
-                    @if (_nfsConfiguration is not null)
+                    @if (_smbConfiguration is not null)
                     {
                         <div class="space-y-6">
                             <div class="space-y-3">
                                 <div class="flex flex-wrap items-center gap-3">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Default server config</p>
+                                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Default SMB server config</p>
                                     <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
-                                        @(_nfsConfiguration.ServerConfigExists ? "Created" : "Preview")
+                                        @(_smbConfiguration.ServerConfigExists ? "Created" : "Preview")
                                     </span>
                                 </div>
                                 <p class="text-sm leading-6 text-neutral-300">We strongly recommend using these default settings unless you know exactly what you want to change.</p>
-                                <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@_nfsConfiguration.ServerConfigFilePath</p>
-                                <textarea @bind="_nfsServerConfigContent"
+                                <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@_smbConfiguration.ServerConfigFilePath</p>
+                                <textarea @bind="_smbServerConfigContent"
                                           @bind:event="oninput"
                                           spellcheck="false"
                                           class="min-h-40 w-full rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200 outline-none"></textarea>
@@ -323,14 +323,14 @@
 
                             <div class="space-y-3">
                                 <div class="flex flex-wrap items-center gap-3">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Default client config</p>
+                                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Default CIFS mount config</p>
                                     <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
-                                        @(_nfsConfiguration.ClientConfigExists ? "Created" : "Preview")
+                                        @(_smbConfiguration.ClientConfigExists ? "Created" : "Preview")
                                     </span>
                                 </div>
-                                <p class="text-sm leading-6 text-neutral-300">We strongly recommend using these default settings unless you need a custom mount behavior.</p>
-                                <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@_nfsConfiguration.ClientConfigFilePath</p>
-                                <textarea @bind="_nfsClientConfigContent"
+                                <p class="text-sm leading-6 text-neutral-300">This is the node-side CIFS mount line that invited servers can apply later for automatic mounting over the VPN.</p>
+                                <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@_smbConfiguration.ClientConfigFilePath</p>
+                                <textarea @bind="_smbClientConfigContent"
                                           @bind:event="oninput"
                                           spellcheck="false"
                                           class="min-h-40 w-full rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200 outline-none"></textarea>
@@ -434,7 +434,7 @@
     private readonly VpnConfigModel _model = new VpnConfigModel();
     private readonly Dictionary<string, string> _fieldErrors = new Dictionary<string, string>(StringComparer.Ordinal);
     private ClusterSettingsModel _clusterSettings = new ClusterSettingsModel();
-    private NfsConfigurationModel? _nfsConfiguration;
+    private SmbConfigurationModel? _smbConfiguration;
     private VpnConfigFileState? _file;
     private string _editorContent = string.Empty;
     private string? _statusMessage;
@@ -446,7 +446,7 @@
     private bool _isSavingEditor;
     private bool _isGeneratingServerKeys;
     private bool _isSavingClusterId;
-    private bool _isSavingNfsConfiguration;
+    private bool _isSavingSmbConfiguration;
     private bool _isVpnConfigured;
     private bool _isEditorOpen;
     private bool _isVpnActive;
@@ -460,8 +460,8 @@
     private string _generatedKeysMessage = string.Empty;
     private string _generatedPrivateKey = string.Empty;
     private string _generatedPublicKey = string.Empty;
-    private string _nfsServerConfigContent = string.Empty;
-    private string _nfsClientConfigContent = string.Empty;
+    private string _smbServerConfigContent = string.Empty;
+    private string _smbClientConfigContent = string.Empty;
     private SavedVpnKeyPair? _serverKeys;
 
     protected override async Task OnInitializedAsync()
@@ -503,8 +503,8 @@
             _serverKeys = null;
         }
 
-        _nfsConfiguration = await NfsService.LoadConfigurationAsync();
-        ApplyNfsConfigurationToEditor();
+        _smbConfiguration = await SmbService.LoadConfigurationAsync();
+        ApplySmbConfigurationToEditor();
     }
 
     private void OnVpnStateChanged()
@@ -547,17 +547,17 @@
         }
     }
 
-    private async Task SaveNfsConfigAsync()
+    private async Task SaveSmbConfigAsync()
     {
-        _isSavingNfsConfiguration = true;
+        _isSavingSmbConfiguration = true;
         _statusMessage = null;
         _statusIsError = false;
 
         try
         {
-            _nfsConfiguration = await NfsService.SaveConfigurationAsync(_nfsServerConfigContent, _nfsClientConfigContent);
-            ApplyNfsConfigurationToEditor();
-            _statusMessage = "NFS config files saved and applied.";
+            _smbConfiguration = await SmbService.SaveConfigurationAsync(_smbServerConfigContent, _smbClientConfigContent);
+            ApplySmbConfigurationToEditor();
+            _statusMessage = "SMB config files saved and applied.";
             _statusIsError = false;
         }
         catch (Exception exception)
@@ -567,7 +567,7 @@
         }
         finally
         {
-            _isSavingNfsConfiguration = false;
+            _isSavingSmbConfiguration = false;
         }
     }
 
@@ -706,7 +706,7 @@
                 PresharedKey = _model.PresharedKey
             });
             await VpnService.SaveAsync(_file.FilePath, content);
-            await NfsService.SyncDefaultConfigIfExistsAsync();
+            await SmbService.SyncDefaultConfigIfExistsAsync();
             await InvitationService.RebuildServerConfigAsync();
             await ApplySavedConfigAsync($"{_file.Title} saved.");
         }
@@ -733,7 +733,7 @@
         try
         {
             await VpnService.SaveAsync(_file.FilePath, _editorContent);
-            await NfsService.SyncDefaultConfigIfExistsAsync();
+            await SmbService.SyncDefaultConfigIfExistsAsync();
             await InvitationService.RebuildServerConfigAsync();
             await ApplySavedConfigAsync(savedMessage: $"{_file.Title} saved.");
         }
@@ -838,10 +838,10 @@
         _serverKeys = await VpnService.LoadServerKeyPairAsync();
     }
 
-    private void ApplyNfsConfigurationToEditor()
+    private void ApplySmbConfigurationToEditor()
     {
-        _nfsServerConfigContent = _nfsConfiguration?.ServerConfigContent ?? string.Empty;
-        _nfsClientConfigContent = _nfsConfiguration?.ClientConfigContent ?? string.Empty;
+        _smbServerConfigContent = _smbConfiguration?.ServerConfigContent ?? string.Empty;
+        _smbClientConfigContent = _smbConfiguration?.ClientConfigContent ?? string.Empty;
     }
 
     private void ResetModel()

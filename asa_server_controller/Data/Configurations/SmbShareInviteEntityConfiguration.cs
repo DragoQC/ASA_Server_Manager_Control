@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace asa_server_controller.Data.Configurations;
 
-public sealed class NfsShareInviteEntityConfiguration : IEntityTypeConfiguration<NfsShareInviteEntity>
+public sealed class SmbShareInviteEntityConfiguration : IEntityTypeConfiguration<SmbShareInviteEntity>
 {
-    public void Configure(EntityTypeBuilder<NfsShareInviteEntity> builder)
+    public void Configure(EntityTypeBuilder<SmbShareInviteEntity> builder)
     {
-        builder.ToTable("NfsShareInvites");
+        builder.ToTable("SmbShareInvites");
 
         builder.HasKey(invite => invite.Id);
 
@@ -36,7 +36,7 @@ public sealed class NfsShareInviteEntityConfiguration : IEntityTypeConfiguration
             .IsUnique();
 
         builder.HasOne(invite => invite.RemoteServer)
-            .WithMany(server => server.NfsShareInvites)
+            .WithMany(server => server.SmbShareInvites)
             .HasForeignKey(invite => invite.RemoteServerId)
             .OnDelete(DeleteBehavior.Cascade);
     }

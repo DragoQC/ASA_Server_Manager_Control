@@ -1,6 +1,6 @@
 namespace asa_server_controller.Data.Entities;
 
-public sealed class NfsShareInviteEntity : BaseEntity
+public sealed class SmbShareInviteEntity : BaseEntity
 {
     public int RemoteServerId { get; set; }
     public RemoteServerEntity RemoteServer { get; set; } = null!;

@@ -71,7 +71,7 @@ public sealed class SudoService
             : result.Output;
     }
 
-    public async Task<string> ApplyNfsServerAsync(CancellationToken cancellationToken = default)
+    public async Task<string> ApplySmbServerAsync(CancellationToken cancellationToken = default)
     {
         ProcessResult result = await RunProcessAsync(
             GlobalConstants.SudoPath,
@@ -82,12 +82,12 @@ public sealed class SudoService
         if (result.ExitCode != 0)
         {
             throw new InvalidOperationException(string.IsNullOrWhiteSpace(result.Output)
-                ? "NFS apply failed."
+                ? "SMB apply failed."
                 : result.Output);
         }
 
         return string.IsNullOrWhiteSpace(result.Output)
-            ? $"{ClusterShareConstants.NfsServiceName} applied."
+            ? $"{ClusterShareConstants.SmbServiceName} applied."
             : result.Output;
     }
 

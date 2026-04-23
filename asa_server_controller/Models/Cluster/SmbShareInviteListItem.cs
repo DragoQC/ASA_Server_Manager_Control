@@ -1,6 +1,6 @@
 namespace asa_server_controller.Models.Cluster;
 
-public sealed record NfsShareInviteListItem(
+public sealed record SmbShareInviteListItem(
     int Id,
     int RemoteServerId,
     string VpnAddress,
