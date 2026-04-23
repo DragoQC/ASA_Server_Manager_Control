@@ -179,6 +179,8 @@ public sealed class InvitationService(
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         string vpnAddress = form.VpnAddress.Trim();
         int parsedPort = ParsePortOrDefault(form.Port);
+        await RemoveAbandonedPendingRemoteServerReservationAsync(dbContext, vpnAddress, cancellationToken);
+
         bool vpnAddressAlreadyExists = await dbContext.RemoteServers
             .AnyAsync(server => server.VpnAddress == vpnAddress, cancellationToken);
 
@@ -309,16 +311,47 @@ public sealed class InvitationService(
 
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         InvitationEntity invitation = await dbContext.Invitations
+            .Include(item => item.RemoteServer)
             .FirstOrDefaultAsync(item => item.Id == invitationId, cancellationToken)
             ?? throw new InvalidOperationException("Invitation was not found.");
 
+        bool shouldRemovePendingRemoteServer = invitation.UsedAtUtc is null &&
+            !string.Equals(invitation.RemoteServer.InviteStatus, "Accepted", StringComparison.Ordinal);
+
         dbContext.Invitations.Remove(invitation);
+        if (shouldRemovePendingRemoteServer)
+        {
+            dbContext.RemoteServers.Remove(invitation.RemoteServer);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await vpnService.DeleteInvitationFilesAsync(invitation.OneTimeVpnKey, invitation.Id, cancellationToken);
         await RebuildServerConfigAsync(cancellationToken);
         await RestartWireGuardIfActiveAsync(cancellationToken);
         invitationEventsService.NotifyChanged();
+    }
+
+    private static async Task RemoveAbandonedPendingRemoteServerReservationAsync(
+        AppDbContext dbContext,
+        string vpnAddress,
+        CancellationToken cancellationToken)
+    {
+        List<RemoteServerEntity> abandonedServers = await dbContext.RemoteServers
+            .Include(server => server.Invitations)
+            .Where(server =>
+                server.VpnAddress == vpnAddress &&
+                server.InviteStatus != "Accepted" &&
+                !server.Invitations.Any())
+            .ToListAsync(cancellationToken);
+
+        if (abandonedServers.Count == 0)
+        {
+            return;
+        }
+
+        dbContext.RemoteServers.RemoveRange(abandonedServers);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<string> LoadInvitationConfigAsync(int invitationId, CancellationToken cancellationToken = default)

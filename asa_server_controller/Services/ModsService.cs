@@ -13,6 +13,7 @@ public sealed class ModsService(
     public async Task<ModsDashboardModel> LoadDashboardAsync(CancellationToken cancellationToken = default)
     {
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await RemoveOrphanedRemoteServerModLinksAsync(dbContext, cancellationToken);
 
         List<CachedMod> cachedMods = await dbContext.Mods
             .OrderBy(mod => mod.Name)
@@ -22,7 +23,11 @@ public sealed class ModsService(
                 mod.Summary,
                 mod.WebsiteUrl,
                 mod.LogoUrl,
-                dbContext.RemoteServerMods.Any(link => link.ModEntityId == mod.Id),
+                dbContext.RemoteServerMods.Any(link =>
+                    link.ModEntityId == mod.Id &&
+                    dbContext.RemoteServers.Any(server =>
+                        server.Id == link.RemoteServerId &&
+                        server.InviteStatus == "Accepted")),
                 mod.DownloadCount,
                 mod.DateModifiedUtc,
                 !string.IsNullOrWhiteSpace(mod.WebsiteUrl)
@@ -33,6 +38,9 @@ public sealed class ModsService(
             .ToListAsync(cancellationToken);
 
         int fleetLinkedModCount = await dbContext.RemoteServerMods
+            .Where(link => dbContext.RemoteServers.Any(server =>
+                server.Id == link.RemoteServerId &&
+                server.InviteStatus == "Accepted"))
             .Select(link => link.ModEntityId)
             .Distinct()
             .CountAsync(cancellationToken);
@@ -44,6 +52,21 @@ public sealed class ModsService(
             cachedMods.Count,
             fleetLinkedModCount,
             cachedMods);
+    }
+
+    private static async Task RemoveOrphanedRemoteServerModLinksAsync(AppDbContext dbContext, CancellationToken cancellationToken)
+    {
+        List<RemoteServerModEntity> orphanedLinks = await dbContext.RemoteServerMods
+            .Where(link => !dbContext.RemoteServers.Any(server => server.Id == link.RemoteServerId))
+            .ToListAsync(cancellationToken);
+
+        if (orphanedLinks.Count == 0)
+        {
+            return;
+        }
+
+        dbContext.RemoteServerMods.RemoveRange(orphanedLinks);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task EnsureModsCachedAsync(IEnumerable<long> modIds, CancellationToken cancellationToken = default)
