@@ -13,7 +13,7 @@ apt-get update
 apt-get install -y \
   wireguard \
   wireguard-tools \
-  samba \
-  cifs-utils
+  nfs-kernel-server \
+  nfs-common
 
-echo "Installed cluster server tools. This control node is ready for WireGuard and SMB share setup."
+echo "Installed cluster server tools. This control node is ready for WireGuard and NFS share setup."

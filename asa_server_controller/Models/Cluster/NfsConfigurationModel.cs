@@ -1,6 +1,6 @@
 namespace asa_server_controller.Models.Cluster;
 
-public sealed record SmbConfigurationModel(
+public sealed record NfsConfigurationModel(
     bool ClusterFolderExists,
     bool ServerConfigExists,
     bool ClientConfigExists,

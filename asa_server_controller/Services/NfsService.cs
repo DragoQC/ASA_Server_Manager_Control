@@ -8,13 +8,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace asa_server_controller.Services;
 
-public sealed class SmbService(
+public sealed class NfsService(
     IDbContextFactory<AppDbContext> dbContextFactory,
     VpnService vpnService,
     SudoService sudoService,
     InvitationEventsService invitationEventsService)
 {
-    public async Task<SmbConfigurationModel> LoadConfigurationAsync(CancellationToken cancellationToken = default)
+    public async Task<NfsConfigurationModel> LoadConfigurationAsync(CancellationToken cancellationToken = default)
     {
         string currentAddress = await vpnService.LoadCurrentAddressAsync(cancellationToken);
         string currentIpAddress = await vpnService.LoadCurrentIpAddressAsync(cancellationToken);
@@ -31,7 +31,7 @@ public sealed class SmbService(
             ? File.ReadAllText(ClusterShareConstants.ClientConfigFilePath)
             : BuildClientConfig(currentIpAddress);
 
-        return new SmbConfigurationModel(
+        return new NfsConfigurationModel(
             clusterFolderExists,
             serverConfigExists,
             clientConfigExists,
@@ -42,34 +42,34 @@ public sealed class SmbService(
             Normalize(clientConfigContent));
     }
 
-    public async Task<SmbConfigurationModel> CreateDefaultConfigAsync(CancellationToken cancellationToken = default)
+    public async Task<NfsConfigurationModel> CreateDefaultConfigAsync(CancellationToken cancellationToken = default)
     {
         string configuredAddress = await vpnService.LoadConfiguredAddressAsync(cancellationToken);
         string configuredIpAddress = await vpnService.LoadConfiguredIpAddressAsync(cancellationToken);
 
         Directory.CreateDirectory(ClusterShareConstants.ClusterDirectoryPath);
-        Directory.CreateDirectory(ClusterShareConstants.SmbDirectoryPath);
+        Directory.CreateDirectory(ClusterShareConstants.NfsDirectoryPath);
 
         string serverConfig = BuildServerConfig(configuredAddress);
         string clientConfig = BuildClientConfig(configuredIpAddress);
 
         await File.WriteAllTextAsync(ClusterShareConstants.ServerConfigFilePath, serverConfig, cancellationToken);
         await File.WriteAllTextAsync(ClusterShareConstants.ClientConfigFilePath, clientConfig, cancellationToken);
-        await sudoService.ApplySmbServerAsync(cancellationToken);
+        await sudoService.ApplyNfsServerAsync(cancellationToken);
 
         return await LoadConfigurationAsync(cancellationToken);
     }
 
-    public async Task<SmbConfigurationModel> SaveConfigurationAsync(string serverConfigContent, string clientConfigContent, CancellationToken cancellationToken = default)
+    public async Task<NfsConfigurationModel> SaveConfigurationAsync(string serverConfigContent, string clientConfigContent, CancellationToken cancellationToken = default)
     {
         await vpnService.LoadConfiguredAddressAsync(cancellationToken);
 
         Directory.CreateDirectory(ClusterShareConstants.ClusterDirectoryPath);
-        Directory.CreateDirectory(ClusterShareConstants.SmbDirectoryPath);
+        Directory.CreateDirectory(ClusterShareConstants.NfsDirectoryPath);
 
         await File.WriteAllTextAsync(ClusterShareConstants.ServerConfigFilePath, Normalize(serverConfigContent), cancellationToken);
         await File.WriteAllTextAsync(ClusterShareConstants.ClientConfigFilePath, Normalize(clientConfigContent), cancellationToken);
-        await sudoService.ApplySmbServerAsync(cancellationToken);
+        await sudoService.ApplyNfsServerAsync(cancellationToken);
 
         return await LoadConfigurationAsync(cancellationToken);
     }
@@ -86,7 +86,7 @@ public sealed class SmbService(
         string configuredIpAddress = await vpnService.LoadConfiguredIpAddressAsync(cancellationToken);
 
         Directory.CreateDirectory(ClusterShareConstants.ClusterDirectoryPath);
-        Directory.CreateDirectory(ClusterShareConstants.SmbDirectoryPath);
+        Directory.CreateDirectory(ClusterShareConstants.NfsDirectoryPath);
 
         if (File.Exists(ClusterShareConstants.ServerConfigFilePath))
         {
@@ -94,7 +94,7 @@ public sealed class SmbService(
                 ClusterShareConstants.ServerConfigFilePath,
                 BuildServerConfig(configuredAddress),
                 cancellationToken);
-            await sudoService.ApplySmbServerAsync(cancellationToken);
+            await sudoService.ApplyNfsServerAsync(cancellationToken);
         }
 
         if (File.Exists(ClusterShareConstants.ClientConfigFilePath))
@@ -118,52 +118,52 @@ public sealed class SmbService(
             File.Exists(ClusterShareConstants.ClientConfigFilePath);
     }
 
-    public async Task<SmbInviteFormModel> LoadSmbFormAsync(CancellationToken cancellationToken = default)
+    public async Task<NfsInviteFormModel> LoadNfsFormAsync(CancellationToken cancellationToken = default)
     {
         if (!await vpnService.IsConfiguredAsync(cancellationToken))
         {
-            return new SmbInviteFormModel
+            return new NfsInviteFormModel
             {
                 IsReady = false,
-                StatusMessage = "Finish the VPN setup on the Cluster setup page before creating SMB invitations."
+                StatusMessage = "Finish the VPN setup on the Cluster setup page before creating NFS invitations."
             };
         }
 
         if (!await IsConfiguredAsync(cancellationToken))
         {
-            return new SmbInviteFormModel
+            return new NfsInviteFormModel
             {
                 IsReady = false,
-                StatusMessage = "Save the SMB configuration on the Cluster setup page before creating SMB invitations."
+                StatusMessage = "Save the NFS configuration on the Cluster setup page before creating NFS invitations."
             };
         }
 
-        return new SmbInviteFormModel
+        return new NfsInviteFormModel
         {
             IsReady = true
         };
     }
 
-    public async Task<IReadOnlyList<SmbShareInviteServerOption>> LoadTargetServersAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<NfsShareInviteServerOption>> LoadTargetServersAsync(CancellationToken cancellationToken = default)
     {
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         return await dbContext.RemoteServers
             .Where(server => server.InviteStatus == "Accepted")
             .OrderBy(server => server.VpnAddress)
-            .Select(server => new SmbShareInviteServerOption(
+            .Select(server => new NfsShareInviteServerOption(
                 server.Id,
                 server.VpnAddress,
                 server.Port))
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<SmbShareInviteListItem>> LoadInvitesAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<NfsShareInviteListItem>> LoadInvitesAsync(CancellationToken cancellationToken = default)
     {
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        List<SmbShareInviteListItem> items = await dbContext.SmbShareInvites
-            .Select(invite => new SmbShareInviteListItem(
+        List<NfsShareInviteListItem> items = await dbContext.NfsShareInvites
+            .Select(invite => new NfsShareInviteListItem(
                 invite.Id,
                 invite.RemoteServerId,
                 invite.RemoteServer.VpnAddress,
@@ -177,12 +177,12 @@ public sealed class SmbService(
             .ToList();
     }
 
-    public async Task<SmbShareInviteResponse> BuildSmbPreviewAsync(int remoteServerId, CancellationToken cancellationToken = default)
+    public async Task<NfsShareInviteResponse> BuildNfsPreviewAsync(int remoteServerId, CancellationToken cancellationToken = default)
     {
-        SmbInviteFormModel form = await LoadSmbFormAsync(cancellationToken);
+        NfsInviteFormModel form = await LoadNfsFormAsync(cancellationToken);
         if (!form.IsReady)
         {
-            throw new InvalidOperationException(form.StatusMessage ?? "SMB invitations are not ready.");
+            throw new InvalidOperationException(form.StatusMessage ?? "NFS invitations are not ready.");
         }
 
         if (remoteServerId <= 0)
@@ -196,24 +196,23 @@ public sealed class SmbService(
 
         if (!exists)
         {
-            throw new InvalidOperationException("Accepted remote server is required for an SMB invite.");
+            throw new InvalidOperationException("Accepted remote server is required for an NFS invite.");
         }
 
-        string controlVpnIp = await vpnService.LoadConfiguredIpAddressAsync(cancellationToken);
-        SmbConfigurationModel configuration = await LoadConfigurationAsync(cancellationToken);
+        NfsConfigurationModel configuration = await LoadConfigurationAsync(cancellationToken);
 
-        return new SmbShareInviteResponse(
-            BuildSharePath(controlVpnIp),
+        return new NfsShareInviteResponse(
+            ClusterShareConstants.ClusterDirectoryPath,
             ClusterShareConstants.ClientMountPath,
             configuration.ClientConfigContent);
     }
 
-    public async Task<string> CreateSmbInvitationLinkAsync(int remoteServerId, CancellationToken cancellationToken = default)
+    public async Task<string> CreateNfsInvitationLinkAsync(int remoteServerId, CancellationToken cancellationToken = default)
     {
-        SmbInviteFormModel form = await LoadSmbFormAsync(cancellationToken);
+        NfsInviteFormModel form = await LoadNfsFormAsync(cancellationToken);
         if (!form.IsReady)
         {
-            throw new InvalidOperationException(form.StatusMessage ?? "SMB invitations are not ready.");
+            throw new InvalidOperationException(form.StatusMessage ?? "NFS invitations are not ready.");
         }
 
         if (remoteServerId <= 0)
@@ -234,7 +233,7 @@ public sealed class SmbService(
         string inviteKey = GenerateInviteKey();
         string inviteLink = BuildInviteLink(vpnConfig.Endpoint, vpnConfig.ListenPort, inviteKey);
 
-        dbContext.SmbShareInvites.Add(new SmbShareInviteEntity
+        dbContext.NfsShareInvites.Add(new NfsShareInviteEntity
         {
             RemoteServerId = remoteServer.Id,
             RemoteServer = remoteServer,
@@ -247,37 +246,36 @@ public sealed class SmbService(
         return inviteLink;
     }
 
-    public async Task<SmbShareInviteResponse> GetShareRequestAsync(string inviteKey, CancellationToken cancellationToken = default)
+    public async Task<NfsShareInviteResponse> GetShareRequestAsync(string inviteKey, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(inviteKey))
         {
-            throw new InvalidOperationException("SMB invite key is required.");
+            throw new InvalidOperationException("NFS invite key is required.");
         }
 
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        SmbShareInviteEntity? invite = await dbContext.SmbShareInvites
+        NfsShareInviteEntity? invite = await dbContext.NfsShareInvites
             .Include(item => item.RemoteServer)
             .FirstOrDefaultAsync(item => item.InviteKey == inviteKey.Trim(), cancellationToken);
 
         if (invite is null)
         {
-            throw new InvalidOperationException("SMB invite key is invalid.");
+            throw new InvalidOperationException("NFS invite key is invalid.");
         }
 
         if (invite.UsedAtUtc is not null)
         {
-            throw new InvalidOperationException("SMB invite key has already been used.");
+            throw new InvalidOperationException("NFS invite key has already been used.");
         }
 
         invite.UsedAtUtc = DateTimeOffset.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         invitationEventsService.NotifyChanged();
 
-        string controlVpnIp = await vpnService.LoadConfiguredIpAddressAsync(cancellationToken);
-        SmbConfigurationModel configuration = await LoadConfigurationAsync(cancellationToken);
+        NfsConfigurationModel configuration = await LoadConfigurationAsync(cancellationToken);
 
-        return new SmbShareInviteResponse(
-            BuildSharePath(controlVpnIp),
+        return new NfsShareInviteResponse(
+            ClusterShareConstants.ClusterDirectoryPath,
             ClusterShareConstants.ClientMountPath,
             configuration.ClientConfigContent);
     }
@@ -286,15 +284,15 @@ public sealed class SmbService(
     {
         if (inviteId <= 0)
         {
-            throw new InvalidOperationException("SMB invitation is required.");
+            throw new InvalidOperationException("NFS invitation is required.");
         }
 
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        SmbShareInviteEntity invite = await dbContext.SmbShareInvites
+        NfsShareInviteEntity invite = await dbContext.NfsShareInvites
             .FirstOrDefaultAsync(item => item.Id == inviteId, cancellationToken)
-            ?? throw new InvalidOperationException("SMB invitation was not found.");
+            ?? throw new InvalidOperationException("NFS invitation was not found.");
 
-        dbContext.SmbShareInvites.Remove(invite);
+        dbContext.NfsShareInvites.Remove(invite);
         await dbContext.SaveChangesAsync(cancellationToken);
         invitationEventsService.NotifyChanged();
     }
@@ -303,19 +301,19 @@ public sealed class SmbService(
     {
         if (inviteId <= 0)
         {
-            throw new InvalidOperationException("SMB invitation is required.");
+            throw new InvalidOperationException("NFS invitation is required.");
         }
 
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        bool exists = await dbContext.SmbShareInvites
+        bool exists = await dbContext.NfsShareInvites
             .AnyAsync(item => item.Id == inviteId, cancellationToken);
 
         if (!exists)
         {
-            throw new InvalidOperationException("SMB invitation was not found.");
+            throw new InvalidOperationException("NFS invitation was not found.");
         }
 
-        SmbConfigurationModel configuration = await LoadConfigurationAsync(cancellationToken);
+        NfsConfigurationModel configuration = await LoadConfigurationAsync(cancellationToken);
         return configuration.ClientConfigContent;
     }
 
@@ -324,38 +322,15 @@ public sealed class SmbService(
         string shareSubnet = GetShareSubnet(configuredAddress);
 
         return Normalize($"""
-[global]
-   server role = standalone server
-   workgroup = WORKGROUP
-   map to guest = Bad User
-   guest account = nobody
-   server min protocol = SMB3
-   disable netbios = yes
-   hosts allow = {shareSubnet} 127.0.0.1
-
-[{ClusterShareConstants.ShareName}]
-   path = {ClusterShareConstants.ClusterDirectoryPath}
-   browseable = yes
-   guest ok = yes
-   guest only = yes
-   read only = no
-   force user = asa_manager_web_app
-   force group = asa_manager_web_app
-   create mask = 0664
-   directory mask = 0775
+{ClusterShareConstants.ClusterDirectoryPath} {shareSubnet}(rw,sync,no_subtree_check,no_root_squash)
 """);
     }
 
     private static string BuildClientConfig(string controlVpnIp)
     {
         return Normalize($"""
-{BuildSharePath(controlVpnIp)} {ClusterShareConstants.ClientMountPath} cifs guest,vers=3.1.1,iocharset=utf8,_netdev,nofail,x-systemd.automount,x-systemd.requires=wg-quick@wg0.service,file_mode=0664,dir_mode=0775 0 0
+{controlVpnIp}:{ClusterShareConstants.ClusterDirectoryPath} {ClusterShareConstants.ClientMountPath} nfs defaults,_netdev,nofail,x-systemd.automount,x-systemd.requires=wg-quick@wg0.service 0 0
 """);
-    }
-
-    private static string BuildSharePath(string controlVpnIp)
-    {
-        return $"//{controlVpnIp}/{ClusterShareConstants.ShareName}";
     }
 
     private static string GetShareSubnet(string configuredAddress)
@@ -378,16 +353,16 @@ public sealed class SmbService(
     private static string BuildInviteLink(string? endpoint, string? listenPort, string inviteKey)
     {
         string host = string.IsNullOrWhiteSpace(endpoint)
-            ? throw new InvalidOperationException("VPN endpoint is required before generating an SMB invite link.")
+            ? throw new InvalidOperationException("VPN endpoint is required before generating an NFS invite link.")
             : NormalizeInviteEndpoint(endpoint.Trim(), listenPort);
 
         if (host.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
             host.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            return $"{host.TrimEnd('/')}/api/smb/invite/{inviteKey}";
+            return $"{host.TrimEnd('/')}/api/nfs/invite/{inviteKey}";
         }
 
-        return $"https://{host}/api/smb/invite/{inviteKey}";
+        return $"https://{host}/api/nfs/invite/{inviteKey}";
     }
 
     private static string NormalizeInviteEndpoint(string endpoint, string? listenPort)

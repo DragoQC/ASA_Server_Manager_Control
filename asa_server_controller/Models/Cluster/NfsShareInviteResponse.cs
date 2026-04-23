@@ -1,6 +1,6 @@
 namespace asa_server_controller.Models.Cluster;
 
-public sealed record SmbShareInviteResponse(
+public sealed record NfsShareInviteResponse(
     string SharePath,
     string MountPath,
     string ClientConfig);

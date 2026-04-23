@@ -14,5 +14,5 @@ public sealed class RemoteServerEntity : BaseEntity
     public DateTimeOffset? ServerInfoCheckedAtUtc { get; set; }
     public string ApiKey { get; set; } = string.Empty;
     public ICollection<InvitationEntity> Invitations { get; set; } = [];
-    public ICollection<SmbShareInviteEntity> SmbShareInvites { get; set; } = [];
+    public ICollection<NfsShareInviteEntity> NfsShareInvites { get; set; } = [];
 }
