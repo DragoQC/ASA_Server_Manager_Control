@@ -92,6 +92,10 @@
 										OnClick="@(() => StopServerAsync(item.Id))" />
 									<ActionButton Text="Open RCON" Disabled="@(!item.CanSendRconCommand)" Secondary="true"
 										OnClick="@(() => OpenRconDialogAsync(item))" />
+									<button type="button" @onclick="() => OpenDeleteServerDialog(item)"
+										class="inline-flex justify-center rounded-full border border-red-300/20 bg-red-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-red-100 transition hover:bg-red-400/20">
+										Delete
+									</button>
 								</div>
 							</div>
 						</div>
@@ -127,6 +131,10 @@
 											OnClick="@(() => StopServerFromMenuAsync(item.Id))" />
 										<ActionButton Text="Open RCON" Disabled="@(!item.CanSendRconCommand)" Secondary="true"
 											OnClick="@(() => OpenRconFromMenuAsync(item))" />
+										<button type="button" @onclick="() => OpenDeleteServerFromMenu(item)"
+											class="inline-flex justify-center rounded-full border border-red-300/20 bg-red-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-red-100 transition hover:bg-red-400/20">
+											Delete
+										</button>
 									</div>
 								</div>
 							</div>
@@ -266,6 +274,17 @@
 	</div>
 }
 
+<ConfirmationDialog IsOpen="@_isDeleteServerDialogOpen"
+					IsBusy="@_isDeletingServer"
+					Eyebrow="Servers"
+					PillText="Delete"
+					Title="Delete remote server?"
+					Message="@($"Delete {_deleteServerTitle}? This removes the server, VPN invitations, NFS invitations, and linked mod usage.")"
+					ConfirmText="Delete"
+					CancelText="Cancel"
+					OnConfirm="DeleteSelectedServerAsync"
+					OnCancel="CloseDeleteServerDialog" />
+
 @code {
 	private IReadOnlyList<asa_server_controller.Models.Servers.RemoteServerListItem> _items =
 		Array.Empty<asa_server_controller.Models.Servers.RemoteServerListItem>();
@@ -289,6 +308,10 @@
 	private string? _rconStatusMessage;
 	private bool _rconStatusIsError;
 	private bool _canSendRconCommand;
+	private bool _isDeleteServerDialogOpen;
+	private bool _isDeletingServer;
+	private int _deleteRemoteServerId;
+	private string _deleteServerTitle = "this server";
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -510,6 +533,55 @@
 		}
 	}
 
+	private void OpenDeleteServerDialog(asa_server_controller.Models.Servers.RemoteServerListItem item)
+	{
+		_openActionMenuServerId = null;
+		_deleteRemoteServerId = item.Id;
+		_deleteServerTitle = GetServerTitle(item);
+		_isDeleteServerDialogOpen = true;
+	}
+
+	private void CloseDeleteServerDialog()
+	{
+		if (_isDeletingServer)
+		{
+			return;
+		}
+
+		_isDeleteServerDialogOpen = false;
+		_deleteRemoteServerId = 0;
+		_deleteServerTitle = "this server";
+	}
+
+	private async Task DeleteSelectedServerAsync()
+	{
+		if (_deleteRemoteServerId <= 0)
+		{
+			return;
+		}
+
+		_isDeletingServer = true;
+
+		try
+		{
+			await RemoteServerService.DeleteAsync(_deleteRemoteServerId);
+			_isDeleteServerDialogOpen = false;
+			_deleteRemoteServerId = 0;
+			_deleteServerTitle = "this server";
+			await RefreshAsync();
+		}
+		catch (Exception exception)
+		{
+			_serverMessages[_deleteRemoteServerId] = exception.Message;
+			_isDeleteServerDialogOpen = false;
+			await RefreshAsync();
+		}
+		finally
+		{
+			_isDeletingServer = false;
+		}
+	}
+
 	private void ResetEditServerModel()
 	{
 		_selectedRemoteServerId = 0;
@@ -573,5 +645,11 @@
 	{
 		_openActionMenuServerId = null;
 		await OpenRconDialogAsync(item);
+	}
+
+	private void OpenDeleteServerFromMenu(asa_server_controller.Models.Servers.RemoteServerListItem item)
+	{
+		_openActionMenuServerId = null;
+		OpenDeleteServerDialog(item);
 	}
 }

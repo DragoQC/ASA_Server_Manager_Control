@@ -1,6 +1,8 @@
 using asa_server_controller.Data;
 using asa_server_controller.Data.Entities;
+using asa_server_controller.Constants;
 using asa_server_controller.Models.Servers;
+using asa_server_controller.Models.Vpn;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Sockets;
 
@@ -8,7 +10,10 @@ namespace asa_server_controller.Services;
 
 public sealed class RemoteServerService(
     IDbContextFactory<AppDbContext> dbContextFactory,
-    RemoteServerHubClientService remoteServerHubClientService)
+    RemoteServerHubClientService remoteServerHubClientService,
+    VpnService vpnService,
+    InvitationEventsService invitationEventsService,
+    ModsEventsService modsEventsService)
 {
     public const string DefaultRemoteServerPort = "8000";
 
@@ -213,6 +218,101 @@ public sealed class RemoteServerService(
         remoteServer.Port = parsedPort;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(int remoteServerId, CancellationToken cancellationToken = default)
+    {
+        if (remoteServerId <= 0)
+        {
+            throw new InvalidOperationException("Server is required.");
+        }
+
+        List<(string InvitationKey, int InvitationId)> vpnInvitationFilesToDelete = [];
+
+        await using (AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            RemoteServerEntity remoteServer = await dbContext.RemoteServers
+                .Include(server => server.Invitations)
+                .FirstOrDefaultAsync(server => server.Id == remoteServerId, cancellationToken)
+                ?? throw new InvalidOperationException("Server was not found.");
+
+            vpnInvitationFilesToDelete = remoteServer.Invitations
+                .Select(invitation => (invitation.OneTimeVpnKey, invitation.Id))
+                .ToList();
+
+            List<NfsShareInviteEntity> nfsInvites = await dbContext.NfsShareInvites
+                .Where(invite => invite.RemoteServerId == remoteServerId)
+                .ToListAsync(cancellationToken);
+
+            List<RemoteServerModEntity> modLinks = await dbContext.RemoteServerMods
+                .Where(link => link.RemoteServerId == remoteServerId)
+                .ToListAsync(cancellationToken);
+
+            dbContext.NfsShareInvites.RemoveRange(nfsInvites);
+            dbContext.RemoteServerMods.RemoveRange(modLinks);
+            dbContext.Invitations.RemoveRange(remoteServer.Invitations);
+            dbContext.RemoteServers.Remove(remoteServer);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        foreach ((string invitationKey, int invitationId) in vpnInvitationFilesToDelete)
+        {
+            await vpnService.DeleteInvitationFilesAsync(invitationKey, invitationId, cancellationToken);
+        }
+
+        await RebuildServerConfigIfReadyAsync(cancellationToken);
+        await RestartWireGuardIfActiveAsync(cancellationToken);
+        invitationEventsService.NotifyChanged();
+        modsEventsService.NotifyChanged();
+    }
+
+    private async Task RebuildServerConfigIfReadyAsync(CancellationToken cancellationToken)
+    {
+        if (!File.Exists(VpnConstants.VpnConfigFilePath))
+        {
+            return;
+        }
+
+        VpnConfigModel vpnConfig = await vpnService.LoadConfiguredModelAsync(cancellationToken);
+        SavedVpnKeyPair serverKeys = await vpnService.LoadServerKeyPairAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(serverKeys.PrivateKey))
+        {
+            return;
+        }
+
+        await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        List<InvitationEntity> invitations = await dbContext.Invitations
+            .Include(item => item.RemoteServer)
+            .OrderBy(item => item.Id)
+            .ToListAsync(cancellationToken);
+
+        List<(string PublicKey, string AllowedIp, string? PresharedKey)> peers = [];
+        foreach (InvitationEntity invitation in invitations)
+        {
+            string? clientPublicKey = await vpnService.LoadInvitationClientPublicKeyAsync(invitation.OneTimeVpnKey, invitation.Id, cancellationToken);
+            if (string.IsNullOrWhiteSpace(clientPublicKey))
+            {
+                continue;
+            }
+
+            peers.Add((
+                clientPublicKey,
+                invitation.RemoteServer.VpnAddress,
+                string.IsNullOrWhiteSpace(vpnConfig.PresharedKey) ? null : vpnConfig.PresharedKey.Trim()));
+        }
+
+        string content = await vpnService.BuildServerConfigWithPeersAsync(vpnConfig, serverKeys.PrivateKey, peers, cancellationToken);
+        await vpnService.SaveAsync(VpnConstants.VpnConfigFilePath, content, cancellationToken);
+    }
+
+    private async Task RestartWireGuardIfActiveAsync(CancellationToken cancellationToken)
+    {
+        if (!await vpnService.IsVpnActiveAsync(cancellationToken))
+        {
+            return;
+        }
+
+        await vpnService.RestartVpnAsync(cancellationToken);
     }
 
     private static string GetIpAddress(string address)
