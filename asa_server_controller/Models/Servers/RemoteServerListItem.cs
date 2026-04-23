@@ -13,6 +13,7 @@ public sealed record RemoteServerListItem(
     string MapName,
     int CurrentPlayers,
     int MaxPlayers,
+    int? GamePort,
     DateTimeOffset? ServerInfoCheckedAtUtc,
     DateTimeOffset? LastSeenAtUtc,
     DateTimeOffset CreatedAtUtc);

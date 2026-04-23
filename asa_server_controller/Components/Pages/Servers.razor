@@ -4,6 +4,7 @@
 @inject asa_server_controller.Services.RemoteRconService RemoteRconService
 @inject asa_server_controller.Services.RemoteServerHubClientService RemoteServerHubClientService
 @inject asa_server_controller.Services.RemoteServerInfoService RemoteServerInfoService
+@inject asa_server_controller.Services.VpnService VpnService
 @implements IDisposable
 
 <PageTitle>Servers</PageTitle>
@@ -30,6 +31,27 @@
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<p class="text-sm text-neutral-300">Servers are created automatically when an invitation link is generated. Edit
 				their VPN address or node port here if needed.</p>
+		</div>
+
+		<div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
+			<p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Required ports</p>
+			<div class="mt-4 flex flex-wrap gap-4">
+				<div class="relative min-w-48 flex-1 rounded-2xl border border-white/10 bg-black/20 p-4 pr-16">
+					<InlineHelpButton OnClick="@(() => OpenHelpDialog("VPN port", "This port belongs to the control machine. Forward it to the controller so remote nodes can join the VPN."))"
+									  Class="absolute right-4 top-4" />
+					<p class="text-xs uppercase tracking-[0.2em] text-neutral-400">VPN</p>
+					<p class="mt-2 text-2xl font-semibold text-white">@_vpnPort</p>
+					<p class="mt-2 text-sm text-neutral-300">WireGuard listen port. User configurable.</p>
+				</div>
+
+				<div class="relative min-w-48 flex-1 rounded-2xl border border-white/10 bg-black/20 p-4 pr-16">
+					<InlineHelpButton OnClick="@(() => OpenHelpDialog("Control web app", "This port belongs to the control machine. Forward it if you want the controller reachable from outside."))"
+									  Class="absolute right-4 top-4" />
+					<p class="text-xs uppercase tracking-[0.2em] text-neutral-400">Web app</p>
+					<p class="mt-2 text-2xl font-semibold text-white">8010</p>
+					<p class="mt-2 text-sm text-neutral-300">Control web app port.</p>
+				</div>
+			</div>
 		</div>
 
 		@if (_items.Count == 0)
@@ -63,7 +85,8 @@
 
 									<div class="space-y-1 text-sm text-neutral-300">
 										<p>VPN address: @item.VpnAddress</p>
-										<p>Port: @(item.Port?.ToString() ?? "Not set")</p>
+										<p>Node API port: @(item.Port?.ToString() ?? "Not set")</p>
+										<p>Game port: @(item.GamePort?.ToString() ?? "Missing")</p>
 										@if (item.IsOnline)
 										{
 											<p>Map: @(string.IsNullOrWhiteSpace(item.MapName) ? "Unknown" : item.MapName)</p>
@@ -285,6 +308,13 @@
 					OnConfirm="DeleteSelectedServerAsync"
 					OnCancel="CloseDeleteServerDialog" />
 
+<InfoDialog IsOpen="@_showHelpDialog"
+			Eyebrow="Ports"
+			Title="@_helpDialogTitle"
+			Message="@_helpDialogMessage"
+			PillText="Help"
+			OnClose="CloseHelpDialog" />
+
 @code {
 	private IReadOnlyList<asa_server_controller.Models.Servers.RemoteServerListItem> _items =
 		Array.Empty<asa_server_controller.Models.Servers.RemoteServerListItem>();
@@ -312,6 +342,10 @@
 	private bool _isDeletingServer;
 	private int _deleteRemoteServerId;
 	private string _deleteServerTitle = "this server";
+	private string _vpnPort = string.Empty;
+	private bool _showHelpDialog;
+	private string _helpDialogTitle = string.Empty;
+	private string _helpDialogMessage = string.Empty;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -333,6 +367,7 @@
 		try
 		{
 			_items = await RemoteServerService.LoadAsync();
+			_vpnPort = await VpnService.LoadCurrentListenPortAsync();
 		}
 		finally
 		{
@@ -651,5 +686,18 @@
 	{
 		_openActionMenuServerId = null;
 		OpenDeleteServerDialog(item);
+	}
+
+	private void OpenHelpDialog(string title, string message)
+	{
+		_helpDialogTitle = title;
+		_helpDialogMessage = message;
+		_showHelpDialog = true;
+	}
+
+	private Task CloseHelpDialog()
+	{
+		_showHelpDialog = false;
+		return Task.CompletedTask;
 	}
 }

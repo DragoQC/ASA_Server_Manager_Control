@@ -61,10 +61,10 @@
         }
         else
         {
-            <div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div class="columns-1 gap-4 sm:columns-[18rem]">
                 @foreach (asa_server_controller.Models.CurseForge.CachedMod mod in _mods)
                 {
-                    <article class="group overflow-hidden rounded-[1.6rem] border border-fuchsia-200/12 bg-black/40 shadow-[0_0_40px_rgba(168,85,247,0.08)] backdrop-blur-md">
+                    <article class="group mb-4 overflow-hidden rounded-[1.6rem] border border-fuchsia-200/12 bg-black/40 shadow-[0_0_40px_rgba(168,85,247,0.08)] backdrop-blur-md [break-inside:avoid]">
                         @if (!string.IsNullOrWhiteSpace(mod.WebsiteUrl))
                         {
                             <a href="@mod.WebsiteUrl"
@@ -96,31 +96,20 @@
                         }
 
                         <div class="space-y-4 p-6">
-                            <div class="flex items-start justify-between gap-4">
-                                <div>
-                                    <p class="text-xs uppercase tracking-[0.3em] text-fuchsia-200/70">Mod</p>
-                                    <h3 class="mt-2 text-2xl font-semibold text-white">@mod.Name</h3>
-                                </div>
-                                <div class="flex flex-col items-end gap-2">
-                                    <StatusTag Text="@(mod.IsInUse ? "In use" : "Unused")" />
-                                    <StatusTag Text="@(mod.IsMetadataResolved ? "Resolved" : "Pending")" />
-                                </div>
+                            <div class="flex items-start justify-between gap-3">
+                                <StatusTag Text="@(mod.IsInUse ? "In use" : "Unused")" />
+                                <StatusTag Text="@(mod.IsMetadataResolved ? "Resolved" : "Pending")" />
                             </div>
 
+                            <p class="text-xs uppercase tracking-[0.3em] text-fuchsia-200/70">Mod</p>
+                            <h3 class="text-2xl font-semibold leading-tight text-white wrap-break-word">@mod.Name</h3>
                             <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">@mod.ModId</p>
                             <p class="text-sm leading-6 text-neutral-300">@mod.Summary</p>
 
                             <div class="flex items-center justify-between gap-3 text-sm text-neutral-400">
                                 <span>@mod.DownloadCount downloads</span>
-                                <span>@(mod.DateModifiedUtc?.LocalDateTime.ToString() ?? "Unknown update")</span>
+                                <span class="text-right">@(mod.DateModifiedUtc?.LocalDateTime.ToString() ?? "Unknown update")</span>
                             </div>
-
-                            @if (!string.IsNullOrWhiteSpace(mod.WebsiteUrl))
-                            {
-                                <ActionButton Text="CurseForge"
-                                              Href="@mod.WebsiteUrl"
-                                              Target="_blank" />
-                            }
                         </div>
                     </article>
                 }
