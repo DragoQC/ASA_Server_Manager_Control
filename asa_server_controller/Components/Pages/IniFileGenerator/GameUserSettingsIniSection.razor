@@ -58,7 +58,6 @@
                                                StatusCode="@GetStatusCode(field)"
                                                SourceUrl="@WikiSourceUrl"
                                                Placeholder="@GetPlaceholder(field)"
-                                               OnHelpClick='@(() => OpenHelpDialog(field.Title, field.Description))'
                                                Value="@GetFieldValue(field.Key)"
                                                ValueChanged="@(value => SetFieldValue(field.Key, value))" />
                                     break;
@@ -69,7 +68,6 @@
                                               StatusCode="@GetStatusCode(field)"
                                               SourceUrl="@WikiSourceUrl"
                                               Placeholder="@GetPlaceholder(field)"
-                                               OnHelpClick='@(() => OpenHelpDialog(field.Title, field.Description))'
                                                Value="@GetFieldValue(field.Key)"
                                                ValueChanged="@(value => SetFieldValue(field.Key, value))" />
                                     break;
@@ -80,7 +78,6 @@
                                                 StatusCode="@GetStatusCode(field)"
                                                 SourceUrl="@WikiSourceUrl"
                                                 Placeholder="@GetPlaceholder(field)"
-                                                OnHelpClick='@(() => OpenHelpDialog(field.Title, field.Description))'
                                                 Value="@GetFieldValue(field.Key)"
                                                 ValueChanged="@(value => SetFieldValue(field.Key, value))" />
                                     break;
@@ -93,7 +90,6 @@
                                                           StatusCode="@GetStatusCode(field)"
                                                           SourceUrl="@WikiSourceUrl"
                                                           Placeholder="@GetPlaceholder(field)"
-                                                          OnHelpClick='@(() => OpenHelpDialog(field.Title, field.Description))'
                                                           Value="@GetFieldValue(field.Key)"
                                                           ValueChanged="@(value => SetFieldValue(field.Key, value))" />
                                     }
@@ -105,7 +101,6 @@
                                                       StatusCode="@GetStatusCode(field)"
                                                       SourceUrl="@WikiSourceUrl"
                                                       Placeholder="@GetPlaceholder(field)"
-                                                      OnHelpClick='@(() => OpenHelpDialog(field.Title, field.Description))'
                                                       Value="@GetFieldValue(field.Key)"
                                                       ValueChanged="@(value => SetFieldValue(field.Key, value))" />
                                     }
@@ -125,12 +120,6 @@
     </div>
 </section>
 
-<InfoDialog IsOpen="@_showHelpDialog"
-            Eyebrow="Ini"
-            Title="@_helpDialogTitle"
-            Message="@_helpDialogMessage"
-            OnClose="CloseHelpDialog" />
-
 @code {
     private const string WikiSourceUrl = "https://ark.wiki.gg/wiki/Server_configuration";
     private const string StorageKey = "asa.ini-generator.gameusersettings";
@@ -139,10 +128,7 @@
     private readonly List<GameUserSettingsFieldDefinition> _fields = [];
     private readonly Dictionary<string, string?> _fieldValues = new(StringComparer.Ordinal);
 
-    private bool _showHelpDialog;
     private bool _loadedFromStorage;
-    private string _helpDialogTitle = string.Empty;
-    private string _helpDialogMessage = string.Empty;
     private string _loadError = string.Empty;
 
     protected override void OnInitialized()
@@ -368,19 +354,6 @@
             "ragnarok" => "[Ragnarok]",
             _ => $"[{sectionKey}]"
         };
-    }
-
-    private void OpenHelpDialog(string title, string message)
-    {
-        _helpDialogTitle = title;
-        _helpDialogMessage = message;
-        _showHelpDialog = true;
-    }
-
-    private Task CloseHelpDialog()
-    {
-        _showHelpDialog = false;
-        return Task.CompletedTask;
     }
 
     private sealed record GameUserSettingsSectionDefinition(
