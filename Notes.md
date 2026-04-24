@@ -1,4 +1,7 @@
 Preview in inifile generator not currently working enough
+page inifilegenerator.razor
+
+separate in two different component. make a gameinisection and a gameusersettingsinisection component please each one will have their things in it.
 
 We need all that is a check marked i did some research for you heres the table name : 
 wikitable config-table

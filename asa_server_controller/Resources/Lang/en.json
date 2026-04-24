@@ -1,0 +1,884 @@
+{
+  "gameusersettings": {
+    "sections": {
+      "serverSettings": {
+        "title": "Server Settings",
+        "description": "Main server configuration and gameplay settings"
+      },
+      "sessionSettings": {
+        "title": "Session Settings",
+        "description": "Network and session configuration"
+      },
+      "multiHome": {
+        "title": "MultiHome",
+        "description": "Multihoming support configuration"
+      },
+      "scriptEngineGameSession": {
+        "title": "Game Session",
+        "description": "Game session settings"
+      },
+      "messageOfTheDay": {
+        "title": "Message of the Day",
+        "description": "Login message display"
+      },
+      "cryoSickness": {
+        "title": "Cryo Sickness and Cryopod Nerf",
+        "description": "Cryopod sickness and creature nerf settings"
+      },
+      "cryoHospital": {
+        "title": "CryoHospital",
+        "description": "Cryo hospital regeneration settings"
+      },
+      "bloodforge": {
+        "title": "Bloodforge",
+        "description": "Bloodforge reinforcement settings"
+      },
+      "textFiltering": {
+        "title": "Text Filtering",
+        "description": "Chat and name filtering configuration"
+      },
+      "crossArkTransfers": {
+        "title": "CrossARK Transfers",
+        "description": "Cross-ARK data transfer settings"
+      },
+      "tekBunker": {
+        "title": "Tek Bunker",
+        "description": "Tek bunker configuration"
+      },
+      "outposts": {
+        "title": "Outposts",
+        "description": "Outpost configuration"
+      },
+      "ragnarok": {
+        "title": "Ragnarok",
+        "description": "Ragnarok map-specific settings"
+      }
+    },
+    "fields": {
+      "ActiveMods": {
+        "title": "Active mods",
+        "description": "Comma-separated list of mod IDs with no spaces. Priority is in descending order (left-most has highest priority)."
+      },
+      "ActiveTotalConversion": {
+        "title": "Total conversion mod",
+        "description": "Used to specify a total conversion mod."
+      },
+      "AdminLogging": {
+        "title": "Admin logging",
+        "description": "If True, logs all admin commands to in-game chat."
+      },
+      "AllowAnyoneBabyImprintCuddle": {
+        "title": "Allow anyone baby imprint",
+        "description": "If True, allows anyone to care for baby creatures, not just who imprinted."
+      },
+      "AllowCrateSpawnsOnTopOfStructures": {
+        "title": "Allow crate spawns on structures",
+        "description": "If True, allows supply crates to appear on top of structures."
+      },
+      "AllowCryoFridgeOnSaddle": {
+        "title": "Allow cryo fridge on saddle",
+        "description": "If True, allows cryofridges on platform saddles and rafts."
+      },
+      "AllowFlyingStaminaRecovery": {
+        "title": "Allow flyer stamina recovery",
+        "description": "If True, allows server to recover stamina when standing on a flyer."
+      },
+      "AllowHideDamageSourceFromLogs": {
+        "title": "Hide damage source from logs",
+        "description": "If False, shows damage sources in tribe logs."
+      },
+      "AllowIntegratedSPlusStructures": {
+        "title": "Allow S+ structures",
+        "description": "If False, disables all new S+ structures."
+      },
+      "AllowMultipleAttachedC4": {
+        "title": "Allow multiple C4",
+        "description": "If True, allows attaching more than one C4 per creature."
+      },
+      "AllowRaidDinoFeeding": {
+        "title": "Allow raid dino feeding",
+        "description": "If True, allows Titanosaurs to be permanently tamed."
+      },
+      "AllowTekSuitPowersInGenesis": {
+        "title": "TEK suit powers in Genesis",
+        "description": "If True, enables TEK suit powers in Genesis: Part 1."
+      },
+      "AllowThirdPersonPlayer": {
+        "title": "Allow third person",
+        "description": "If False, disables third person camera on dedicated servers."
+      },
+      "AlwaysAllowStructurePickup": {
+        "title": "Always allow structure pickup",
+        "description": "If True, disables timer on quick pick-up system."
+      },
+      "AlwaysNotifyPlayerLeft": {
+        "title": "Always notify player left",
+        "description": "If True, players will always be notified when someone leaves."
+      },
+      "ArmadoggoDeathCooldown": {
+        "title": "Armadoggo death cooldown",
+        "description": "Cooldown in seconds for Armadoggo to reappear after fatal damage."
+      },
+      "AutoDestroyDecayedDinos": {
+        "title": "Auto destroy decayed dinos",
+        "description": "If True, auto-destroys claimable decayed tames on load."
+      },
+      "AutoDestroyOldStructuresMultiplier": {
+        "title": "Auto destroy old structures",
+        "description": "Multiplier for auto-destruction of old structures."
+      },
+      "AutoSavePeriodMinutes": {
+        "title": "Auto save interval",
+        "description": "Interval in minutes for automatic saves. 0 = constant saving."
+      },
+      "bForceCanRideFliers": {
+        "title": "Force ride flyers",
+        "description": "If True, allows flyers on maps where normally disabled."
+      },
+      "BanListURL": {
+        "title": "Ban list URL",
+        "description": "URL to a global ban list."
+      },
+      "ClampItemSpoilingTimes": {
+        "title": "Clamp item spoiling times",
+        "description": "If True, clamps all spoiling times to maximum."
+      },
+      "ClampItemStats": {
+        "title": "Clamp item stats",
+        "description": "If True, enables stats clamping for items."
+      },
+      "ClampResourceHarvestDamage": {
+        "title": "Clamp resource harvest damage",
+        "description": "If True, limits damage by tames based on resource health."
+      },
+      "CosmeticWhitelistOverride": {
+        "title": "Cosmetic whitelist URL",
+        "description": "URL to comma-separated list of whitelisted cosmetics."
+      },
+      "CosmoWeaponAmmoReloadAmount": {
+        "title": "Cosmo weapon ammo reload",
+        "description": "Amount of ammo given as Cosmo webslinger reloads."
+      },
+      "CustomDynamicConfigUrl": {
+        "title": "Dynamic config URL",
+        "description": "Direct link to a live dynamicconfig.ini file."
+      },
+      "CustomLiveTuningUrl": {
+        "title": "Live tuning URL",
+        "description": "Direct link to the live tuning file."
+      },
+      "DayCycleSpeedScale": {
+        "title": "Day cycle speed",
+        "description": "Scaling factor for passage of time in ARK."
+      },
+      "DestroyTamesOverTheSoftTameLimit": {
+        "title": "Destroy tames over soft limit",
+        "description": "Tames above soft tame limit will be marked for Cryo."
+      },
+      "DestroyUnconnectedWaterPipes": {
+        "title": "Destroy unconnected pipes",
+        "description": "If True, auto-destroys unconnected pipes after 2 days."
+      },
+      "DifficultyOffset": {
+        "title": "Difficulty offset",
+        "description": "Specifies the difficulty level offset."
+      },
+      "DinoCharacterFoodDrainMultiplier": {
+        "title": "Dino food drain",
+        "description": "Scaling factor for creature food consumption."
+      },
+      "DinoCharacterHealthRecoveryMultiplier": {
+        "title": "Dino health recovery",
+        "description": "Scaling factor for creature health recovery."
+      },
+      "DinoCharacterStaminaDrainMultiplier": {
+        "title": "Dino stamina drain",
+        "description": "Scaling factor for creature stamina consumption."
+      },
+      "DinoCountMultiplier": {
+        "title": "Dino count multiplier",
+        "description": "Scaling factor for creature spawns."
+      },
+      "DinoDamageMultiplier": {
+        "title": "Dino damage multiplier",
+        "description": "Scaling factor for wild creature damage."
+      },
+      "DinoResistanceMultiplier": {
+        "title": "Dino resistance multiplier",
+        "description": "Scaling factor for wild creature resistance."
+      },
+      "DisableCryopodEnemyCheck": {
+        "title": "Disable cryopod enemy check",
+        "description": "If True, allows cryopods with enemies nearby."
+      },
+      "DisableCryopodFridgeRequirement": {
+        "title": "Disable cryopod fridge requirement",
+        "description": "If True, allows cryopods without powered cryofridge."
+      },
+      "DisableDinoDecayPvE": {
+        "title": "Disable dino decay PvE",
+        "description": "If True, disables creature decay in PvE mode."
+      },
+      "DisableImprintDinoBuff": {
+        "title": "Disable imprint dino buff",
+        "description": "If True, disables creature imprinting stat bonus."
+      },
+      "DisablePvEGamma": {
+        "title": "Disable PvE gamma",
+        "description": "If True, prevents console gamma in PvE mode."
+      },
+      "DisableStructureDecayPvE": {
+        "title": "Disable structure decay PvE",
+        "description": "If True, disables auto-decay of structures in PvE."
+      },
+      "DisableWeatherFog": {
+        "title": "Disable weather fog",
+        "description": "If True, disables fog."
+      },
+      "DontAlwaysNotifyPlayerJoined": {
+        "title": "Disable player joined notification",
+        "description": "If True, globally disables player join notifications."
+      },
+      "EnableExtraStructurePreventionVolumes": {
+        "title": "Enable structure prevention volumes",
+        "description": "If True, disables building in resource-rich areas."
+      },
+      "EnablePvPGamma": {
+        "title": "Enable PvP gamma",
+        "description": "If True, allows console gamma in PvP mode."
+      },
+      "ExtinctionEventTimeInterval": {
+        "title": "Extinction event interval",
+        "description": "Time in seconds to enable extinction mode."
+      },
+      "FastDecayUnsnappedCoreStructures": {
+        "title": "Fast decay unsnapped structures",
+        "description": "If True, unsnapped foundations decay faster."
+      },
+      "ForceAllStructureLocking": {
+        "title": "Force all structure locking",
+        "description": "If True, defaults all structures to locked."
+      },
+      "ForceGachaUnhappyInCaves": {
+        "title": "Force Gacha unhappy in caves",
+        "description": "If True, Gachas become unhappy within caves."
+      },
+      "globalVoiceChat": {
+        "title": "Global voice chat",
+        "description": "If True, voice chat becomes global."
+      },
+      "HarvestAmountMultiplier": {
+        "title": "Harvest amount multiplier",
+        "description": "Scaling factor for harvest yields."
+      },
+      "HarvestHealthMultiplier": {
+        "title": "Harvest health multiplier",
+        "description": "Scaling factor for item harvest health."
+      },
+      "IgnoreLimitMaxStructuresInRangeTypeFlag": {
+        "title": "Ignore structure limit",
+        "description": "If True, removes 150 decorative structure limit."
+      },
+      "ImplantSuicideCD": {
+        "title": "Implant suicide cooldown",
+        "description": "Cooldown in seconds between implant respawn uses."
+      },
+      "ItemStackSizeMultiplier": {
+        "title": "Item stack size multiplier",
+        "description": "Multiplier for global item stack size."
+      },
+      "KickIdlePlayersPeriod": {
+        "title": "Kick idle players period",
+        "description": "Time in seconds before idle players are kicked."
+      },
+      "MaxCosmoWeaponAmmo": {
+        "title": "Max Cosmo weapon ammo",
+        "description": "Maximum ammo for Cosmo webslinger. -1 = unlimited."
+      },
+      "MaxGateFrameOnSaddles": {
+        "title": "Max gate frames on saddles",
+        "description": "Maximum gateways on platform saddles."
+      },
+      "MaxHexagonsPerCharacter": {
+        "title": "Max hexagons",
+        "description": "Maximum hexagons a character can accumulate."
+      },
+      "MaxPersonalTamedDinos": {
+        "title": "Max personal tamed dinos",
+        "description": "Per-tribe creature tame limit."
+      },
+      "MaxPlatformSaddleStructureLimit": {
+        "title": "Max platform saddle structures",
+        "description": "Maximum number of saddles/rafts allowed."
+      },
+      "MaxTamedDinos": {
+        "title": "Max tamed dinos",
+        "description": "Maximum number of tame creatures on server."
+      },
+      "MaxTamedDinos_SoftTameLimit": {
+        "title": "Soft tame limit",
+        "description": "Server-wide soft tame limit."
+      },
+      "MaxTamedDinos_SoftTameLimit_CountdownForDeletionDuration": {
+        "title": "Soft tame deletion countdown",
+        "description": "Time in seconds before tame is destroyed."
+      },
+      "MaxTrainCars": {
+        "title": "Max train cars",
+        "description": "Maximum amount of carts a train cave can have."
+      },
+      "MaxTributeCharacters": {
+        "title": "Max tribute characters",
+        "description": "Slots for uploaded characters."
+      },
+      "MaxTributeDinos": {
+        "title": "Max tribute dinos",
+        "description": "Slots for uploaded creatures."
+      },
+      "MaxTributeItems": {
+        "title": "Max tribute items",
+        "description": "Slots for uploaded items and resources."
+      },
+      "NightTimeSpeedScale": {
+        "title": "Night time speed",
+        "description": "Scaling factor for passage of time during night."
+      },
+      "NonPermanentDiseases": {
+        "title": "Non-permanent diseases",
+        "description": "If True, makes permanent diseases not permanent."
+      },
+      "NPCNetworkStasisRangeScalePlayerCountStart": {
+        "title": "NPC stasis range start",
+        "description": "Minimum online players for stasis range scaling."
+      },
+      "NPCNetworkStasisRangeScalePlayerCountEnd": {
+        "title": "NPC stasis range end",
+        "description": "Maximum online players for stasis range scaling."
+      },
+      "NPCNetworkStasisRangeScalePercentEnd": {
+        "title": "NPC stasis range percent",
+        "description": "Maximum scale percentage when stasis range end reached."
+      },
+      "OnlyAutoDestroyCoreStructures": {
+        "title": "Only auto destroy core structures",
+        "description": "If True, prevents non-core structures from auto-destroying."
+      },
+      "OnlyDecayUnsnappedCoreStructures": {
+        "title": "Only decay unsnapped core",
+        "description": "If True, only unsnapped core structures decay."
+      },
+      "OverrideOfficialDifficulty": {
+        "title": "Override official difficulty",
+        "description": "Allows overriding default server difficulty."
+      },
+      "OverrideStructurePlatformPrevention": {
+        "title": "Override structure platform prevention",
+        "description": "If True, turrets become buildable on platforms."
+      },
+      "OxygenSwimSpeedStatMultiplier": {
+        "title": "Oxygen swim speed multiplier",
+        "description": "Multiplier for swim speed from oxygen stat."
+      },
+      "PerPlatformMaxStructuresMultiplier": {
+        "title": "Per platform structure multiplier",
+        "description": "Increases max items on saddles and rafts."
+      },
+      "PersonalTamedDinosSaddleStructureCost": {
+        "title": "Personal tamed saddle cost",
+        "description": "Tame slots used by platform saddle."
+      },
+      "PlatformSaddleBuildAreaBoundsMultiplier": {
+        "title": "Platform saddle build area",
+        "description": "Allows structures further from platform."
+      },
+      "PlayerCharacterFoodDrainMultiplier": {
+        "title": "Player food drain",
+        "description": "Scaling factor for player food consumption."
+      },
+      "PlayerCharacterHealthRecoveryMultiplier": {
+        "title": "Player health recovery",
+        "description": "Scaling factor for player health recovery."
+      },
+      "PlayerCharacterStaminaDrainMultiplier": {
+        "title": "Player stamina drain",
+        "description": "Scaling factor for player stamina consumption."
+      },
+      "PlayerCharacterWaterDrainMultiplier": {
+        "title": "Player water drain",
+        "description": "Scaling factor for player water consumption."
+      },
+      "PlayerDamageMultiplier": {
+        "title": "Player damage multiplier",
+        "description": "Scaling factor for player attack damage."
+      },
+      "PlayerResistanceMultiplier": {
+        "title": "Player resistance multiplier",
+        "description": "Scaling factor for player damage resistance."
+      },
+      "PreventDiseases": {
+        "title": "Prevent diseases",
+        "description": "If True, completely prevents diseases."
+      },
+      "PreventMateBoost": {
+        "title": "Prevent mate boost",
+        "description": "If True, disables creature mate boosting."
+      },
+      "PreventOfflinePvP": {
+        "title": "Prevent offline PvP",
+        "description": "If True, enables Offline Raiding Prevention."
+      },
+      "PreventOfflinePvPInterval": {
+        "title": "Prevent offline PvP interval",
+        "description": "Seconds before ORP becomes active."
+      },
+      "PreventSpawnAnimations": {
+        "title": "Prevent spawn animations",
+        "description": "If True, players spawn without wake-up animation."
+      },
+      "PreventTribeAlliances": {
+        "title": "Prevent tribe alliances",
+        "description": "If True, prevents tribe alliances."
+      },
+      "ProximityChat": {
+        "title": "Proximity chat",
+        "description": "If True, only nearby players see chat."
+      },
+      "PvEAllowStructuresAtSupplyDrops": {
+        "title": "PvE allow structures at drops",
+        "description": "If True, allows building near supply drops in PvE."
+      },
+      "PvEStructureDecayPeriodMultiplier": {
+        "title": "PvE structure decay multiplier",
+        "description": "Scaling factor for structure decay in PvE."
+      },
+      "PvPDinoDecay": {
+        "title": "PvP dino decay",
+        "description": "If True, enables creatures decay in PvP."
+      },
+      "PvPStructureDecay": {
+        "title": "PvP structure decay",
+        "description": "If True, enables structure decay in PvP."
+      },
+      "RandomSupplyCratePoints": {
+        "title": "Random supply crate points",
+        "description": "If True, supply drops in random locations."
+      },
+      "RCONEnabled": {
+        "title": "RCON enabled",
+        "description": "If True, enables RCON."
+      },
+      "RCONPort": {
+        "title": "RCON port",
+        "description": "TCP RCON port."
+      },
+      "RCONServerGameLogBuffer": {
+        "title": "RCON game log buffer",
+        "description": "Lines of game logs sent over RCON."
+      },
+      "ResourcesRespawnPeriodMultiplier": {
+        "title": "Resources respawn multiplier",
+        "description": "Scaling factor for resource node respawn."
+      },
+      "ServerAdminPassword": {
+        "title": "Server admin password",
+        "description": "Password for administrator commands."
+      },
+      "ServerAutoForceRespawnWildDinosInterval": {
+        "title": "Auto respawn wild dinos",
+        "description": "Force respawn wild dinos after seconds."
+      },
+      "ServerCrosshair": {
+        "title": "Server crosshair",
+        "description": "If False, disables crosshair."
+      },
+      "ServerForceNoHUD": {
+        "title": "Server force no HUD",
+        "description": "If True, HUD always disabled for NPCs."
+      },
+      "ServerHardcore": {
+        "title": "Server hardcore",
+        "description": "If True, enables Hardcore mode."
+      },
+      "ServerPassword": {
+        "title": "Server password",
+        "description": "Password required to join server."
+      },
+      "serverPVE": {
+        "title": "Server PvE",
+        "description": "If True, disables PvP and enables PvE."
+      },
+      "ShowFloatingDamageText": {
+        "title": "Show floating damage",
+        "description": "If True, enables popup damage text."
+      },
+      "ShowMapPlayerLocation": {
+        "title": "Show map player location",
+        "description": "If False, hides player position on map."
+      },
+      "SpectatorPassword": {
+        "title": "Spectator password",
+        "description": "Password for non-admin spectators."
+      },
+      "StructureDamageMultiplier": {
+        "title": "Structure damage multiplier",
+        "description": "Scaling factor for structure attack damage."
+      },
+      "StructurePickupHoldDuration": {
+        "title": "Structure pickup hold duration",
+        "description": "Quick pick-up hold duration."
+      },
+      "StructurePickupTimeAfterPlacement": {
+        "title": "Structure pickup after placement",
+        "description": "Seconds after placement for quick pick-up."
+      },
+      "StructurePreventResourceRadiusMultiplier": {
+        "title": "Structure prevent resource radius",
+        "description": "Same as ResourceNoReplenishRadiusStructures."
+      },
+      "StructureResistanceMultiplier": {
+        "title": "Structure resistance multiplier",
+        "description": "Scaling factor for structure damage resistance."
+      },
+      "TamedDinoDamageMultiplier": {
+        "title": "Tamed dino damage",
+        "description": "Scaling factor for tame creature damage."
+      },
+      "TamedDinoResistanceMultiplier": {
+        "title": "Tamed dino resistance",
+        "description": "Scaling factor for tame creature resistance."
+      },
+      "TamingSpeedMultiplier": {
+        "title": "Taming speed multiplier",
+        "description": "Scaling factor for creature taming speed."
+      },
+      "TheMaxStructuresInRange": {
+        "title": "Max structures in range",
+        "description": "Maximum structures in a certain range."
+      },
+      "TribeLogDestroyedEnemyStructures": {
+        "title": "Tribe log destroyed structures",
+        "description": "Shows enemy destruction in tribe logs."
+      },
+      "TribeNameChangeCooldown": {
+        "title": "Tribe name change cooldown",
+        "description": "Minutes between tribe name changes."
+      },
+      "UseFjordurTraversalBuff": {
+        "title": "Use Fjordur traversal buff",
+        "description": "If True, enables Fjordur biome teleport."
+      },
+      "UseOptimizedHarvestingHealth": {
+        "title": "Use optimized harvesting",
+        "description": "If True, enables server harvesting optimization."
+      },
+      "XPMultiplier": {
+        "title": "XP multiplier",
+        "description": "Scaling factor for experience."
+      },
+      "YoungIceFoxDeathCooldown": {
+        "title": "Veilwyn death cooldown",
+        "description": "Cooldown for Veilwyn to reappear."
+      },
+      "CrossARKAllowForeignDinoDownloads": {
+        "title": "CrossARK foreign dino downloads",
+        "description": "If True, enables non-native creature downloads."
+      },
+      "MinimumDinoReuploadInterval": {
+        "title": "Minimum dino reupload interval",
+        "description": "Seconds between creature re-uploads."
+      },
+      "noTributeDownloads": {
+        "title": "No tribute downloads",
+        "description": "If True, prevents CrossARK data downloads."
+      },
+      "PreventDownloadDinos": {
+        "title": "Prevent download dinos",
+        "description": "If True, prevents creature downloads."
+      },
+      "PreventDownloadItems": {
+        "title": "Prevent download items",
+        "description": "If True, prevents item downloads."
+      },
+      "PreventDownloadSurvivors": {
+        "title": "Prevent download survivors",
+        "description": "If True, prevents survivor downloads."
+      },
+      "PreventUploadDinos": {
+        "title": "Prevent upload dinos",
+        "description": "If True, prevents creature uploads."
+      },
+      "PreventUploadItems": {
+        "title": "Prevent upload items",
+        "description": "If True, prevents item uploads."
+      },
+      "PreventUploadSurvivors": {
+        "title": "Prevent upload survivors",
+        "description": "If True, prevents survivor uploads."
+      },
+      "TributeCharacterExpirationSeconds": {
+        "title": "Tribute character expiration",
+        "description": "Seconds before uploaded survivors expire."
+      },
+      "TributeDinoExpirationSeconds": {
+        "title": "Tribute dino expiration",
+        "description": "Seconds before uploaded tames expire."
+      },
+      "TributeItemExpirationSeconds": {
+        "title": "Tribute item expiration",
+        "description": "Seconds before uploaded items expire."
+      },
+      "EnableCryoSicknessPVE": {
+        "title": "Enable cryo sickness PvE",
+        "description": "If True, enables cryopod cooldown timer in PvE."
+      },
+      "EnableCryopodNerf": {
+        "title": "Enable cryopod nerf",
+        "description": "If True, disables cryopod cooldown timer."
+      },
+      "CryopodNerfDamageMult": {
+        "title": "Cryopod nerf damage",
+        "description": "Damage dealt by deployed creature."
+      },
+      "CryopodNerfDuration": {
+        "title": "Cryopod nerf duration",
+        "description": "Seconds cryosickness lasts after deployment."
+      },
+      "CryopodNerfIncomingDamageMultPercent": {
+        "title": "Cryopod nerf incoming damage",
+        "description": "Damage taken by deployed creature."
+      },
+      "CryoHospitalHoursToRegenHP": {
+        "title": "Cryo hospital HP regen",
+        "description": "Hours to regenerate HP in cryo."
+      },
+      "CryoHospitalHoursToRegenFood": {
+        "title": "Cryo hospital food regen",
+        "description": "Hours to regenerate food in cryo."
+      },
+      "CryoHospitalHoursToDrainTorpor": {
+        "title": "Cryo hospital torpor drain",
+        "description": "Hours to drain torpor in cryo."
+      },
+      "CryoHospitalMatingCooldownReduction": {
+        "title": "Cryo hospital mating cooldown",
+        "description": "Mating cooldown reduction in cryo."
+      },
+      "BloodforgeReinforceExtraDurability": {
+        "title": "Bloodforge extra durability",
+        "description": "Extra durability for Bloodforge."
+      },
+      "BloodforgeReinforceResourceCostMultiplier": {
+        "title": "Bloodforge resource cost",
+        "description": "Resource cost multiplier for Bloodforge."
+      },
+      "BloodforgeReinforceSpeedMultiplier": {
+        "title": "Bloodforge speed",
+        "description": "Speed multiplier for Bloodforge."
+      },
+      "BadWordListURL": {
+        "title": "Bad word list URL",
+        "description": "URL hosting bad words list."
+      },
+      "BadWordWhiteListURL": {
+        "title": "Good word list URL",
+        "description": "URL hosting good words list."
+      },
+      "bFilterChat": {
+        "title": "Filter chat",
+        "description": "If True, filters chat based on word lists."
+      },
+      "bFilterCharacterNames": {
+        "title": "Filter character names",
+        "description": "If True, filters character names."
+      },
+      "bFilterTribeNames": {
+        "title": "Filter tribe names",
+        "description": "If True, filters tribe names."
+      },
+      "LimitBunkersPerTribe": {
+        "title": "Limit bunkers per tribe",
+        "description": "If True, limits bunkers per tribe."
+      },
+      "LimitBunkersPerTribeNum": {
+        "title": "Max bunkers per tribe",
+        "description": "Number of bunkers allowed per tribe."
+      },
+      "AllowBunkersInPreventionZones": {
+        "title": "Allow bunkers in prevention zones",
+        "description": "If True, allows bunkers in prevention zones."
+      },
+      "AllowRidingDinosInsideBunkers": {
+        "title": "Allow riding inside bunkers",
+        "description": "If True, allows riding inside bunkers."
+      },
+      "AllowBunkerModulesAboveGround": {
+        "title": "Allow bunker modules above ground",
+        "description": "If True, allows modules above ground."
+      },
+      "AllowDinoAIInsideBunkers": {
+        "title": "Allow dino AI inside bunkers",
+        "description": "If True, allows dino AI inside bunkers."
+      },
+      "AllowBunkerModulesInPreventionZones": {
+        "title": "Allow modules in prevention zones",
+        "description": "If True, allows modules in prevention zones."
+      },
+      "MinDistanceBetweenBunkers": {
+        "title": "Min distance between bunkers",
+        "description": "Minimum distance between bunkers."
+      },
+      "EnemyAccessBunkerHPThreshold": {
+        "title": "Enemy access bunker HP threshold",
+        "description": "HP threshold for enemy bunker access."
+      },
+      "BunkerUnderHPThresholdDmgMultiplier": {
+        "title": "Bunker under HP damage",
+        "description": "Damage multiplier when under HP threshold."
+      },
+      "MaxActiveOutposts": {
+        "title": "Max active outposts",
+        "description": "Maximum active outposts."
+      },
+      "MaxActiveResourceCaches": {
+        "title": "Max active resource caches",
+        "description": "Maximum active resource caches."
+      },
+      "MaxActiveCityOutposts": {
+        "title": "Max active city outposts",
+        "description": "Maximum active city outposts."
+      },
+      "AdminListURL": {
+        "title": "Admin list URL",
+        "description": "Alternative to admin whitelist files using a remote web resource. Update frequency is controlled by UpdateAllowedCheatersInterval."
+      },
+      "AutoRestartIntervalSeconds": {
+        "title": "Auto restart interval",
+        "description": "Time in seconds after which the server automatically restarts. Wiki notes it may shut the server down instead of restarting correctly."
+      },
+      "ChatLogFileSplitIntervalSeconds": {
+        "title": "Chat log split interval",
+        "description": "Controls chat log file split interval in seconds. Values lower than 45 get forced to 45."
+      },
+      "ChatLogFlushIntervalSeconds": {
+        "title": "Chat log flush interval",
+        "description": "Controls how often chat logs are flushed to disk in seconds. Values lower than 15 get forced to 15."
+      },
+      "ChatLogMaxAgeInDays": {
+        "title": "Chat log max age",
+        "description": "Controls how many days chat logs are kept. Negative values become virtually infinite."
+      },
+      "DontRestoreBackup": {
+        "title": "Do not restore backup",
+        "description": "Prevents automatic backup restore on corrupted saves when DisableDupeLogDeletes is also present."
+      },
+      "EnableAFKKickPlayerCountPercent": {
+        "title": "AFK kick player count percent",
+        "description": "Applies idle timeout only when online player count reaches a normalized fraction of MaxPlayers."
+      },
+      "EnableMeshBitingProtection": {
+        "title": "Mesh biting protection",
+        "description": "If False, disables mesh biting protection."
+      },
+      "FreezeReaperPregnancy": {
+        "title": "Freeze reaper pregnancy",
+        "description": "If True, freezes Reaper King pregnancy timer and experience gain."
+      },
+      "LogChatMessages": {
+        "title": "Log chat messages",
+        "description": "If True, enables advanced chat logging to ShooterGame/Saved/Logs/ChatLogs/<SessionName>/ in JSON format."
+      },
+      "MaxStructuresInSmallRadius": {
+        "title": "Max structures in small radius",
+        "description": "Maximum structures allowed within RadiusStructuresInSmallRadius from the player position."
+      },
+      "MaxStructuresToProcess": {
+        "title": "Max structures to process",
+        "description": "Maximum structure batch size processed each server tick."
+      },
+      "PreventOutOfTribePinCodeUse": {
+        "title": "Prevent out-of-tribe pin use",
+        "description": "If True, prevents players outside the tribe from using structure pin codes."
+      },
+      "RadiusStructuresInSmallRadius": {
+        "title": "Small radius structure radius",
+        "description": "Small radius dimension in Unreal Units used by MaxStructuresInSmallRadius."
+      },
+      "ServerEnableMeshChecking": {
+        "title": "Enable mesh checking",
+        "description": "Used in foliage repopulation. Has no effect if forcedisablemeshchecking is set."
+      },
+      "TribeMergeAllowed": {
+        "title": "Tribe merge allowed",
+        "description": "If False, prevents tribe merging."
+      },
+      "TribeMergeCooldown": {
+        "title": "Tribe merge cooldown",
+        "description": "Tribe merge cooldown in seconds."
+      },
+      "UpdateAllowedCheatersInterval": {
+        "title": "Update admin list interval",
+        "description": "Time in seconds between refreshes of the remote admin list URL. Values lower than 3.0 are forced to 3.0."
+      },
+      "UseCharacterTracker": {
+        "title": "Use character tracker",
+        "description": "Enables character tracking. Can also be controlled by the disableCharacterTracker launch argument, which has priority."
+      },
+      "UseExclusiveList": {
+        "title": "Use exclusive list",
+        "description": "If True, behaves like the exclusivejoin launch option."
+      },
+      "AllowMultipleTamedUnicorns": {
+        "title": "Allow multiple unicorns",
+        "description": "If True, allows multiple tamed unicorns."
+      },
+      "EnableVolcano": {
+        "title": "Enable volcano",
+        "description": "If True, enables volcano."
+      },
+      "UnicornSpawnInterval": {
+        "title": "Unicorn spawn interval",
+        "description": "Spawn interval for unicorns."
+      },
+      "VolcanoIntensity": {
+        "title": "Volcano intensity",
+        "description": "Intensity of volcano."
+      },
+      "VolcanoInterval": {
+        "title": "Volcano interval",
+        "description": "Interval for volcano."
+      },
+      "SessionName": {
+        "title": "Session name",
+        "description": "Server name advertised in server browser."
+      },
+      "Port": {
+        "title": "Game port",
+        "description": "UDP game port."
+      },
+      "QueryPort": {
+        "title": "Query port",
+        "description": "UDP Steam query port."
+      },
+      "MaxPlayers": {
+        "title": "Max players",
+        "description": "Maximum players allowed."
+      },
+      "MultiHome": {
+        "title": "MultiHome",
+        "description": "If True, enables multihoming."
+      },
+      "MultiHomeAddress": {
+        "title": "MultiHome IP",
+        "description": "IP address for multihoming."
+      },
+      "Duration": {
+        "title": "Message duration",
+        "description": "Duration in seconds for login message."
+      },
+      "Message": {
+        "title": "Message of the day",
+        "description": "Message shown to players on login. Use \\n for new line."
+      }
+    }
+  }
+}

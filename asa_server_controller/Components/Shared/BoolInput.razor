@@ -42,6 +42,7 @@
         <select value="@Value"
                 @onchange="OnChanged"
                 class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none">
+            <option value="">Default (@Placeholder)</option>
             <option value="True">True</option>
             <option value="False">False</option>
         </select>
@@ -77,17 +78,20 @@
     public string? SourceUrl { get; set; }
 
     [Parameter]
-    public string Value { get; set; } = "False";
+    public string? Value { get; set; }
 
     [Parameter]
-    public EventCallback<string> ValueChanged { get; set; }
+    public string Placeholder { get; set; } = "False";
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
 
     [Parameter]
     public EventCallback OnHelpClick { get; set; }
 
     private Task OnChanged(ChangeEventArgs eventArgs)
     {
-        Value = eventArgs.Value?.ToString() ?? "False";
+        Value = eventArgs.Value?.ToString();
         return ValueChanged.InvokeAsync(Value);
     }
 }

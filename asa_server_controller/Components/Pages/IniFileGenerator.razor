@@ -1,4 +1,6 @@
 @page "/admin/ini-file-generator"
+@using asa_server_controller.Components.Pages.IniFileGeneratorSections
+@inject IJSRuntime JS
 
 <PageTitle>Ini File Generator</PageTitle>
 
@@ -14,7 +16,7 @@
         <div>
             <h1 class="text-4xl font-semibold tracking-tight text-white">Ini File Generator</h1>
             <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
-                Fill a few values and generate a starter ini file. This is a helper tool page for users to build their own config faster.
+                Fill values and generate starter ini content. Only real server-config-owned values are marked as managed.
             </p>
         </div>
 
@@ -36,159 +38,13 @@
                 @if (string.Equals(_activeTab, "game", StringComparison.Ordinal))
                 {
                     <div class="@GetPanelClass()">
-                        <section class="space-y-6">
-                            <div>
-                                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Generator</p>
-                                <h2 class="mt-3 text-2xl font-semibold text-white">Game.ini builder</h2>
-                                <p class="mt-3 max-w-3xl text-sm leading-6 text-neutral-300">
-                                    Basic gameplay values for a starter <code class="rounded bg-white/10 px-2 py-1 text-neutral-100">Game.ini</code>.
-                                </p>
-                            </div>
-
-                            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                <TextField Label="Baby mature speed"
-                                           @bind-Value="_gameBabyMatureSpeedMultiplier"
-                                           Hint="Example: 1.0" />
-
-                                <TextField Label="Egg hatch speed"
-                                           @bind-Value="_gameEggHatchSpeedMultiplier"
-                                           Hint="Example: 1.0" />
-
-                                <TextField Label="Harvest amount"
-                                           @bind-Value="_gameHarvestAmountMultiplier"
-                                           Hint="Example: 1.0" />
-
-                                <TextField Label="XP multiplier"
-                                           @bind-Value="_gameXpMultiplier"
-                                           Hint="Example: 1.0" />
-
-                                <TextField Label="Taming speed"
-                                           @bind-Value="_gameTamingSpeedMultiplier"
-                                           Hint="Example: 1.0" />
-                            </div>
-
-                            <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-5">
-                                <p class="text-[0.7rem] uppercase tracking-[0.28em] text-fuchsia-200/85">Generated Game.ini</p>
-                                <textarea readonly
-                                          class="mt-4 min-h-80 w-full rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200 outline-none">@BuildGameIniPreview()</textarea>
-                            </div>
-                        </section>
+                        <GameIniSection />
                     </div>
                 }
                 else
                 {
                     <div class="@GetPanelClass()">
-                        <section class="space-y-6">
-                            <div>
-                                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Generator</p>
-                                <h2 class="mt-3 text-2xl font-semibold text-white">GameUserSettings.ini builder</h2>
-                                <p class="mt-3 max-w-3xl text-sm leading-6 text-neutral-300">
-                                    Based on the ASA column from the ARK wiki server configuration page. Green = supported on ASA. Amber = uncertain, verify on the wiki and test if possible.
-                                </p>
-                                <a href="https://ark.wiki.gg/wiki/Server_configuration"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   class="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10">
-                                    Open wiki source
-                                </a>
-                            </div>
-
-                            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                <TextInput Title="Active mods"
-                                           Variable="ActiveMods"
-                                           Description="Comma-separated list of mod IDs with no spaces."
-                                           ValueType="string list"
-                                           AvailabilityLabel="Supported"
-                                           InputLabel="Mod IDs"
-                                           Note="Usually managed from Server Config if you want one source of truth."
-                                           OnHelpClick='@(() => OpenHelpDialog("ActiveMods", "Comma-separated list of mod IDs with no spaces, in a single line."))'
-                                           @bind-Value="_activeMods" />
-
-                                <IntInput Title="Game port"
-                                          Variable="Port"
-                                          Description="Specifies the UDP game port."
-                                          ValueType="integer"
-                                          AvailabilityLabel="Supported"
-                                          InputLabel="Port"
-                                          Note="Usually managed from launch/server config."
-                                          OnHelpClick='@(() => OpenHelpDialog("Port", "Specifies the UDP game port."))'
-                                          @bind-Value="_port" />
-
-                                <IntInput Title="Query port"
-                                          Variable="QueryPort"
-                                          Description="Specifies the UDP Steam query port."
-                                          ValueType="integer"
-                                          AvailabilityLabel="Check wiki"
-                                          InputLabel="Query port"
-                                          IsUncertain="true"
-                                          SourceUrl="@WikiServerConfigurationUrl"
-                                          OnHelpClick='@(() => OpenHelpDialog("QueryPort", "Specifies the UDP Steam query port."))'
-                                          @bind-Value="_queryPort" />
-
-                                <TextInput Title="Session name"
-                                           Variable="SessionName"
-                                           Description="Server name advertised in the server browser."
-                                           ValueType="string"
-                                           AvailabilityLabel="Supported"
-                                           InputLabel="Session name"
-                                           Note="Usually managed from Server Config."
-                                           OnHelpClick='@(() => OpenHelpDialog("SessionName", "Server name advertised in the game and server browser."))'
-                                           @bind-Value="_sessionName" />
-
-                                <BoolInput Title="Enable MultiHome"
-                                           Variable="MultiHome"
-                                           Description="Enables multihoming when used with a MultiHome IP address."
-                                           ValueType="boolean"
-                                           AvailabilityLabel="Check wiki"
-                                           InputLabel="Enabled"
-                                           IsUncertain="true"
-                                           SourceUrl="@WikiServerConfigurationUrl"
-                                           OnHelpClick='@(() => OpenHelpDialog("MultiHome", "If True, enables multihoming. A MultiHome IP must also be specified."))'
-                                           @bind-Value="_multiHomeEnabled" />
-
-                                <TextInput Title="MultiHome IP"
-                                           Variable="MultiHome"
-                                           Description="Specifies the MultiHome IP address when multihoming is enabled."
-                                           ValueType="string"
-                                           AvailabilityLabel="Check wiki"
-                                           InputLabel="IP address"
-                                           Note="Leave empty if not using multihoming."
-                                           IsUncertain="true"
-                                           SourceUrl="@WikiServerConfigurationUrl"
-                                           OnHelpClick='@(() => OpenHelpDialog("MultiHome IP", "Specifies the MultiHome IP address. Leave empty if not using multihoming."))'
-                                           @bind-Value="_multiHomeAddress" />
-																<div>[MessageOfTheDay]</div>
-																<div>The following options must come under the [MessageOfTheDay] section of GameUserSettings.ini.</div>
-                                <IntInput Title="Message duration"
-                                          Variable="Duration"
-                                          Description="Duration in seconds for the message of the day."
-                                          ValueType="integer"
-                                          AvailabilityLabel="Supported"
-                                          InputLabel="Seconds"
-                                          OnHelpClick='@(() => OpenHelpDialog("Duration", "Duration in seconds for the displayed message of the day on player login."))'
-                                          @bind-Value="_motdDuration" />
-
-                                <TextInput Title="Message of the day"
-                                           Variable="Message"
-                                           Description="Single line message shown to players on login. Use \\n for a new line."
-                                           ValueType="string"
-                                           AvailabilityLabel="Supported"
-                                           InputLabel="Message"
-                                           IsTextArea="true"
-                                           OnHelpClick='@(() => OpenHelpDialog("Message", "Single line message displayed once the player logs in. Use \\\\n to start a new line."))'
-                                           @bind-Value="_motdMessage" />
-                            </div>
-
-                            <div class="rounded-[1.6rem] border border-amber-300/20 bg-amber-400/10 p-5 text-sm leading-6 text-amber-100">
-                                `Check wiki` means the ASA column was uncertain (`?`) on the source table. Validate in game if you plan to rely on it.
-                            </div>
-
-                            <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-5">
-                                <p class="text-[0.7rem] uppercase tracking-[0.28em] text-fuchsia-200/85">Generated GameUserSettings.ini</p>
-                                <textarea readonly
-                                          class="mt-4 min-h-80 w-full rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200 outline-none">@BuildGameUserSettingsPreview()</textarea>
-                            </div>
-                        </section>
+                        <GameUserSettingsIniSection />
                     </div>
                 }
             </div>
@@ -196,39 +52,31 @@
     </div>
 </section>
 
-<InfoDialog IsOpen="@_showHelpDialog"
-            Eyebrow="Ini"
-            Title="@_helpDialogTitle"
-            Message="@_helpDialogMessage"
-            PillText="Help"
-            OnClose="CloseHelpDialog" />
-
 @code {
+    private const string StorageKey = "asa.ini-generator.active-tab";
     private string _activeTab = "game";
+    private bool _loadedFromStorage;
 
-    private string _gameBabyMatureSpeedMultiplier = "1.0";
-    private string _gameEggHatchSpeedMultiplier = "1.0";
-    private string _gameHarvestAmountMultiplier = "1.0";
-    private string _gameXpMultiplier = "1.0";
-    private string _gameTamingSpeedMultiplier = "1.0";
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _loadedFromStorage)
+        {
+            return;
+        }
 
-    private const string WikiServerConfigurationUrl = "https://ark.wiki.gg/wiki/Server_configuration";
+        _loadedFromStorage = true;
+        string? storedTab = await JS.InvokeAsync<string>("iniGeneratorStorage.load", StorageKey);
+        if (!string.IsNullOrWhiteSpace(storedTab))
+        {
+            _activeTab = storedTab;
+            StateHasChanged();
+        }
+    }
 
-    private string _activeMods = string.Empty;
-    private string _port = "7777";
-    private string _queryPort = "27015";
-    private string _sessionName = "ASA Server";
-    private string _multiHomeEnabled = "False";
-    private string _multiHomeAddress = string.Empty;
-    private string _motdDuration = "20";
-    private string _motdMessage = string.Empty;
-    private bool _showHelpDialog;
-    private string _helpDialogTitle = string.Empty;
-    private string _helpDialogMessage = string.Empty;
-
-    private void SetTab(string tab)
+    private async Task SetTab(string tab)
     {
         _activeTab = tab;
+        await JS.InvokeVoidAsync("iniGeneratorStorage.save", StorageKey, _activeTab);
     }
 
     private string GetTabClass(string tab)
@@ -241,61 +89,5 @@
     private static string GetPanelClass()
     {
         return "rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur";
-    }
-
-    private string BuildGameIniPreview()
-    {
-        return $$"""
-[/Script/ShooterGame.ShooterGameMode]
-BabyMatureSpeedMultiplier={{_gameBabyMatureSpeedMultiplier}}
-EggHatchSpeedMultiplier={{_gameEggHatchSpeedMultiplier}}
-HarvestAmountMultiplier={{_gameHarvestAmountMultiplier}}
-XPMultiplier={{_gameXpMultiplier}}
-TamingSpeedMultiplier={{_gameTamingSpeedMultiplier}}
-""";
-    }
-
-    private string BuildGameUserSettingsPreview()
-    {
-        List<string> lines = ["[ServerSettings]"];
-
-        if (!string.IsNullOrWhiteSpace(_activeMods))
-        {
-            lines.Add($"ActiveMods={_activeMods}");
-        }
-
-        lines.Add(string.Empty);
-        lines.Add("[SessionSettings]");
-        lines.Add($"Port={_port}");
-        lines.Add($"QueryPort={_queryPort}");
-        lines.Add($"SessionName={_sessionName}");
-
-        if (!string.IsNullOrWhiteSpace(_multiHomeAddress))
-        {
-            lines.Add($"MultiHome={_multiHomeAddress}");
-        }
-
-        lines.Add(string.Empty);
-        lines.Add("[/MultiHome]");
-        lines.Add($"MultiHome={_multiHomeEnabled}");
-        lines.Add(string.Empty);
-        lines.Add("[MessageOfTheDay]");
-        lines.Add($"Duration={_motdDuration}");
-        lines.Add($"Message={_motdMessage}");
-
-        return string.Join(Environment.NewLine, lines);
-    }
-
-    private void OpenHelpDialog(string title, string message)
-    {
-        _helpDialogTitle = title;
-        _helpDialogMessage = message;
-        _showHelpDialog = true;
-    }
-
-    private Task CloseHelpDialog()
-    {
-        _showHelpDialog = false;
-        return Task.CompletedTask;
     }
 }

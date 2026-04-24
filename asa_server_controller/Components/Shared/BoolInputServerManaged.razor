@@ -1,0 +1,42 @@
+@namespace ASA.ServerController.Components.Shared
+
+<div class="@ContainerClass">
+    <label class="flex cursor-pointer items-center gap-3">
+        <input type="checkbox"
+               checked="@BoolValue"
+               @onchange="@((e) => ValueChanged.InvokeAsync((bool)(e.Value)))"
+               class="@CheckboxClass" />
+        <span class="text-sm text-neutral-200">
+            @Label
+            @if (IsServerManaged)
+            {
+                <span class="text-amber-400" title="Managed by server config">*</span>
+            }
+        </span>
+    </label>
+    @if (!string.IsNullOrEmpty(Hint))
+    {
+        <p class="mt-1 text-xs text-neutral-400">@Hint</p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool BoolValue { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool IsServerManaged { get; set; }
+
+    [Parameter]
+    public string Hint { get; set; } = string.Empty;
+
+    private string ContainerClass => "col-span-1";
+
+    private string CheckboxClass => "h-4 w-4 rounded border-white/20 bg-black/30 text-fuchsia-500 outline-none focus:ring-fuchsia-400/50";
+}
