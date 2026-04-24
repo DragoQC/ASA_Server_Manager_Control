@@ -83,45 +83,104 @@
                                 <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Generator</p>
                                 <h2 class="mt-3 text-2xl font-semibold text-white">GameUserSettings.ini builder</h2>
                                 <p class="mt-3 max-w-3xl text-sm leading-6 text-neutral-300">
-                                    Basic server/session values for a starter <code class="rounded bg-white/10 px-2 py-1 text-neutral-100">GameUserSettings.ini</code>.
+                                    Based on the ASA column from the ARK wiki server configuration page. Green = supported on ASA. Amber = uncertain, verify on the wiki and test if possible.
                                 </p>
+                                <a href="https://ark.wiki.gg/wiki/Server_configuration"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10">
+                                    Open wiki source
+                                </a>
                             </div>
 
                             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                <TextField Label="Session name"
-                                           @bind-Value="_sessionName"
-                                           Hint="Example: My ASA Server" />
+                                <TextInput Title="Active mods"
+                                           Variable="ActiveMods"
+                                           Description="Comma-separated list of mod IDs with no spaces."
+                                           ValueType="string list"
+                                           AvailabilityLabel="Supported"
+                                           InputLabel="Mod IDs"
+                                           Note="Usually managed from Server Config if you want one source of truth."
+                                           OnHelpClick='@(() => OpenHelpDialog("ActiveMods", "Comma-separated list of mod IDs with no spaces, in a single line."))'
+                                           @bind-Value="_activeMods" />
 
-                                <TextField Label="Max players"
-                                           @bind-Value="_maxPlayers"
-                                           Hint="Example: 70" />
+                                <IntInput Title="Game port"
+                                          Variable="Port"
+                                          Description="Specifies the UDP game port."
+                                          ValueType="integer"
+                                          AvailabilityLabel="Supported"
+                                          InputLabel="Port"
+                                          Note="Usually managed from launch/server config."
+                                          OnHelpClick='@(() => OpenHelpDialog("Port", "Specifies the UDP game port."))'
+                                          @bind-Value="_port" />
 
-                                <div>
-                                    <label class="mb-2 block text-sm font-medium text-neutral-300">Server PVE</label>
-                                    <select @bind="_serverPve"
-                                            class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none">
-                                        <option value="False">False</option>
-                                        <option value="True">True</option>
-                                    </select>
-                                </div>
+                                <IntInput Title="Query port"
+                                          Variable="QueryPort"
+                                          Description="Specifies the UDP Steam query port."
+                                          ValueType="integer"
+                                          AvailabilityLabel="Check wiki"
+                                          InputLabel="Query port"
+                                          IsUncertain="true"
+                                          SourceUrl="@WikiServerConfigurationUrl"
+                                          OnHelpClick='@(() => OpenHelpDialog("QueryPort", "Specifies the UDP Steam query port."))'
+                                          @bind-Value="_queryPort" />
 
-                                <div>
-                                    <label class="mb-2 block text-sm font-medium text-neutral-300">Allow third person</label>
-                                    <select @bind="_allowThirdPersonPlayer"
-                                            class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none">
-                                        <option value="True">True</option>
-                                        <option value="False">False</option>
-                                    </select>
-                                </div>
+                                <TextInput Title="Session name"
+                                           Variable="SessionName"
+                                           Description="Server name advertised in the server browser."
+                                           ValueType="string"
+                                           AvailabilityLabel="Supported"
+                                           InputLabel="Session name"
+                                           Note="Usually managed from Server Config."
+                                           OnHelpClick='@(() => OpenHelpDialog("SessionName", "Server name advertised in the game and server browser."))'
+                                           @bind-Value="_sessionName" />
 
-                                <div>
-                                    <label class="mb-2 block text-sm font-medium text-neutral-300">Show map player location</label>
-                                    <select @bind="_showMapPlayerLocation"
-                                            class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none">
-                                        <option value="True">True</option>
-                                        <option value="False">False</option>
-                                    </select>
-                                </div>
+                                <BoolInput Title="Enable MultiHome"
+                                           Variable="MultiHome"
+                                           Description="Enables multihoming when used with a MultiHome IP address."
+                                           ValueType="boolean"
+                                           AvailabilityLabel="Check wiki"
+                                           InputLabel="Enabled"
+                                           IsUncertain="true"
+                                           SourceUrl="@WikiServerConfigurationUrl"
+                                           OnHelpClick='@(() => OpenHelpDialog("MultiHome", "If True, enables multihoming. A MultiHome IP must also be specified."))'
+                                           @bind-Value="_multiHomeEnabled" />
+
+                                <TextInput Title="MultiHome IP"
+                                           Variable="MultiHome"
+                                           Description="Specifies the MultiHome IP address when multihoming is enabled."
+                                           ValueType="string"
+                                           AvailabilityLabel="Check wiki"
+                                           InputLabel="IP address"
+                                           Note="Leave empty if not using multihoming."
+                                           IsUncertain="true"
+                                           SourceUrl="@WikiServerConfigurationUrl"
+                                           OnHelpClick='@(() => OpenHelpDialog("MultiHome IP", "Specifies the MultiHome IP address. Leave empty if not using multihoming."))'
+                                           @bind-Value="_multiHomeAddress" />
+																<div>[MessageOfTheDay]</div>
+																<div>The following options must come under the [MessageOfTheDay] section of GameUserSettings.ini.</div>
+                                <IntInput Title="Message duration"
+                                          Variable="Duration"
+                                          Description="Duration in seconds for the message of the day."
+                                          ValueType="integer"
+                                          AvailabilityLabel="Supported"
+                                          InputLabel="Seconds"
+                                          OnHelpClick='@(() => OpenHelpDialog("Duration", "Duration in seconds for the displayed message of the day on player login."))'
+                                          @bind-Value="_motdDuration" />
+
+                                <TextInput Title="Message of the day"
+                                           Variable="Message"
+                                           Description="Single line message shown to players on login. Use \\n for a new line."
+                                           ValueType="string"
+                                           AvailabilityLabel="Supported"
+                                           InputLabel="Message"
+                                           IsTextArea="true"
+                                           OnHelpClick='@(() => OpenHelpDialog("Message", "Single line message displayed once the player logs in. Use \\\\n to start a new line."))'
+                                           @bind-Value="_motdMessage" />
+                            </div>
+
+                            <div class="rounded-[1.6rem] border border-amber-300/20 bg-amber-400/10 p-5 text-sm leading-6 text-amber-100">
+                                `Check wiki` means the ASA column was uncertain (`?`) on the source table. Validate in game if you plan to rely on it.
                             </div>
 
                             <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-5">
@@ -137,6 +196,13 @@
     </div>
 </section>
 
+<InfoDialog IsOpen="@_showHelpDialog"
+            Eyebrow="Ini"
+            Title="@_helpDialogTitle"
+            Message="@_helpDialogMessage"
+            PillText="Help"
+            OnClose="CloseHelpDialog" />
+
 @code {
     private string _activeTab = "game";
 
@@ -146,11 +212,19 @@
     private string _gameXpMultiplier = "1.0";
     private string _gameTamingSpeedMultiplier = "1.0";
 
+    private const string WikiServerConfigurationUrl = "https://ark.wiki.gg/wiki/Server_configuration";
+
+    private string _activeMods = string.Empty;
+    private string _port = "7777";
+    private string _queryPort = "27015";
     private string _sessionName = "ASA Server";
-    private string _maxPlayers = "70";
-    private string _serverPve = "False";
-    private string _allowThirdPersonPlayer = "True";
-    private string _showMapPlayerLocation = "True";
+    private string _multiHomeEnabled = "False";
+    private string _multiHomeAddress = string.Empty;
+    private string _motdDuration = "20";
+    private string _motdMessage = string.Empty;
+    private bool _showHelpDialog;
+    private string _helpDialogTitle = string.Empty;
+    private string _helpDialogMessage = string.Empty;
 
     private void SetTab(string tab)
     {
@@ -183,15 +257,45 @@ TamingSpeedMultiplier={{_gameTamingSpeedMultiplier}}
 
     private string BuildGameUserSettingsPreview()
     {
-        return $$"""
-[ServerSettings]
-ServerPVE={{_serverPve}}
-ShowMapPlayerLocation={{_showMapPlayerLocation}}
-AllowThirdPersonPlayer={{_allowThirdPersonPlayer}}
+        List<string> lines = ["[ServerSettings]"];
 
-[SessionSettings]
-SessionName={{_sessionName}}
-MaxPlayers={{_maxPlayers}}
-""";
+        if (!string.IsNullOrWhiteSpace(_activeMods))
+        {
+            lines.Add($"ActiveMods={_activeMods}");
+        }
+
+        lines.Add(string.Empty);
+        lines.Add("[SessionSettings]");
+        lines.Add($"Port={_port}");
+        lines.Add($"QueryPort={_queryPort}");
+        lines.Add($"SessionName={_sessionName}");
+
+        if (!string.IsNullOrWhiteSpace(_multiHomeAddress))
+        {
+            lines.Add($"MultiHome={_multiHomeAddress}");
+        }
+
+        lines.Add(string.Empty);
+        lines.Add("[/MultiHome]");
+        lines.Add($"MultiHome={_multiHomeEnabled}");
+        lines.Add(string.Empty);
+        lines.Add("[MessageOfTheDay]");
+        lines.Add($"Duration={_motdDuration}");
+        lines.Add($"Message={_motdMessage}");
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private void OpenHelpDialog(string title, string message)
+    {
+        _helpDialogTitle = title;
+        _helpDialogMessage = message;
+        _showHelpDialog = true;
+    }
+
+    private Task CloseHelpDialog()
+    {
+        _showHelpDialog = false;
+        return Task.CompletedTask;
     }
 }
