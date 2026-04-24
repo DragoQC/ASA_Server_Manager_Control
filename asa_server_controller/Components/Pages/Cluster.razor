@@ -125,9 +125,7 @@
                     <div class="space-y-3">
                         <div class="flex flex-wrap items-center gap-3">
                         <h2 class="text-3xl font-semibold text-white">WireGuard fields</h2>
-                            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                                @(_file.Exists ? "Loaded" : "New config")
-                            </span>
+                            <StatusTag Text="@(_file.Exists ? "Loaded" : "New config")" />
                         </div>
 
                         <p class="max-w-3xl text-base leading-7 text-neutral-300">
@@ -273,9 +271,7 @@
                     <div class="space-y-3">
                         <div class="flex flex-wrap items-center gap-3">
                             <h2 class="text-3xl font-semibold text-white">NFS Configuration</h2>
-                            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                                Cluster share
-                            </span>
+                            <StatusTag Text="@GetNfsConfigurationStateLabel()" />
                         </div>
 
                         <p class="max-w-3xl text-base leading-7 text-neutral-300">
@@ -284,10 +280,6 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3">
-                        <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
-                            @(_nfsConfiguration?.ClusterFolderExists == true ? "Cluster folder ready" : "Cluster folder missing")
-                        </span>
-
                         <button type="button"
                                 @onclick="SaveNfsConfigAsync"
                                 disabled="@(_isSavingNfsConfiguration || !_isVpnConfigured)"
@@ -309,9 +301,7 @@
                             <div class="space-y-3">
                                 <div class="flex flex-wrap items-center gap-3">
                                     <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Default NFS server config</p>
-                                    <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
-                                        @(_nfsConfiguration.ServerConfigExists ? "Created" : "Preview")
-                                    </span>
+                                    <StatusTag Text="@(_nfsConfiguration.ServerConfigExists ? "Created" : "Preview")" />
                                 </div>
                                 <p class="text-sm leading-6 text-neutral-300">We strongly recommend using these default settings unless you know exactly what you want to change.</p>
                                 <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@_nfsConfiguration.ServerConfigFilePath</p>
@@ -324,9 +314,7 @@
                             <div class="space-y-3">
                                 <div class="flex flex-wrap items-center gap-3">
                                     <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Default NFS mount config</p>
-                                    <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
-                                        @(_nfsConfiguration.ClientConfigExists ? "Created" : "Preview")
-                                    </span>
+                                    <StatusTag Text="@(_nfsConfiguration.ClientConfigExists ? "Created" : "Preview")" />
                                 </div>
                                 <p class="text-sm leading-6 text-neutral-300">This is the node-side NFS mount line that invited servers can apply later for automatic mounting over the VPN.</p>
                                 <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@_nfsConfiguration.ClientConfigFilePath</p>
@@ -354,9 +342,7 @@
                     <div class="flex flex-wrap items-center gap-3">
                         <p class="text-xs font-semibold uppercase tracking-[0.45em] text-fuchsia-300">File editor</p>
                         <h2 class="text-3xl font-semibold text-white">@_file.Title</h2>
-                        <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                            @_file.StateLabel
-                        </span>
+                        <StatusTag Text="@_file.StateLabel" />
                     </div>
                     <p class="max-w-3xl text-sm leading-6 text-neutral-300">@_file.Description</p>
                     <p class="text-xs uppercase tracking-[0.28em] text-neutral-500">@_file.FilePath</p>
@@ -914,6 +900,26 @@
         return _editorMessageIsError
             ? "mx-6 mt-6 rounded-2xl border border-red-300/20 bg-red-400/10 px-5 py-4 text-sm text-red-100"
             : "mx-6 mt-6 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-100";
+    }
+
+    private string GetNfsConfigurationStateLabel()
+    {
+        if (_nfsConfiguration is null)
+        {
+            return "Not configured";
+        }
+
+        if (!_nfsConfiguration.ClusterFolderExists)
+        {
+            return "Missing folder";
+        }
+
+        if (_nfsConfiguration.ServerConfigExists && _nfsConfiguration.ClientConfigExists)
+        {
+            return "Ready";
+        }
+
+        return "Not configured";
     }
 
     private void OpenHelpDialog(string title, string message)

@@ -60,7 +60,7 @@ public sealed class RemoteServerInfoService(
 
             RemoteServerInfoResponse? response = await remoteAdminHttpClient.GetFromJsonAsync<RemoteServerInfoResponse>(
                 connection.BaseUrl,
-                "/api/server/me",
+                "/api/admin/server",
                 connection.ApiKey);
 
             if (response is null || !response.Success)

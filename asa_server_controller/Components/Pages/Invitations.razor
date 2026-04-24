@@ -63,7 +63,7 @@
         }
 
         <section class="rounded-[1.8rem] border border-white/10 bg-black/20 p-3 backdrop-blur">
-            <div class="grid grid-cols-2 gap-3 p-2">
+            <div class="flex flex-wrap gap-3 p-2 sm:grid sm:grid-cols-2">
                 <button type="button"
                         @onclick='() => SetTab("vpn")'
                         class="@GetTabClass("vpn")">
@@ -172,12 +172,8 @@
                                                 <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                                                     <div class="space-y-3">
                                                         <div class="flex flex-wrap gap-2">
-                                                            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                                                                @item.InviteStatus
-                                                            </span>
-                                                            <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200">
-                                                                @item.ValidationStatus
-                                                            </span>
+                                                            <StatusTag Text="@item.InviteStatus" />
+                                                            <StatusTag Text="@item.ValidationStatus" />
                                                         </div>
 
                                                         <div>
@@ -315,9 +311,7 @@
                                                 <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                                                     <div class="space-y-3">
                                                         <div class="flex flex-wrap gap-2">
-                                                            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                                                                @(item.UsedAtUtc is null ? "Pending" : "Accepted")
-                                                            </span>
+                                                            <StatusTag Text="@(item.UsedAtUtc is null ? "Pending" : "Accepted")" />
                                                         </div>
 
                                                         <div>
@@ -776,8 +770,8 @@
     private string GetTabClass(string tab)
     {
         return string.Equals(_activeTab, tab, StringComparison.Ordinal)
-            ? "rounded-[1.1rem] border border-fuchsia-300/30 bg-fuchsia-400/15 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-fuchsia-100 transition"
-            : "rounded-[1.1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-neutral-200 transition hover:bg-white/10";
+            ? "min-w-0 flex-1 rounded-[1.1rem] border border-fuchsia-300/30 bg-fuchsia-400/15 px-4 py-3 text-center text-sm font-semibold uppercase tracking-[0.2em] text-fuchsia-100 whitespace-normal transition sm:flex-none"
+            : "min-w-0 flex-1 rounded-[1.1rem] border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-semibold uppercase tracking-[0.2em] text-neutral-200 whitespace-normal transition hover:bg-white/10 sm:flex-none";
     }
 
     private string GetPanelClass()

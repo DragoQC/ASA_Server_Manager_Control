@@ -9,4 +9,9 @@ public sealed record RemoteServerInfoResponse(
     int MaxPlayers,
     int? GamePort,
     DateTimeOffset CheckedAtUtc,
-    [property: JsonPropertyName("modIds")] List<string>? ModIds);
+    [property: JsonPropertyName("modIds")] List<string>? ModIds,
+    string? TotalRam = null,
+    string? RamPercentage = null,
+    string? CpuUsage = null,
+    string? DiskTotal = null,
+    string? DiskUsed = null);

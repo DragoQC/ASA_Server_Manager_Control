@@ -1,0 +1,11 @@
+.masonry-layout {
+    width: 100%;
+}
+
+.masonry-layout ::deep > * {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: var(--masonry-gap, 1rem);
+    break-inside: avoid;
+    vertical-align: top;
+}

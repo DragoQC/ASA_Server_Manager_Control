@@ -3,21 +3,29 @@
     string normalized = text.ToUpperInvariant();
 
     bool isOk = normalized == "OK" ||
+                normalized == "READY" ||
+                normalized == "LOADED" ||
                 normalized == "RUNNING" ||
+                normalized == "ONLINE" ||
+                normalized == "ACCEPTED" ||
                 normalized == "CONNECTED" ||
                 normalized == "IN USE";
     bool isMissing = normalized.Contains("MISSING", StringComparison.Ordinal);
-    bool isWarning = normalized.Contains("WARN", StringComparison.Ordinal) ||
+    bool isWarning = normalized == "PENDING" ||
+                     normalized == "NOT CLAIMED" ||
+                     normalized.Contains("WARN", StringComparison.Ordinal) ||
                      normalized.Contains("STARTING", StringComparison.Ordinal) ||
                      normalized.Contains("STOPPING", StringComparison.Ordinal);
     bool isBad = normalized.Contains("FAILED", StringComparison.Ordinal) ||
+                 normalized == "OFFLINE" ||
                  normalized.Contains("ERROR", StringComparison.Ordinal) ||
                  normalized.Contains("FAULT", StringComparison.Ordinal) ||
                  normalized.Contains("FAULTED", StringComparison.Ordinal) ||
                  normalized.Contains("WRONG", StringComparison.Ordinal) ||
                  normalized.Contains("INVALID", StringComparison.Ordinal) ||
                  normalized.Contains("UNUSED", StringComparison.Ordinal) ||
-                 normalized.Contains("UNAVAILABLE", StringComparison.Ordinal);
+                 normalized.Contains("UNAVAILABLE", StringComparison.Ordinal) ||
+                 normalized.Contains("UNINSTALLED", StringComparison.Ordinal);
 
     string css = isOk
         ? "rounded-full border border-emerald-300/30 bg-emerald-400/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200 shadow-[0_0_18px_rgba(52,211,153,0.35)]"

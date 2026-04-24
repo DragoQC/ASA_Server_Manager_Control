@@ -37,7 +37,7 @@ public sealed class RemoteServerModsService(
         RemoteServerConnection connection = await remoteServerService.LoadRequiredConnectionAsync(remoteServerId, cancellationToken);
         RemoteServerInfoResponse? response = await remoteAdminHttpClient.GetFromJsonAsync<RemoteServerInfoResponse>(
             connection.BaseUrl,
-            "/api/server/me",
+            "/api/admin/server",
             connection.ApiKey,
             cancellationToken);
 

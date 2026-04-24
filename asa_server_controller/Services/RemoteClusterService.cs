@@ -28,11 +28,17 @@ public sealed class RemoteClusterService(
 
             try
             {
-                await remoteAdminHttpClient.PostAsJsonAsync<UpdateClusterIdRequest, object>(
+                await remoteAdminHttpClient.PatchAsJsonAsync<PatchServerConfigRequest, object>(
                     connection.BaseUrl,
-                    ClusterConstants.RemoteClusterUpdatePath,
+                    ClusterConstants.RemoteServerConfigPath,
                     connection.ApiKey,
-                    new UpdateClusterIdRequest(clusterId.Trim()),
+                    new PatchServerConfigRequest(
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        clusterId.Trim()),
                     cancellationToken);
 
                 updatedCount++;

@@ -1,0 +1,197 @@
+@page "/admin/ini-file-generator"
+
+<PageTitle>Ini File Generator</PageTitle>
+
+<section class="rounded-b-4xl border-x border-b border-fuchsia-400/15 bg-linear-to-br from-black/35 via-[#0b0612]/30 to-[#17081f]/35 p-8 shadow-[0_0_48px_rgba(168,85,247,0.16)] backdrop-blur-[2px]">
+    <div class="space-y-8">
+        <div class="flex flex-wrap items-center gap-4">
+            <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Ini file generator</p>
+            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                Config helper
+            </span>
+        </div>
+
+        <div>
+            <h1 class="text-4xl font-semibold tracking-tight text-white">Ini File Generator</h1>
+            <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
+                Fill a few values and generate a starter ini file. This is a helper tool page for users to build their own config faster.
+            </p>
+        </div>
+
+        <section class="rounded-[1.8rem] border border-white/10 bg-black/20 p-3 backdrop-blur">
+            <div class="flex flex-wrap gap-3 p-2 sm:grid sm:grid-cols-2">
+                <button type="button"
+                        @onclick='() => SetTab("game")'
+                        class="@GetTabClass("game")">
+                    Game.ini
+                </button>
+                <button type="button"
+                        @onclick='() => SetTab("gus")'
+                        class="@GetTabClass("gus")">
+                    GameUserSettings.ini
+                </button>
+            </div>
+
+            <div class="mt-6">
+                @if (string.Equals(_activeTab, "game", StringComparison.Ordinal))
+                {
+                    <div class="@GetPanelClass()">
+                        <section class="space-y-6">
+                            <div>
+                                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Generator</p>
+                                <h2 class="mt-3 text-2xl font-semibold text-white">Game.ini builder</h2>
+                                <p class="mt-3 max-w-3xl text-sm leading-6 text-neutral-300">
+                                    Basic gameplay values for a starter <code class="rounded bg-white/10 px-2 py-1 text-neutral-100">Game.ini</code>.
+                                </p>
+                            </div>
+
+                            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                <TextField Label="Baby mature speed"
+                                           @bind-Value="_gameBabyMatureSpeedMultiplier"
+                                           Hint="Example: 1.0" />
+
+                                <TextField Label="Egg hatch speed"
+                                           @bind-Value="_gameEggHatchSpeedMultiplier"
+                                           Hint="Example: 1.0" />
+
+                                <TextField Label="Harvest amount"
+                                           @bind-Value="_gameHarvestAmountMultiplier"
+                                           Hint="Example: 1.0" />
+
+                                <TextField Label="XP multiplier"
+                                           @bind-Value="_gameXpMultiplier"
+                                           Hint="Example: 1.0" />
+
+                                <TextField Label="Taming speed"
+                                           @bind-Value="_gameTamingSpeedMultiplier"
+                                           Hint="Example: 1.0" />
+                            </div>
+
+                            <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-5">
+                                <p class="text-[0.7rem] uppercase tracking-[0.28em] text-fuchsia-200/85">Generated Game.ini</p>
+                                <textarea readonly
+                                          class="mt-4 min-h-80 w-full rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200 outline-none">@BuildGameIniPreview()</textarea>
+                            </div>
+                        </section>
+                    </div>
+                }
+                else
+                {
+                    <div class="@GetPanelClass()">
+                        <section class="space-y-6">
+                            <div>
+                                <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Generator</p>
+                                <h2 class="mt-3 text-2xl font-semibold text-white">GameUserSettings.ini builder</h2>
+                                <p class="mt-3 max-w-3xl text-sm leading-6 text-neutral-300">
+                                    Basic server/session values for a starter <code class="rounded bg-white/10 px-2 py-1 text-neutral-100">GameUserSettings.ini</code>.
+                                </p>
+                            </div>
+
+                            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                <TextField Label="Session name"
+                                           @bind-Value="_sessionName"
+                                           Hint="Example: My ASA Server" />
+
+                                <TextField Label="Max players"
+                                           @bind-Value="_maxPlayers"
+                                           Hint="Example: 70" />
+
+                                <div>
+                                    <label class="mb-2 block text-sm font-medium text-neutral-300">Server PVE</label>
+                                    <select @bind="_serverPve"
+                                            class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none">
+                                        <option value="False">False</option>
+                                        <option value="True">True</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="mb-2 block text-sm font-medium text-neutral-300">Allow third person</label>
+                                    <select @bind="_allowThirdPersonPlayer"
+                                            class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none">
+                                        <option value="True">True</option>
+                                        <option value="False">False</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="mb-2 block text-sm font-medium text-neutral-300">Show map player location</label>
+                                    <select @bind="_showMapPlayerLocation"
+                                            class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none">
+                                        <option value="True">True</option>
+                                        <option value="False">False</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-5">
+                                <p class="text-[0.7rem] uppercase tracking-[0.28em] text-fuchsia-200/85">Generated GameUserSettings.ini</p>
+                                <textarea readonly
+                                          class="mt-4 min-h-80 w-full rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200 outline-none">@BuildGameUserSettingsPreview()</textarea>
+                            </div>
+                        </section>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</section>
+
+@code {
+    private string _activeTab = "game";
+
+    private string _gameBabyMatureSpeedMultiplier = "1.0";
+    private string _gameEggHatchSpeedMultiplier = "1.0";
+    private string _gameHarvestAmountMultiplier = "1.0";
+    private string _gameXpMultiplier = "1.0";
+    private string _gameTamingSpeedMultiplier = "1.0";
+
+    private string _sessionName = "ASA Server";
+    private string _maxPlayers = "70";
+    private string _serverPve = "False";
+    private string _allowThirdPersonPlayer = "True";
+    private string _showMapPlayerLocation = "True";
+
+    private void SetTab(string tab)
+    {
+        _activeTab = tab;
+    }
+
+    private string GetTabClass(string tab)
+    {
+        return string.Equals(_activeTab, tab, StringComparison.Ordinal)
+            ? "inline-flex justify-center rounded-[1.2rem] border border-fuchsia-300/30 bg-fuchsia-400/15 px-5 py-3 text-sm font-medium text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition"
+            : "inline-flex justify-center rounded-[1.2rem] border border-white/10 bg-black/20 px-5 py-3 text-sm font-medium text-neutral-300 transition hover:border-fuchsia-300/20 hover:bg-white/5 hover:text-white";
+    }
+
+    private static string GetPanelClass()
+    {
+        return "rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur";
+    }
+
+    private string BuildGameIniPreview()
+    {
+        return $$"""
+[/Script/ShooterGame.ShooterGameMode]
+BabyMatureSpeedMultiplier={{_gameBabyMatureSpeedMultiplier}}
+EggHatchSpeedMultiplier={{_gameEggHatchSpeedMultiplier}}
+HarvestAmountMultiplier={{_gameHarvestAmountMultiplier}}
+XPMultiplier={{_gameXpMultiplier}}
+TamingSpeedMultiplier={{_gameTamingSpeedMultiplier}}
+""";
+    }
+
+    private string BuildGameUserSettingsPreview()
+    {
+        return $$"""
+[ServerSettings]
+ServerPVE={{_serverPve}}
+ShowMapPlayerLocation={{_showMapPlayerLocation}}
+AllowThirdPersonPlayer={{_allowThirdPersonPlayer}}
+
+[SessionSettings]
+SessionName={{_sessionName}}
+MaxPlayers={{_maxPlayers}}
+""";
+    }
+}

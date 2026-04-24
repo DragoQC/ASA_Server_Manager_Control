@@ -1,0 +1,36 @@
+<div class="@BuildCssClass()"
+     style="@BuildStyle()">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public int MaxColumns { get; set; } = 4;
+
+    [Parameter]
+    public string MinColumnWidth { get; set; } = "18rem";
+
+    [Parameter]
+    public decimal GapRem { get; set; } = 1m;
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    private string BuildCssClass()
+    {
+        const string baseClass = "masonry-layout";
+        return string.IsNullOrWhiteSpace(Class) ? baseClass : $"{baseClass} {Class}";
+    }
+
+    private string BuildStyle()
+    {
+        int normalizedMaxColumns = MaxColumns <= 0 ? 4 : MaxColumns;
+        decimal normalizedGapRem = GapRem <= 0 ? 1m : GapRem;
+        string normalizedMinColumnWidth = string.IsNullOrWhiteSpace(MinColumnWidth) ? "18rem" : MinColumnWidth.Trim();
+
+        return $"--masonry-gap:{normalizedGapRem.ToString(System.Globalization.CultureInfo.InvariantCulture)}rem;column-count:{normalizedMaxColumns};column-width:{normalizedMinColumnWidth};column-gap:var(--masonry-gap);";
+    }
+}

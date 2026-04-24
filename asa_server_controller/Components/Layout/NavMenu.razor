@@ -11,16 +11,16 @@
                 </span>
             </a>
 
-            <AuthorizeView>
+            <AuthorizeView Context="authState">
                 <Authorized>
-                    <div class="rounded-full border border-fuchsia-400/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.24em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)]">
-                        Authenticated command layer
+                    <div class="rounded-full border border-fuchsia-400/10 bg-white/5 px-4 py-2 text-sm text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)]">
+                        @(authState.User.Identity?.Name ?? "Connected user")
                     </div>
                 </Authorized>
                 <NotAuthorized>
                     <a href="/admin/login"
-                       class="rounded-full border border-fuchsia-400/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.24em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition hover:bg-fuchsia-400/15">
-                        Admin login
+                       class="rounded-full border border-fuchsia-400/10 bg-white/5 px-4 py-2 text-sm text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition hover:bg-fuchsia-400/15">
+                        Login
                     </a>
                 </NotAuthorized>
             </AuthorizeView>
@@ -60,6 +60,18 @@
                                  class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition hover:bg-fuchsia-400/15"
                                  ActiveClass="border-fuchsia-300/40 bg-fuchsia-400/20 text-white shadow-[0_0_22px_rgba(168,85,247,0.35)]">
                             Invitations
+                        </NavLink>
+
+                        <NavLink href="/admin/ini-files"
+                                 class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition hover:bg-fuchsia-400/15"
+                                 ActiveClass="border-fuchsia-300/40 bg-fuchsia-400/20 text-white shadow-[0_0_22px_rgba(168,85,247,0.35)]">
+                            Ini Files
+                        </NavLink>
+
+                        <NavLink href="/admin/ini-file-generator"
+                                 class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100 shadow-[0_0_18px_rgba(168,85,247,0.15)] transition hover:bg-fuchsia-400/15"
+                                 ActiveClass="border-fuchsia-300/40 bg-fuchsia-400/20 text-white shadow-[0_0_22px_rgba(168,85,247,0.35)]">
+                            Ini File Generator
                         </NavLink>
 
                         <NavLink href="/admin/mods"

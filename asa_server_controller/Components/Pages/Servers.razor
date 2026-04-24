@@ -3,6 +3,7 @@
 @inject asa_server_controller.Services.RemoteManagerService RemoteManagerService
 @inject asa_server_controller.Services.RemoteRconService RemoteRconService
 @inject asa_server_controller.Services.RemoteServerHubClientService RemoteServerHubClientService
+@inject asa_server_controller.Services.RemoteServerInstallStateHubClientService RemoteServerInstallStateHubClientService
 @inject asa_server_controller.Services.RemoteServerInfoService RemoteServerInfoService
 @inject asa_server_controller.Services.VpnService VpnService
 @implements IDisposable
@@ -31,6 +32,10 @@
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<p class="text-sm text-neutral-300">Servers are created automatically when an invitation link is generated. Edit
 				their VPN address or node port here if needed.</p>
+		</div>
+
+		<div class="rounded-[1.4rem] border border-fuchsia-400/15 bg-fuchsia-400/5 p-4 text-sm leading-6 text-neutral-300">
+			Player count on this page comes from RCON polling. If the server is down or RCON is unavailable, player data stays at `0`.
 		</div>
 
 		<div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
@@ -72,7 +77,7 @@
 					<div
 						class="relative overflow-hidden rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
 						<div class="w-full pr-14 xl:pr-0">
-							<StatusTag Text="@item.StateLabel" />
+							<StatusTag Text="@GetDisplayStateLabel(item)" />
 						</div>
 
 						<div class="mt-5 w-full">
@@ -87,10 +92,18 @@
 										<p>VPN address: @item.VpnAddress</p>
 										<p>Node API port: @(item.Port?.ToString() ?? "Not set")</p>
 										<p>Game port: @(item.GamePort?.ToString() ?? "Missing")</p>
-										@if (item.IsOnline)
+										@if (!IsServerInstalled(item.Id))
+										{
+											<p>Server not installed yet</p>
+										}
+										else if (item.IsOnline)
 										{
 											<p>Map: @(string.IsNullOrWhiteSpace(item.MapName) ? "Unknown" : item.MapName)</p>
 											<p>Players: @item.CurrentPlayers / @(item.MaxPlayers > 0 ? item.MaxPlayers : 0)</p>
+											@if (!item.CanSendRconCommand)
+											{
+												<p class="text-xs text-neutral-400">Player count requires RCON. Without it, this stays at 0.</p>
+											}
 										}
 										else
 										{
@@ -108,13 +121,21 @@
 								</div>
 
 								<div class="hidden xl:flex xl:w-1/4 xl:flex-col xl:items-stretch xl:justify-start xl:gap-2">
-									<ActionButton Text="Edit" Secondary="true" OnClick="@(() => OpenEditServerDialog(item))" />
-									<ActionButton Text="Start" Disabled="@(IsStartBusy(item.Id) || !item.CanStart)"
-										OnClick="@(() => StartServerAsync(item.Id))" />
-									<ActionButton Text="Stop" Disabled="@(IsStopBusy(item.Id) || !item.CanStop)" Secondary="true"
-										OnClick="@(() => StopServerAsync(item.Id))" />
-									<ActionButton Text="Open RCON" Disabled="@(!item.CanSendRconCommand)" Secondary="true"
-										OnClick="@(() => OpenRconDialogAsync(item))" />
+									@if (IsServerInstalled(item.Id))
+									{
+										<ActionButton Text="Edit" Secondary="true" OnClick="@(() => OpenEditServerDialog(item))" />
+										<ActionButton Text="Start" Disabled="@(IsStartBusy(item.Id) || !item.CanStart)"
+											OnClick="@(() => StartServerAsync(item.Id))" />
+										<ActionButton Text="Stop" Disabled="@(IsStopBusy(item.Id) || !item.CanStop)" Secondary="true"
+											OnClick="@(() => StopServerAsync(item.Id))" />
+										<ActionButton Text="Open RCON" Disabled="@(!item.CanSendRconCommand)" Secondary="true"
+											OnClick="@(() => OpenRconDialogAsync(item))" />
+									}
+									else
+									{
+										<ActionButton Text="Install" Disabled="@IsInstallBusy(item.Id)"
+											OnClick="@(() => InstallServerAsync(item.Id))" />
+									}
 									<button type="button" @onclick="() => OpenDeleteServerDialog(item)"
 										class="inline-flex justify-center rounded-full border border-red-300/20 bg-red-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-red-100 transition hover:bg-red-400/20">
 										Delete
@@ -147,13 +168,21 @@
 									</div>
 
 									<div class="mt-5 flex-1 space-y-2">
-										<ActionButton Text="Edit" Secondary="true" OnClick="@(() => OpenEditServerFromMenu(item))" />
-										<ActionButton Text="Start" Disabled="@(IsStartBusy(item.Id) || !item.CanStart)"
-											OnClick="@(() => StartServerFromMenuAsync(item.Id))" />
-										<ActionButton Text="Stop" Disabled="@(IsStopBusy(item.Id) || !item.CanStop)" Secondary="true"
-											OnClick="@(() => StopServerFromMenuAsync(item.Id))" />
-										<ActionButton Text="Open RCON" Disabled="@(!item.CanSendRconCommand)" Secondary="true"
-											OnClick="@(() => OpenRconFromMenuAsync(item))" />
+										@if (IsServerInstalled(item.Id))
+										{
+											<ActionButton Text="Edit" Secondary="true" OnClick="@(() => OpenEditServerFromMenu(item))" />
+											<ActionButton Text="Start" Disabled="@(IsStartBusy(item.Id) || !item.CanStart)"
+												OnClick="@(() => StartServerFromMenuAsync(item.Id))" />
+											<ActionButton Text="Stop" Disabled="@(IsStopBusy(item.Id) || !item.CanStop)" Secondary="true"
+												OnClick="@(() => StopServerFromMenuAsync(item.Id))" />
+											<ActionButton Text="Open RCON" Disabled="@(!item.CanSendRconCommand)" Secondary="true"
+												OnClick="@(() => OpenRconFromMenuAsync(item))" />
+										}
+										else
+										{
+											<ActionButton Text="Install" Disabled="@IsInstallBusy(item.Id)"
+												OnClick="@(() => InstallServerFromMenuAsync(item.Id))" />
+										}
 										<button type="button" @onclick="() => OpenDeleteServerFromMenu(item)"
 											class="inline-flex justify-center rounded-full border border-red-300/20 bg-red-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-red-100 transition hover:bg-red-400/20">
 											Delete
@@ -350,6 +379,7 @@
 	protected override async Task OnInitializedAsync()
 	{
 		RemoteServerHubClientService.Changed += OnRemoteServerChanged;
+		RemoteServerInstallStateHubClientService.Changed += OnRemoteInstallStateChanged;
 		RemoteServerInfoService.InfoUpdated += OnRemoteInfoUpdated;
 		await RefreshAsync();
 	}
@@ -357,6 +387,7 @@
 	public void Dispose()
 	{
 		RemoteServerHubClientService.Changed -= OnRemoteServerChanged;
+		RemoteServerInstallStateHubClientService.Changed -= OnRemoteInstallStateChanged;
 		RemoteServerInfoService.InfoUpdated -= OnRemoteInfoUpdated;
 	}
 
@@ -390,6 +421,20 @@
 	}
 
 	private void OnRemoteInfoUpdated(int remoteServerId)
+	{
+		_ = InvokeAsync(async () =>
+		{
+			if (_isRefreshing)
+			{
+				return;
+			}
+
+			await RefreshAsync();
+			StateHasChanged();
+		});
+	}
+
+	private void OnRemoteInstallStateChanged(int remoteServerId)
 	{
 		_ = InvokeAsync(async () =>
 		{
@@ -455,6 +500,11 @@
 		await RunManagerCommandAsync(remoteServerId, "stop", () => RemoteManagerService.StopAsync(remoteServerId));
 	}
 
+	private async Task InstallServerAsync(int remoteServerId)
+	{
+		await RunManagerCommandAsync(remoteServerId, "install", () => RemoteManagerService.InstallAllAsync(remoteServerId));
+	}
+
 	private async Task RunManagerCommandAsync(
 		int remoteServerId,
 		string actionName,
@@ -493,6 +543,12 @@
 	{
 		return _busyActions.TryGetValue(remoteServerId, out string? actionName) &&
 			string.Equals(actionName, "stop", StringComparison.Ordinal);
+	}
+
+	private bool IsInstallBusy(int remoteServerId)
+	{
+		return _busyActions.TryGetValue(remoteServerId, out string? actionName) &&
+			string.Equals(actionName, "install", StringComparison.Ordinal);
 	}
 
 	private async Task OpenRconDialogAsync(asa_server_controller.Models.Servers.RemoteServerListItem item)
@@ -676,6 +732,12 @@
 		await StopServerAsync(remoteServerId);
 	}
 
+	private async Task InstallServerFromMenuAsync(int remoteServerId)
+	{
+		_openActionMenuServerId = null;
+		await InstallServerAsync(remoteServerId);
+	}
+
 	private async Task OpenRconFromMenuAsync(asa_server_controller.Models.Servers.RemoteServerListItem item)
 	{
 		_openActionMenuServerId = null;
@@ -699,5 +761,28 @@
 	{
 		_showHelpDialog = false;
 		return Task.CompletedTask;
+	}
+
+	private string GetDisplayStateLabel(asa_server_controller.Models.Servers.RemoteServerListItem item)
+	{
+		return IsServerInstalled(item.Id)
+			? item.StateLabel
+			: "Uninstalled";
+	}
+
+	private bool IsServerInstalled(int remoteServerId)
+	{
+		asa_server_controller.Models.Install.RemoteInstallStateSnapshot snapshot =
+			RemoteServerInstallStateHubClientService.GetSnapshot(remoteServerId);
+
+		if (!string.Equals(snapshot.ConnectionState, "Connected", StringComparison.Ordinal))
+		{
+			return false;
+		}
+
+		return string.Equals(snapshot.Workspace.Proton.Status, "OK", StringComparison.OrdinalIgnoreCase) &&
+			string.Equals(snapshot.Workspace.Steam.Status, "OK", StringComparison.OrdinalIgnoreCase) &&
+			string.Equals(snapshot.Workspace.StartScript.Status, "OK", StringComparison.OrdinalIgnoreCase) &&
+			string.Equals(snapshot.Workspace.ServiceFile.Status, "OK", StringComparison.OrdinalIgnoreCase);
 	}
 }
