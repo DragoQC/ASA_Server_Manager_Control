@@ -2,7 +2,7 @@
 @inject IJSRuntime JS
 @using System.Text.Json
 
-<section class="space-y-6">
+<section class="space-y-4">
     <div>
         <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Generator</p>
         <h2 class="mt-3 text-2xl font-semibold text-white">Game.ini builder</h2>
@@ -11,42 +11,47 @@
         </p>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <TextField Label="Baby mature speed"
-                   Value="@_babyMatureSpeedMultiplier"
-                   ValueChanged="SetBabyMatureSpeedMultiplier"
-                   Hint="Example: 1.0"
-                   placeholder="@DefaultBabyMatureSpeedMultiplier" />
+    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <IniFloatField Title="Baby mature speed"
+                       ValueType="float"
+                       StatusCode="S"
+                       Value="@_babyMatureSpeedMultiplier"
+                       ValueChanged="SetBabyMatureSpeedMultiplier"
+                       Placeholder="@DefaultBabyMatureSpeedMultiplier" />
 
-        <TextField Label="Egg hatch speed"
-                   Value="@_eggHatchSpeedMultiplier"
-                   ValueChanged="SetEggHatchSpeedMultiplier"
-                   Hint="Example: 1.0"
-                   placeholder="@DefaultEggHatchSpeedMultiplier" />
+        <IniFloatField Title="Egg hatch speed"
+                       ValueType="float"
+                       StatusCode="S"
+                       Value="@_eggHatchSpeedMultiplier"
+                       ValueChanged="SetEggHatchSpeedMultiplier"
+                       Placeholder="@DefaultEggHatchSpeedMultiplier" />
 
-        <TextField Label="Harvest amount"
-                   Value="@_harvestAmountMultiplier"
-                   ValueChanged="SetHarvestAmountMultiplier"
-                   Hint="Example: 1.0"
-                   placeholder="@DefaultHarvestAmountMultiplier" />
+        <IniFloatField Title="Harvest amount"
+                       ValueType="float"
+                       StatusCode="S"
+                       Value="@_harvestAmountMultiplier"
+                       ValueChanged="SetHarvestAmountMultiplier"
+                       Placeholder="@DefaultHarvestAmountMultiplier" />
 
-        <TextField Label="XP multiplier"
-                   Value="@_xpMultiplier"
-                   ValueChanged="SetXpMultiplier"
-                   Hint="Example: 1.0"
-                   placeholder="@DefaultXpMultiplier" />
+        <IniFloatField Title="XP multiplier"
+                       ValueType="float"
+                       StatusCode="S"
+                       Value="@_xpMultiplier"
+                       ValueChanged="SetXpMultiplier"
+                       Placeholder="@DefaultXpMultiplier" />
 
-        <TextField Label="Taming speed"
-                   Value="@_tamingSpeedMultiplier"
-                   ValueChanged="SetTamingSpeedMultiplier"
-                   Hint="Example: 1.0"
-                   placeholder="@DefaultTamingSpeedMultiplier" />
+        <IniFloatField Title="Taming speed"
+                       ValueType="float"
+                       StatusCode="S"
+                       Value="@_tamingSpeedMultiplier"
+                       ValueChanged="SetTamingSpeedMultiplier"
+                       Placeholder="@DefaultTamingSpeedMultiplier" />
     </div>
 
-    <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-5">
+    <div class="rounded-[1.2rem] border border-white/10 bg-black/20 p-4">
         <p class="text-[0.7rem] uppercase tracking-[0.28em] text-fuchsia-200/85">Generated Game.ini</p>
         <textarea readonly
-                  class="mt-4 min-h-80 w-full rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200 outline-none">@BuildGameIniPreview()</textarea>
+                  class="mt-3 min-h-72 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 font-mono text-xs leading-6 text-neutral-200 outline-none">@BuildGameIniPreview()</textarea>
     </div>
 </section>
 

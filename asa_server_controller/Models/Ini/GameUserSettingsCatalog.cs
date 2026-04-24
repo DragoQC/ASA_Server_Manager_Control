@@ -14,8 +14,8 @@ public static class GameUserSettingsCatalog
     public static IReadOnlyList<GameUserSettingsFieldCatalogItem> Fields { get; } =
     [
 			  // Settings
-        new("ActiveMods", "serverSettings", "textareainput", true, false, ""),
-        new("ActiveTotalConversion", "serverSettings", "textinput", false, false, ""),
+        new("ActiveMods", "serverSettings", "textareainput", true, false, "123097123,1231243"),
+        new("ActiveMapMod", "serverSettings", "int", false, false, "123097123"),
         new("AdminLogging", "serverSettings", "boolinput", false, false, "False"),
         new("AllowAnyoneBabyImprintCuddle", "serverSettings", "boolinput", false, false, "False"),
         new("AllowCrateSpawnsOnTopOfStructures", "serverSettings", "boolinput", false, false, "False"),

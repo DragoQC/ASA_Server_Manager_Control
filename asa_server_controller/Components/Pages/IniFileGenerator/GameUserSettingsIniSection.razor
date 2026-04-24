@@ -4,7 +4,7 @@
 @inject IWebHostEnvironment HostEnvironment
 @namespace asa_server_controller.Components.Pages.IniFileGeneratorSections
 
-<section class="space-y-6">
+<section class="space-y-4">
     <div>
         <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Generator</p>
         <h2 class="mt-3 text-2xl font-semibold text-white">GameUserSettings.ini builder</h2>
@@ -36,30 +36,26 @@
                 continue;
             }
 
-            <section class="space-y-4 rounded-[1.6rem] border border-white/10 bg-black/15 p-5">
+            <section class="space-y-3 rounded-[1.2rem] border border-white/10 bg-black/15 p-4">
                 <div>
                     <p class="text-[0.7rem] uppercase tracking-[0.28em] text-fuchsia-200/85">@sectionDefinition.Title</p>
                     @if (!string.IsNullOrWhiteSpace(sectionDefinition.Description))
                     {
-                        <p class="mt-2 text-sm leading-6 text-neutral-300">@sectionDefinition.Description</p>
+                        <p class="mt-1 text-xs leading-5 text-neutral-400">@sectionDefinition.Description</p>
                     }
                 </div>
 
-                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     @foreach (GameUserSettingsFieldDefinition field in sectionFields)
                     {
                         <div @key="field.Key">
                             @switch (NormalizeFieldType(field.Type))
                             {
                                 case "boolinput":
-                                    <BoolInput Title="@field.Title"
-                                               Variable="@field.Key"
-                                               Description="@field.Description"
+                                    <IniBoolField Title="@field.Title"
                                                ValueType="@GetValueTypeLabel(field.Type)"
-                                               AvailabilityLabel="@GetAvailabilityLabel(field)"
-                                               InputLabel="Value"
-                                               Note="@GetNote(field)"
-                                               IsUncertain="@field.Uncertain"
+                                               IsServerManaged="@field.IsServerManaged"
+                                               StatusCode="@GetStatusCode(field)"
                                                SourceUrl="@WikiSourceUrl"
                                                Placeholder="@GetPlaceholder(field)"
                                                OnHelpClick='@(() => OpenHelpDialog(field.Title, field.Description))'
@@ -67,14 +63,10 @@
                                                ValueChanged="@(value => SetFieldValue(field.Key, value))" />
                                     break;
                                 case "intinput":
-                                    <IntInput Title="@field.Title"
-                                              Variable="@field.Key"
-                                              Description="@field.Description"
+                                    <IniIntField Title="@field.Title"
                                               ValueType="@GetValueTypeLabel(field.Type)"
-                                              AvailabilityLabel="@GetAvailabilityLabel(field)"
-                                              InputLabel="Value"
-                                              Note="@GetNote(field)"
-                                              IsUncertain="@field.Uncertain"
+                                              IsServerManaged="@field.IsServerManaged"
+                                              StatusCode="@GetStatusCode(field)"
                                               SourceUrl="@WikiSourceUrl"
                                               Placeholder="@GetPlaceholder(field)"
                                                OnHelpClick='@(() => OpenHelpDialog(field.Title, field.Description))'
@@ -82,14 +74,10 @@
                                                ValueChanged="@(value => SetFieldValue(field.Key, value))" />
                                     break;
                                 case "floatinput":
-                                    <FloatInput Title="@field.Title"
-                                                Variable="@field.Key"
-                                                Description="@field.Description"
+                                    <IniFloatField Title="@field.Title"
                                                 ValueType="@GetValueTypeLabel(field.Type)"
-                                                AvailabilityLabel="@GetAvailabilityLabel(field)"
-                                                InputLabel="Value"
-                                                Note="@GetNote(field)"
-                                                IsUncertain="@field.Uncertain"
+                                                IsServerManaged="@field.IsServerManaged"
+                                                StatusCode="@GetStatusCode(field)"
                                                 SourceUrl="@WikiSourceUrl"
                                                 Placeholder="@GetPlaceholder(field)"
                                                 OnHelpClick='@(() => OpenHelpDialog(field.Title, field.Description))'
@@ -97,20 +85,30 @@
                                                 ValueChanged="@(value => SetFieldValue(field.Key, value))" />
                                     break;
                                 default:
-                                    <TextInput Title="@field.Title"
-                                               Variable="@field.Key"
-                                               Description="@field.Description"
-                                               ValueType="@GetValueTypeLabel(field.Type)"
-                                               AvailabilityLabel="@GetAvailabilityLabel(field)"
-                                               InputLabel="Value"
-                                               Note="@GetNote(field)"
-                                               IsUncertain="@field.Uncertain"
-                                               SourceUrl="@WikiSourceUrl"
-                                               Placeholder="@GetPlaceholder(field)"
-                                               IsTextArea="@IsTextArea(field.Type)"
-                                               OnHelpClick='@(() => OpenHelpDialog(field.Title, field.Description))'
-                                               Value="@GetFieldValue(field.Key)"
-                                               ValueChanged="@(value => SetFieldValue(field.Key, value))" />
+                                    if (IsTextArea(field.Type))
+                                    {
+                                        <IniTextAreaField Title="@field.Title"
+                                                          ValueType="@GetValueTypeLabel(field.Type)"
+                                                          IsServerManaged="@field.IsServerManaged"
+                                                          StatusCode="@GetStatusCode(field)"
+                                                          SourceUrl="@WikiSourceUrl"
+                                                          Placeholder="@GetPlaceholder(field)"
+                                                          OnHelpClick='@(() => OpenHelpDialog(field.Title, field.Description))'
+                                                          Value="@GetFieldValue(field.Key)"
+                                                          ValueChanged="@(value => SetFieldValue(field.Key, value))" />
+                                    }
+                                    else
+                                    {
+                                        <IniTextField Title="@field.Title"
+                                                      ValueType="@GetValueTypeLabel(field.Type)"
+                                                      IsServerManaged="@field.IsServerManaged"
+                                                      StatusCode="@GetStatusCode(field)"
+                                                      SourceUrl="@WikiSourceUrl"
+                                                      Placeholder="@GetPlaceholder(field)"
+                                                      OnHelpClick='@(() => OpenHelpDialog(field.Title, field.Description))'
+                                                      Value="@GetFieldValue(field.Key)"
+                                                      ValueChanged="@(value => SetFieldValue(field.Key, value))" />
+                                    }
                                     break;
                             }
                         </div>
@@ -120,10 +118,10 @@
         }
     }
 
-    <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-5">
+    <div class="rounded-[1.2rem] border border-white/10 bg-black/20 p-4">
         <p class="text-[0.7rem] uppercase tracking-[0.28em] text-fuchsia-200/85">Generated GameUserSettings.ini</p>
         <textarea readonly
-                  class="mt-4 min-h-80 w-full rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200 outline-none">@BuildGameUserSettingsPreview()</textarea>
+                  class="mt-3 min-h-72 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 font-mono text-xs leading-6 text-neutral-200 outline-none">@BuildGameUserSettingsPreview()</textarea>
     </div>
 </section>
 
@@ -287,39 +285,19 @@
         };
     }
 
-    private static string GetAvailabilityLabel(GameUserSettingsFieldDefinition field)
+    private static string GetStatusCode(GameUserSettingsFieldDefinition field)
     {
         if (field.IsServerManaged)
         {
-            return "Server managed";
+            return "S";
         }
 
         if (field.IsUnsupported)
         {
-            return "Not in ASA";
+            return "X";
         }
 
-        return field.Uncertain ? "Check wiki" : "Supported";
-    }
-
-    private static string? GetNote(GameUserSettingsFieldDefinition field)
-    {
-        if (field.IsServerManaged)
-        {
-            return "Managed from Server Config.";
-        }
-
-        if (field.IsUnsupported)
-        {
-            return "Marked as unsupported for ASA on the wiki.";
-        }
-
-        if (field.Uncertain)
-        {
-            return "May not be supported in ASA. Verify on the wiki and test before relying on it.";
-        }
-
-        return null;
+        return field.Uncertain ? "?" : "S";
     }
 
     private string BuildGameUserSettingsPreview()
