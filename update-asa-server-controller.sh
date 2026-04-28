@@ -123,8 +123,8 @@ EOF
 
 log_manager "ASA Server Controller Updater"
 
-if [ ! -x "${DOTNET_BIN}" ] || ! "${DOTNET_BIN}" --list-sdks 2>/dev/null | grep -q "^${DOTNET_SDK_VERSION}$"; then
-  log_error ".NET SDK ${DOTNET_SDK_VERSION} is not installed. Run the setup script first."
+if [ ! -x "${DOTNET_BIN}" ] || ! "${DOTNET_BIN}" --list-sdks 2>/dev/null | grep -q '^10\.0\.'; then
+  log_error ".NET 10 SDK is not installed. Run the setup script first."
   exit 1
 fi
 
