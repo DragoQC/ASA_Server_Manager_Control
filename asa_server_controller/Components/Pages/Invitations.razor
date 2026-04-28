@@ -786,9 +786,24 @@
             return;
         }
 
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", value);
-        _statusMessage = successMessage;
-        _statusIsError = false;
+        try
+        {
+            bool copied = await JS.InvokeAsync<bool>("appClipboard.copyText", value);
+            if (!copied)
+            {
+                _statusMessage = "Unable to copy the invitation link on this browser.";
+                _statusIsError = true;
+                return;
+            }
+
+            _statusMessage = successMessage;
+            _statusIsError = false;
+        }
+        catch (JSException)
+        {
+            _statusMessage = "Unable to copy the invitation link on this browser.";
+            _statusIsError = true;
+        }
     }
 
     private Task CopyVpnInviteLinkAsync(string? inviteLink)
