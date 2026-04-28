@@ -1,4 +1,5 @@
 .user-settings-masonry {
+    columns: 1 22rem;
     column-gap: 1.5rem;
 }
 
@@ -11,8 +12,8 @@
     -webkit-column-break-inside: avoid;
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
     .user-settings-masonry {
-        column-count: 2;
+        columns: 2 24rem;
     }
 }
