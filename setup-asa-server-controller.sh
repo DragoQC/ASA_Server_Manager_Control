@@ -95,6 +95,17 @@ run_as_app_user_bash() {
   runuser -u "${USER_NAME}" -- bash -lc "$1"
 }
 
+install_update_command() {
+  local command_path="$1"
+
+  cat <<EOF > "${command_path}"
+#!/usr/bin/env bash
+exec "${REPO_DIR}/update-asa-server-controller.sh" "\$@"
+EOF
+
+  chmod 0755 "${command_path}"
+}
+
 log_manager "ASA Server Controller Installer"
 
 log_manager "Installing dependencies..."
@@ -227,16 +238,10 @@ log_ok "Published control web app to ${PUBLISH_DIR}."
 
 if [ -f "${REPO_DIR}/update-asa-server-controller.sh" ]; then
   chmod 0755 "${REPO_DIR}/update-asa-server-controller.sh"
-  ln -sfn "${REPO_DIR}/update-asa-server-controller.sh" "${UPDATE_LINK_PATH}"
-
-  if [ ! -e "${SHORT_UPDATE_LINK_PATH}" ] || [ -L "${SHORT_UPDATE_LINK_PATH}" ]; then
-    ln -sfn "${REPO_DIR}/update-asa-server-controller.sh" "${SHORT_UPDATE_LINK_PATH}"
-    log_ok "Linked ${SHORT_UPDATE_LINK_PATH} to the updater script."
-  else
-    log_info "Skipped ${SHORT_UPDATE_LINK_PATH}; a non-symlink file already exists there."
-  fi
-
-  log_ok "Linked ${UPDATE_LINK_PATH} to the updater script."
+  install_update_command "${UPDATE_LINK_PATH}"
+  install_update_command "${SHORT_UPDATE_LINK_PATH}"
+  log_ok "Installed ${UPDATE_LINK_PATH} updater command."
+  log_ok "Installed ${SHORT_UPDATE_LINK_PATH} updater command."
 fi
 
 log_manager "Creating systemd service..."
