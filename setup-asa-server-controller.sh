@@ -3,6 +3,8 @@
 export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
 export LANGUAGE=C.UTF-8
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_NOLOGO=1
 
 set -euo pipefail
 
@@ -14,6 +16,7 @@ ERROR_COLOR='\033[38;5;196m'
 SECTION_COLOR='\033[38;5;141m'
 GIT_COLOR='\033[38;5;45m'
 DOTNET_COLOR='\033[38;5;39m'
+VERBOSE=false
 
 log_manager() {
   echo -e "${SECTION_COLOR}[AsaServerController]${RESET} $1"
@@ -37,6 +40,33 @@ log_info() {
 
 log_error() {
   echo -e "${ERROR_COLOR}✖ $1${RESET}"
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -v|--verbose)
+      VERBOSE=true
+      ;;
+  esac
+  shift
+done
+
+run_quiet() {
+  if [ "${VERBOSE}" = true ]; then
+    "$@"
+    return
+  fi
+
+  local output_file
+  output_file="$(mktemp)"
+  if "$@" >"${output_file}" 2>&1; then
+    rm -f "${output_file}"
+    return
+  fi
+
+  cat "${output_file}" >&2
+  rm -f "${output_file}"
+  return 1
 }
 
 find_first_available_package() {
@@ -109,13 +139,13 @@ EOF
 log_manager "ASA Server Controller Installer"
 
 log_manager "Installing dependencies..."
-apt update
+run_quiet apt update
 ICU_PACKAGE="$(find_first_available_package libicu76 libicu72 libicu-dev)" || {
   log_error "Could not find a supported libicu package in apt."
   exit 1
 }
 
-apt install -y \
+run_quiet apt install -y \
   git \
   curl \
   wget \
@@ -187,8 +217,8 @@ log_ok "Granted ${USER_NAME} access to run the cluster server prep script and qu
 if [ ! -x "${DOTNET_BIN}" ] || ! "${DOTNET_BIN}" --list-sdks 2>/dev/null | grep -q "^${DOTNET_SDK_VERSION}$"; then
   log_dotnet "Installing .NET SDK ${DOTNET_SDK_VERSION}..."
   TEMP_INSTALL_SCRIPT="$(mktemp)"
-  curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${TEMP_INSTALL_SCRIPT}"
-  bash "${TEMP_INSTALL_SCRIPT}" --version "${DOTNET_SDK_VERSION}" --install-dir "${DOTNET_ROOT}"
+  run_quiet curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${TEMP_INSTALL_SCRIPT}"
+  run_quiet bash "${TEMP_INSTALL_SCRIPT}" --version "${DOTNET_SDK_VERSION}" --install-dir "${DOTNET_ROOT}"
   rm -f "${TEMP_INSTALL_SCRIPT}"
   ln -sf "${DOTNET_ROOT}/dotnet" "${DOTNET_BIN}"
   log_ok "Installed .NET SDK ${DOTNET_SDK_VERSION}."
@@ -203,12 +233,12 @@ log_git "Fetching repository..."
 if [ ! -d "${REPO_DIR}/.git" ]; then
   rm -rf "${REPO_DIR}"
   mkdir -p "$(dirname "${REPO_DIR}")"
-  run_as_app_user git clone --branch "${REPO_BRANCH}" "${REPO_URL}" "${REPO_DIR}"
+  run_quiet run_as_app_user git clone --branch "${REPO_BRANCH}" "${REPO_URL}" "${REPO_DIR}"
   log_ok "Cloned ${REPO_URL}."
 else
-  run_as_app_user git -C "${REPO_DIR}" fetch --all --prune
-  run_as_app_user git -C "${REPO_DIR}" checkout "${REPO_BRANCH}"
-  run_as_app_user git -C "${REPO_DIR}" reset --hard "origin/${REPO_BRANCH}"
+  run_quiet run_as_app_user git -C "${REPO_DIR}" fetch --all --prune
+  run_quiet run_as_app_user git -C "${REPO_DIR}" checkout "${REPO_BRANCH}"
+  run_quiet run_as_app_user git -C "${REPO_DIR}" reset --hard "origin/${REPO_BRANCH}"
   log_ok "Updated local repository copy."
 fi
 
@@ -217,7 +247,7 @@ rm -rf "${PUBLISH_DIR}"
 mkdir -p "${PUBLISH_DIR}"
 chown -R "${USER_NAME}:${GROUP_NAME}" "${WEBAPP_ROOT}"
 
-run_as_app_user_bash "export DOTNET_ROOT='${DOTNET_ROOT}'; export PATH='${DOTNET_ROOT}:/usr/local/bin:/usr/bin:/bin'; cd '${REPO_DIR}'; '${DOTNET_BIN}' publish '${APP_PROJECT_RELATIVE_PATH}' -c Release -o '${PUBLISH_DIR}'"
+run_quiet run_as_app_user_bash "export DOTNET_ROOT='${DOTNET_ROOT}'; export DOTNET_CLI_TELEMETRY_OPTOUT='1'; export DOTNET_NOLOGO='1'; export PATH='${DOTNET_ROOT}:/usr/local/bin:/usr/bin:/bin'; cd '${REPO_DIR}'; '${DOTNET_BIN}' publish '${APP_PROJECT_RELATIVE_PATH}' -c Release -o '${PUBLISH_DIR}'"
 
 mkdir -p "${PUBLISH_DIR}/Data"
 
@@ -256,6 +286,8 @@ User=${USER_NAME}
 Group=${GROUP_NAME}
 WorkingDirectory=${PUBLISH_DIR}
 Environment=DOTNET_ROOT=${DOTNET_ROOT}
+Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
+Environment=DOTNET_NOLOGO=1
 Environment=ASPNETCORE_URLS=${APP_URL}
 Environment=ASA_CONTROL_DATA_DIR=${APP_DATA_ROOT}
 ExecStart=${DOTNET_BIN} ${PUBLISH_DIR}/${APP_DLL_NAME}

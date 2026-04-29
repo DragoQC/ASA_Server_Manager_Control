@@ -3,6 +3,8 @@
 export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
 export LANGUAGE=C.UTF-8
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_NOLOGO=1
 
 set -euo pipefail
 
@@ -14,6 +16,7 @@ ERROR_COLOR='\033[38;5;196m'
 SECTION_COLOR='\033[38;5;141m'
 GIT_COLOR='\033[38;5;45m'
 DOTNET_COLOR='\033[38;5;39m'
+VERBOSE=false
 
 log_manager() {
   echo -e "${SECTION_COLOR}[AsaServerController]${RESET} $1"
@@ -41,6 +44,33 @@ log_warn() {
 
 log_error() {
   echo -e "${ERROR_COLOR}✖ $1${RESET}"
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -v|--verbose)
+      VERBOSE=true
+      ;;
+  esac
+  shift
+done
+
+run_quiet() {
+  if [ "${VERBOSE}" = true ]; then
+    "$@"
+    return
+  fi
+
+  local output_file
+  output_file="$(mktemp)"
+  if "$@" >"${output_file}" 2>&1; then
+    rm -f "${output_file}"
+    return
+  fi
+
+  cat "${output_file}" >&2
+  rm -f "${output_file}"
+  return 1
 }
 
 USER_NAME="${USER_NAME:-asa_manager_web_app}"
@@ -109,6 +139,8 @@ User=${USER_NAME}
 Group=${GROUP_NAME}
 WorkingDirectory=${PUBLISH_DIR}
 Environment=DOTNET_ROOT=${DOTNET_ROOT}
+Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
+Environment=DOTNET_NOLOGO=1
 Environment=ASPNETCORE_URLS=${APP_URL}
 Environment=ASA_CONTROL_DATA_DIR=${APP_DATA_ROOT}
 ExecStart=${DOTNET_BIN} ${PUBLISH_DIR}/${APP_DLL_NAME}
@@ -142,18 +174,18 @@ export PATH="/usr/local/bin:${PATH}"
 log_git "Fetching repository..."
 if [ ! -d "${REPO_DIR}/.git" ]; then
   mkdir -p "$(dirname "${REPO_DIR}")"
-  run_as_app_user git clone --branch "${REPO_BRANCH}" "${REPO_URL}" "${REPO_DIR}"
+  run_quiet run_as_app_user git clone --branch "${REPO_BRANCH}" "${REPO_URL}" "${REPO_DIR}"
   log_ok "Cloned ${REPO_URL} (${REPO_BRANCH})."
 else
-  run_as_app_user git -C "${REPO_DIR}" fetch --all --prune
+  run_quiet run_as_app_user git -C "${REPO_DIR}" fetch --all --prune
 
   if ! run_as_app_user git -C "${REPO_DIR}" show-ref --verify --quiet "refs/remotes/origin/${REPO_BRANCH}"; then
     log_error "Remote branch origin/${REPO_BRANCH} was not found."
     exit 1
   fi
 
-  run_as_app_user git -C "${REPO_DIR}" checkout "${REPO_BRANCH}"
-  run_as_app_user git -C "${REPO_DIR}" reset --hard "origin/${REPO_BRANCH}"
+  run_quiet run_as_app_user git -C "${REPO_DIR}" checkout "${REPO_BRANCH}"
+  run_quiet run_as_app_user git -C "${REPO_DIR}" reset --hard "origin/${REPO_BRANCH}"
   log_ok "Updated local repository copy to origin/${REPO_BRANCH}."
 fi
 
@@ -164,13 +196,13 @@ rm -rf "${NEXT_PUBLISH_DIR}"
 mkdir -p "${NEXT_PUBLISH_DIR}"
 chown -R "${USER_NAME}:${GROUP_NAME}" "${WEBAPP_ROOT}"
 
-run_as_app_user_bash "export DOTNET_ROOT='${DOTNET_ROOT}'; export PATH='${DOTNET_ROOT}:/usr/local/bin:/usr/bin:/bin'; cd '${REPO_DIR}'; '${DOTNET_BIN}' publish '${APP_PROJECT_RELATIVE_PATH}' -c Release -o '${NEXT_PUBLISH_DIR}'"
+run_quiet run_as_app_user_bash "export DOTNET_ROOT='${DOTNET_ROOT}'; export DOTNET_CLI_TELEMETRY_OPTOUT='1'; export DOTNET_NOLOGO='1'; export PATH='${DOTNET_ROOT}:/usr/local/bin:/usr/bin:/bin'; cd '${REPO_DIR}'; '${DOTNET_BIN}' publish '${APP_PROJECT_RELATIVE_PATH}' -c Release -o '${NEXT_PUBLISH_DIR}'"
 
 write_service_file
 
 if systemctl is-active --quiet "${SERVICE_NAME}"; then
   log_manager "Stopping ${SERVICE_NAME}..."
-  systemctl stop "${SERVICE_NAME}"
+  run_quiet systemctl stop "${SERVICE_NAME}"
 fi
 
 rm -rf "${PREVIOUS_PUBLISH_DIR}"
@@ -181,9 +213,9 @@ fi
 mv "${NEXT_PUBLISH_DIR}" "${PUBLISH_DIR}"
 chown -R "${USER_NAME}:${GROUP_NAME}" "${WEBAPP_ROOT}"
 
-systemctl daemon-reload
-systemctl enable "${SERVICE_NAME}" >/dev/null 2>&1 || true
-systemctl restart "${SERVICE_NAME}"
+run_quiet systemctl daemon-reload
+run_quiet systemctl enable "${SERVICE_NAME}"
+run_quiet systemctl restart "${SERVICE_NAME}"
 
 rm -rf "${PREVIOUS_PUBLISH_DIR}"
 
@@ -191,5 +223,7 @@ log_ok "Updated and restarted ${SERVICE_NAME}."
 log_info "Repository branch: ${REPO_BRANCH}"
 log_info "Publish path: ${PUBLISH_DIR}"
 log_info "App data path: ${APP_DATA_ROOT}"
-log_manager "Service status:"
-systemctl status "${SERVICE_NAME}" --no-pager
+if [ "${VERBOSE}" = true ]; then
+  log_manager "Service status:"
+  systemctl status "${SERVICE_NAME}" --no-pager
+fi
