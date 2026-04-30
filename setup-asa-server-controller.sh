@@ -158,7 +158,8 @@ run_quiet apt install -y \
   zlib1g \
   libc6-i386 \
   lib32gcc-s1 \
-  lib32stdc++6
+  lib32stdc++6 \
+	iptables
 log_ok "Installed dependencies."
 
 if ! getent group "${GROUP_NAME}" >/dev/null 2>&1; then
