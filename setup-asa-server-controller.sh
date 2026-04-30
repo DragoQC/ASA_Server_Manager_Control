@@ -209,8 +209,10 @@ ${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/systemctl enable wg-quick@${WG_INTERF
 ${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/systemctl start wg-quick@${WG_INTERFACE_NAME}
 ${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/systemctl stop wg-quick@${WG_INTERFACE_NAME}
 ${USER_NAME} ALL=(root) NOPASSWD: /usr/bin/systemctl restart wg-quick@${WG_INTERFACE_NAME}
+${USER_NAME} ALL=(root) NOPASSWD: /usr/sbin/iptables *
+${USER_NAME} ALL=(root) NOPASSWD: /usr/sbin/iptables-save *
+${USER_NAME} ALL=(root) NOPASSWD: /usr/sbin/iptables-restore *
 ${USER_NAME} ALL=(root) NOPASSWD: /usr/sbin/sysctl -w net.ipv4.ip_forward=1
-${USER_NAME} ALL=(root) NOPASSWD: /usr/sbin/iptables
 EOF
 chmod 0440 "${SUDOERS_FILE}"
 visudo -cf "${SUDOERS_FILE}"

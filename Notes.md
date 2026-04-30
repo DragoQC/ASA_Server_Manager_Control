@@ -1,4 +1,26 @@
-Sudo required error. you forgot some things in the new IP table and other things that was just added. we need toa djust the sudo requirements before pushing that
+Sudo required error. you forgot some things in the new IP table and other things that was just added. we need toa djust the sudo requirements before pushing that.
+WE need the app to stay safe its here the problem : 
+foreach (GamePortForwardingRule rule in rules)
+        {
+            string destination = $"{rule.TargetHost}:{rule.TargetGamePort}";
+            await RunIptablesAsync(
+                ["-t", "nat", "-A", GamePortDnatChain, "-p", "udp", "--dport", rule.ExposedGamePort.ToString(), "-j", "DNAT", "--to-destination", destination],
+                cancellationToken);
+
+            await RunIptablesAsync(
+                ["-t", "nat", "-A", GamePortSnatChain, "-p", "udp", "-d", rule.TargetHost, "--dport", rule.TargetGamePort.ToString(), "-j", "MASQUERADE"],
+                cancellationToken);
+
+            await RunIptablesAsync(
+                ["-A", GamePortForwardChain, "-p", "udp", "-d", rule.TargetHost, "--dport", rule.TargetGamePort.ToString(), "-j", "ACCEPT"],
+                cancellationToken);
+
+            await RunIptablesAsync(
+                ["-A", GamePortForwardChain, "-p", "udp", "-s", rule.TargetHost, "--sport", rule.TargetGamePort.ToString(), "-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"],
+                cancellationToken);
+        }
+
+				each of those arrent allowed by default need to add in setup those so we can safely execute those with usdo
 fail: Microsoft.Extensions.Hosting.Internal.Host[9]
       BackgroundService failed
       System.InvalidOperationException: sudo: a password is required
