@@ -102,7 +102,7 @@ WebApplication app = builder.Build();
 await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
 {
     AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await EnsureDatabaseMigratedAsync(dbContext);
+    await dbContext.Database.MigrateAsync();
     AuthService authService = scope.ServiceProvider.GetRequiredService<AuthService>();
     await authService.EnsureDefaultAdminUserAsync();
 }
@@ -126,52 +126,3 @@ app.MapRazorComponents<global::asa_server_controller.Components.App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
-
-static async Task EnsureDatabaseMigratedAsync(AppDbContext dbContext)
-{
-    IHistoryRepository historyRepository = dbContext.GetService<IHistoryRepository>();
-    IMigrationsAssembly migrationsAssembly = dbContext.GetService<IMigrationsAssembly>();
-
-    bool hasHistoryTable = await historyRepository.ExistsAsync();
-    if (!hasHistoryTable && await HasExistingApplicationTablesAsync(dbContext))
-    {
-        string? initialMigrationId = migrationsAssembly.Migrations.Keys.OrderBy(id => id).FirstOrDefault();
-        if (!string.IsNullOrWhiteSpace(initialMigrationId))
-        {
-            string productVersion = typeof(Migration).Assembly
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-                .InformationalVersion
-                .Split('+')[0]
-                ?? "10.0.0";
-            string createHistoryScript = historyRepository.GetCreateScript();
-            string insertHistoryScript = historyRepository.GetInsertScript(new HistoryRow(initialMigrationId, productVersion));
-
-            await dbContext.Database.ExecuteSqlRawAsync(createHistoryScript);
-            await dbContext.Database.ExecuteSqlRawAsync(insertHistoryScript);
-        }
-    }
-
-    await dbContext.Database.MigrateAsync();
-}
-
-static async Task<bool> HasExistingApplicationTablesAsync(AppDbContext dbContext)
-{
-    const string sql = """
-        SELECT COUNT(*)
-        FROM sqlite_master
-        WHERE type = 'table'
-          AND name NOT LIKE 'sqlite_%'
-          AND name <> '__EFMigrationsHistory';
-        """;
-
-    await using DbCommand command = dbContext.Database.GetDbConnection().CreateCommand();
-    command.CommandText = sql;
-
-    if (command.Connection?.State != ConnectionState.Open)
-    {
-        await dbContext.Database.OpenConnectionAsync();
-    }
-
-    object? result = await command.ExecuteScalarAsync();
-    return Convert.ToInt64(result) > 0;
-}
