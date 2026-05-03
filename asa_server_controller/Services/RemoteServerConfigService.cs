@@ -33,6 +33,7 @@ public sealed class RemoteServerConfigService(
         int gamePort,
         string modIds,
         string clusterId,
+        string customExtraArgs,
         CancellationToken cancellationToken = default)
     {
         RemoteServerConnection connection = await remoteServerService.LoadRequiredConnectionAsync(remoteServerId, cancellationToken);
@@ -47,7 +48,8 @@ public sealed class RemoteServerConfigService(
                 maxPlayers,
                 gamePort,
                 NormalizeModIds(modIds),
-                clusterId),
+                clusterId,
+                customExtraArgs),
             cancellationToken);
     }
 

@@ -8,4 +8,5 @@ public sealed class VpnInviteFormModel
     public string ClusterId { get; init; } = string.Empty;
     public string? VpnAddress { get; init; }
     public string Port { get; init; } = string.Empty;
+    public string ExposedGamePort { get; init; } = string.Empty;
 }

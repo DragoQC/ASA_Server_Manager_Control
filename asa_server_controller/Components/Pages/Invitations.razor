@@ -111,6 +111,12 @@
                                                    Hint="Prefilled to 8000. Change it only if the node web app uses another port."
                                                    autocomplete="off" />
 
+                                        <TextField Label="Exposed game port"
+                                                   @bind-Value="_form.ExposedGamePort"
+                                                   placeholder="7777"
+                                                   Hint="Prefilled to the next free public UDP game port. Deleted or reassigned ports become reusable."
+                                                   autocomplete="off" />
+
                                         <TextField Label="Cluster ID"
                                                    @bind-Value="_form.ClusterId"
                                                    readonly="readonly"
@@ -580,6 +586,7 @@
         _form.ClusterId = _vpnForm.ClusterId;
         _form.VpnAddress = _vpnForm.VpnAddress;
         _form.Port = _vpnForm.Port;
+        _form.ExposedGamePort = _vpnForm.ExposedGamePort;
 
         if (!_vpnForm.IsReady || string.IsNullOrWhiteSpace(_form.VpnAddress))
         {

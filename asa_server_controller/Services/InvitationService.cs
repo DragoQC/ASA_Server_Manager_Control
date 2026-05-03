@@ -18,6 +18,7 @@ public sealed class InvitationService(
     RemoteServerHubClientService remoteServerHubClientService)
 {
     private const int DefaultRemoteServerPort = 8000;
+    private const int DefaultExposedGamePort = 7777;
 
     public async Task<IReadOnlyList<InvitationListItem>> LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -56,7 +57,8 @@ public sealed class InvitationService(
                 IsVpnInstalled = false,
                 StatusMessage = "Install WireGuard on the Cluster setup page before creating VPN invitations.",
                 ClusterId = clusterSettings.ClusterId ?? string.Empty,
-                Port = DefaultRemoteServerPort.ToString()
+                Port = DefaultRemoteServerPort.ToString(),
+                ExposedGamePort = DefaultExposedGamePort.ToString()
             };
         }
 
@@ -68,7 +70,8 @@ public sealed class InvitationService(
                 IsVpnInstalled = true,
                 StatusMessage = "Finish the VPN setup on the Cluster setup page before creating VPN invitations.",
                 ClusterId = clusterSettings.ClusterId ?? string.Empty,
-                Port = DefaultRemoteServerPort.ToString()
+                Port = DefaultRemoteServerPort.ToString(),
+                ExposedGamePort = DefaultExposedGamePort.ToString()
             };
         }
 
@@ -80,13 +83,18 @@ public sealed class InvitationService(
                 IsVpnInstalled = true,
                 StatusMessage = "Set the cluster ID on the Cluster setup page before creating VPN invitations.",
                 ClusterId = string.Empty,
-                Port = DefaultRemoteServerPort.ToString()
+                Port = DefaultRemoteServerPort.ToString(),
+                ExposedGamePort = DefaultExposedGamePort.ToString()
             };
         }
 
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         List<string> reservedVpnAddresses = await dbContext.RemoteServers
             .Select(server => server.VpnAddress)
+            .ToListAsync(cancellationToken);
+        List<int> reservedExposedGamePorts = await dbContext.RemoteServers
+            .Where(server => server.ExposedGamePort.HasValue)
+            .Select(server => server.ExposedGamePort!.Value)
             .ToListAsync(cancellationToken);
 
         return new VpnInviteFormModel
@@ -95,7 +103,8 @@ public sealed class InvitationService(
             IsVpnInstalled = true,
             ClusterId = clusterSettings.ClusterId,
             VpnAddress = GetNextVpnAddress(await vpnService.LoadConfiguredAddressAsync(cancellationToken), reservedVpnAddresses),
-            Port = DefaultRemoteServerPort.ToString()
+            Port = DefaultRemoteServerPort.ToString(),
+            ExposedGamePort = GetNextExposedGamePort(reservedExposedGamePorts).ToString()
         };
     }
 
@@ -119,6 +128,7 @@ public sealed class InvitationService(
         {
             VpnAddress = form.VpnAddress.Trim(),
             Port = ParsePortOrDefault(form.Port),
+            ExposedGamePort = ParseExposedGamePortOrDefault(form.ExposedGamePort),
             InviteStatus = "Preview",
             ValidationStatus = "Preview",
             ApiKey = "(generated on link creation)"
@@ -181,6 +191,7 @@ public sealed class InvitationService(
         await using AppDbContext dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         string vpnAddress = form.VpnAddress.Trim();
         int parsedPort = ParsePortOrDefault(form.Port);
+        int parsedExposedGamePort = await ParseExposedGamePortAsync(dbContext, form.ExposedGamePort, cancellationToken);
         await RemoveOrphanedRemoteServerReservationAsync(dbContext, vpnAddress, cancellationToken);
 
         bool vpnAddressAlreadyExists = await dbContext.RemoteServers
@@ -210,6 +221,7 @@ public sealed class InvitationService(
         {
             VpnAddress = vpnAddress,
             Port = parsedPort,
+            ExposedGamePort = parsedExposedGamePort,
             InviteStatus = "Pending",
             ValidationStatus = "Not claimed",
             ApiKey = remoteApiKey
@@ -369,6 +381,57 @@ public sealed class InvitationService(
         dbContext.RemoteServerMods.RemoveRange(orphanedModLinks);
         dbContext.RemoteServers.RemoveRange(orphanedServers);
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static int ParseExposedGamePortOrDefault(string? exposedGamePort)
+    {
+        if (string.IsNullOrWhiteSpace(exposedGamePort))
+        {
+            return DefaultExposedGamePort;
+        }
+
+        if (!int.TryParse(exposedGamePort.Trim(), out int parsedPort) || parsedPort <= 0 || parsedPort > 65535)
+        {
+            throw new InvalidOperationException("Exposed game port is invalid.");
+        }
+
+        return parsedPort;
+    }
+
+    private static async Task<int> ParseExposedGamePortAsync(
+        AppDbContext dbContext,
+        string? exposedGamePort,
+        CancellationToken cancellationToken)
+    {
+        int parsedPort = ParseExposedGamePortOrDefault(exposedGamePort);
+
+        bool exposedGamePortExists = await dbContext.RemoteServers
+            .AnyAsync(server => server.ExposedGamePort == parsedPort, cancellationToken);
+
+        if (exposedGamePortExists)
+        {
+            throw new InvalidOperationException("Exposed game port is already assigned to another remote server.");
+        }
+
+        return parsedPort;
+    }
+
+    private static int GetNextExposedGamePort(IReadOnlyCollection<int> reservedExposedGamePorts)
+    {
+        HashSet<int> usedPorts = reservedExposedGamePorts.ToHashSet();
+        int suggestedPort = DefaultExposedGamePort;
+
+        while (usedPorts.Contains(suggestedPort) && suggestedPort < 65535)
+        {
+            suggestedPort++;
+        }
+
+        if (suggestedPort > 65535)
+        {
+            throw new InvalidOperationException("No exposed game ports are available.");
+        }
+
+        return suggestedPort;
     }
 
     public async Task<string> LoadInvitationConfigAsync(int invitationId, CancellationToken cancellationToken = default)

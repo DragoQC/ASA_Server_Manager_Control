@@ -99,13 +99,25 @@
                             </div>
                         </section>
 
+                        <section class="rounded-[1.6rem] border border-white/10 bg-white/5 p-6">
+                            <div class="mb-5">
+                                <h3 class="text-2xl font-semibold text-white">Extra flags</h3>
+                                <p class="mt-2 text-sm text-neutral-400">Raw extra launch flags passed to the remote node startup config.</p>
+                            </div>
+
+                            <div class="grid gap-4">
+                                <TextAreaHelpField Label="Custom extra args"
+                                                   @bind-Value="_configCustomExtraArgs"
+                                                   Hint="Example: -NoBattlEye -crossplay"
+                                                   OnHelpClick="@(() => OpenHelpDialog("Custom extra args", "Optional raw launch flags appended to the remote server start command. Example: -NoBattlEye -crossplay."))" />
+                            </div>
+                        </section>
+
                         <section class="rounded-[1.6rem] border border-fuchsia-400/15 bg-fuchsia-400/5 p-5 text-sm leading-6 text-neutral-300">
                             <p class="text-[0.7rem] uppercase tracking-[0.3em] text-fuchsia-200/85">Read-only extras</p>
                             <p class="mt-3">Query port: <span class="font-semibold text-white">@_configQueryPort</span></p>
                             <p class="mt-1">RCON port: <span class="font-semibold text-white">@_configRconPort</span></p>
                             <p class="mt-1">Cluster dir: <span class="font-semibold text-white">@_configClusterDir</span></p>
-                            <p class="mt-1">Extra args: <span class="font-semibold text-white">@_configCustomExtraArgs</span></p>
-                            <p class="mt-3 text-xs text-neutral-400">Those values are returned by the node, but the current node PATCH endpoint does not accept edits for them from this manager app yet.</p>
                         </section>
 
                         <div class="flex justify-end gap-3 pt-2">
@@ -164,7 +176,7 @@
     private string _configQueryPort = "-";
     private string _configRconPort = "-";
     private string _configClusterDir = "-";
-    private string _configCustomExtraArgs = "-";
+    private string _configCustomExtraArgs = string.Empty;
     private bool _showHelpDialog;
     private string _helpDialogTitle = string.Empty;
     private string _helpDialogMessage = string.Empty;
@@ -203,7 +215,7 @@
             _configQueryPort = config.QueryPort.ToString();
             _configRconPort = config.RconPort.ToString();
             _configClusterDir = string.IsNullOrWhiteSpace(config.ClusterDir) ? "-" : config.ClusterDir;
-            _configCustomExtraArgs = string.IsNullOrWhiteSpace(config.CustomExtraArgs) ? "-" : config.CustomExtraArgs;
+            _configCustomExtraArgs = config.CustomExtraArgs ?? string.Empty;
             _hasLoadedConfig = true;
         }
         catch (Exception exception)
@@ -248,7 +260,8 @@
                 maxPlayers,
                 gamePort,
                 _configModIds ?? string.Empty,
-                _configClusterId ?? string.Empty);
+                _configClusterId ?? string.Empty,
+                _configCustomExtraArgs);
 
             await OnClose.InvokeAsync();
             await OnSaved.InvokeAsync();
@@ -317,7 +330,7 @@
         _configQueryPort = "-";
         _configRconPort = "-";
         _configClusterDir = "-";
-        _configCustomExtraArgs = "-";
+        _configCustomExtraArgs = string.Empty;
     }
 
     private void ResetComponentState()

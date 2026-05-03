@@ -38,7 +38,8 @@ public sealed class RemoteClusterService(
                         null,
                         null,
                         null,
-                        clusterId.Trim()),
+                        clusterId.Trim(),
+                        null),
                     cancellationToken);
 
                 updatedCount++;
