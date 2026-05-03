@@ -15,6 +15,13 @@
             <StatusTag Text="Admin metrics" />
         </div>
 
+        @if (!string.IsNullOrWhiteSpace(_loadError))
+        {
+            <div class="rounded-2xl border border-red-300/20 bg-red-400/10 px-5 py-4 text-sm text-red-100">
+                @_loadError
+            </div>
+        }
+
         @if (_items.Count == 0)
         {
             <div class="rounded-[1.75rem] border border-fuchsia-400/15 bg-black/25 p-6 shadow-[0_0_30px_rgba(192,132,252,0.14)] backdrop-blur-xl">
@@ -92,6 +99,7 @@
 @code {
     private IReadOnlyList<DashboardServerItem> _items = Array.Empty<DashboardServerItem>();
     private bool _isDisposed;
+    private string? _loadError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -136,13 +144,26 @@
 
     private async Task RefreshAsync()
     {
-        await RemoteServerAdminHubClientService.SynchronizeNowAsync();
-        await RemoteServerInfoService.RefreshAllNowAsync();
+        try
+        {
+            await RemoteServerAdminHubClientService.SynchronizeNowAsync();
+            await RemoteServerInfoService.RefreshAllNowAsync();
 
-        IReadOnlyList<RemoteServerListItem> servers = await RemoteServerService.LoadAsync();
-        _items = servers
-            .Select(BuildItem)
-            .ToList();
+            IReadOnlyList<RemoteServerListItem> servers = await RemoteServerService.LoadAsync();
+            _items = servers
+                .Select(BuildItem)
+                .ToList();
+            _loadError = null;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _items = [];
+            _loadError = exception.Message;
+        }
     }
 
     private DashboardServerItem BuildItem(RemoteServerListItem server)

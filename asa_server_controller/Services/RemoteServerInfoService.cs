@@ -32,7 +32,18 @@ public sealed class RemoteServerInfoService(
 
         foreach (RemoteServerConnection connection in connections)
         {
-            await RefreshAsync(connection.Id, cancellationToken);
+            try
+            {
+                await RefreshAsync(connection.Id, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, "Failed to refresh server info for remote server {RemoteServerId}.", connection.Id);
+            }
         }
     }
 
