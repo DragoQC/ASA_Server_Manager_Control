@@ -1,13 +1,14 @@
 @page "/admin/cluster"
-@inject asa_server_controller.Services.ClusterSettingsService ClusterSettingsService
-@inject asa_server_controller.Services.NfsService NfsService
-@inject asa_server_controller.Services.RemoteClusterService RemoteClusterService
-@inject asa_server_controller.Services.InvitationService InvitationService
-@inject asa_server_controller.Services.VpnService VpnService
-@inject IJSRuntime JS
 @using asa_server_controller.Constants
 @using asa_server_controller.Models.Cluster
 @using asa_server_controller.Models.Vpn
+@using asa_server_controller.Services
+@inject ClusterSettingsService ClusterSettingsService
+@inject NfsService NfsService
+@inject RemoteClusterService RemoteClusterService
+@inject InvitationService InvitationService
+@inject VpnService VpnService
+@inject IJSRuntime JS
 @implements IDisposable
 
 <PageTitle>Cluster Setup</PageTitle>

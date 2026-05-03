@@ -1,13 +1,14 @@
 @page "/"
-@inject asa_server_controller.Services.RemoteServerModsService RemoteServerModsService
-@inject asa_server_controller.Services.RemoteServerHubClientService RemoteServerHubClientService
-@inject asa_server_controller.Services.RemoteServerInfoService RemoteServerInfoService
-@inject asa_server_controller.Services.InvitationEventsService InvitationEventsService
-@inject NavigationManager Navigation
-@inject IJSRuntime JS
 @using asa_server_controller.Models.Home;
+@using asa_server_controller.Services
 @using HomeServerModel = asa_server_controller.Models.Home.HomeServerModel
 @using PublicServerModItem = asa_server_controller.Models.Servers.PublicServerModItem
+@inject RemoteServerModsService RemoteServerModsService
+@inject RemoteServerHubClientService RemoteServerHubClientService
+@inject RemoteServerInfoService RemoteServerInfoService
+@inject InvitationEventsService InvitationEventsService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <PageTitle>ASA Fleet</PageTitle>
 

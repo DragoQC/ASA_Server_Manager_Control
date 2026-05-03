@@ -1,6 +1,8 @@
 @page "/admin/mods"
-@inject asa_server_controller.Services.ModsService ModsService
-@inject asa_server_controller.Services.ModsEventsService ModsEventsService
+@using asa_server_controller.Models.CurseForge
+@using asa_server_controller.Services
+@inject ModsService ModsService
+@inject ModsEventsService ModsEventsService
 @implements IDisposable
 
 <PageTitle>Mods</PageTitle>
@@ -62,7 +64,7 @@
         else
         {
             <MasonryLayout MaxColumns="4" MinColumnWidth="18rem">
-                @foreach (asa_server_controller.Models.CurseForge.CachedMod mod in _mods)
+                @foreach (CachedMod mod in _mods)
                 {
                     <MasonryItem>
                     <article class="group overflow-hidden rounded-[1.6rem] border border-fuchsia-200/12 bg-black/40 shadow-[0_0_40px_rgba(168,85,247,0.08)] backdrop-blur-md">
@@ -121,7 +123,7 @@
 </section>
 
 @code {
-    private IReadOnlyList<asa_server_controller.Models.CurseForge.CachedMod> _mods = [];
+    private IReadOnlyList<CachedMod> _mods = [];
     private int _cachedModCount;
     private int _fleetLinkedModCount;
     private bool _hasApiKey;
@@ -141,7 +143,7 @@
 
     private async Task LoadAsync()
     {
-        asa_server_controller.Models.CurseForge.ModsDashboardModel dashboard = await ModsService.LoadDashboardAsync();
+        ModsDashboardModel dashboard = await ModsService.LoadDashboardAsync();
         _hasApiKey = dashboard.HasApiKey;
         _mods = dashboard.CachedMods;
         _cachedModCount = dashboard.CachedModCount;

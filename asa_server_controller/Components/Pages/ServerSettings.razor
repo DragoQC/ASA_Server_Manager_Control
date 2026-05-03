@@ -1,7 +1,10 @@
 @page "/admin/server-settings"
-@inject asa_server_controller.Services.EmailSettingsService EmailSettingsService
-@inject asa_server_controller.Services.CurseForgeService CurseForgeService
-@inject asa_server_controller.Services.ModsService ModsService
+@using asa_server_controller.Models.CurseForge
+@using asa_server_controller.Models.Settings
+@using asa_server_controller.Services
+@inject EmailSettingsService EmailSettingsService
+@inject CurseForgeService CurseForgeService
+@inject ModsService ModsService
 
 <PageTitle>Server Settings</PageTitle>
 
@@ -170,8 +173,8 @@
             OnClose="CloseHelpDialog" />
 
 @code {
-    private asa_server_controller.Models.Settings.EmailSettingsModel _model = new();
-    private asa_server_controller.Models.CurseForge.CurseForgeApiSettingsModel _curseForgeSettings = new();
+    private EmailSettingsModel _model = new();
+    private CurseForgeApiSettingsModel _curseForgeSettings = new();
     private string _smtpPort = string.Empty;
     private string? _message;
     private string? _error;

@@ -1,6 +1,8 @@
 @page "/admin/user-settings"
+@using asa_server_controller.Models.Settings
+@using asa_server_controller.Services
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject asa_server_controller.Services.AuthService AuthService
+@inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
 <PageTitle>User Settings</PageTitle>
@@ -140,7 +142,7 @@
 </section>
 
 @code {
-    private asa_server_controller.Models.Settings.UserSettingsModel? _settings;
+    private UserSettingsModel? _settings;
     private string _email = string.Empty;
     private string? _message;
     private string? _error;

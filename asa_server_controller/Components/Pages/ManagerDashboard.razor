@@ -1,8 +1,10 @@
 @page "/admin/dashboard"
 @implements IDisposable
-@inject asa_server_controller.Services.RemoteServerService RemoteServerService
-@inject asa_server_controller.Services.RemoteServerAdminHubClientService RemoteServerAdminHubClientService
-@inject asa_server_controller.Services.RemoteServerInfoService RemoteServerInfoService
+@using asa_server_controller.Models.Servers
+@using asa_server_controller.Services
+@inject RemoteServerService RemoteServerService
+@inject RemoteServerAdminHubClientService RemoteServerAdminHubClientService
+@inject RemoteServerInfoService RemoteServerInfoService
 
 <PageTitle>Manager Dashboard</PageTitle>
 
@@ -137,16 +139,16 @@
         await RemoteServerAdminHubClientService.SynchronizeNowAsync();
         await RemoteServerInfoService.RefreshAllNowAsync();
 
-        IReadOnlyList<asa_server_controller.Models.Servers.RemoteServerListItem> servers = await RemoteServerService.LoadAsync();
+        IReadOnlyList<RemoteServerListItem> servers = await RemoteServerService.LoadAsync();
         _items = servers
             .Select(BuildItem)
             .ToList();
     }
 
-    private DashboardServerItem BuildItem(asa_server_controller.Models.Servers.RemoteServerListItem server)
+    private DashboardServerItem BuildItem(RemoteServerListItem server)
     {
-        asa_server_controller.Models.Servers.RemoteAdminHostMetricsSnapshot metrics = RemoteServerAdminHubClientService.GetSnapshot(server.Id);
-        asa_server_controller.Models.Servers.RemoteServerInfoResponse? info = RemoteServerInfoService.GetLatestInfo(server.Id);
+        RemoteAdminHostMetricsSnapshot metrics = RemoteServerAdminHubClientService.GetSnapshot(server.Id);
+        RemoteServerInfoResponse? info = RemoteServerInfoService.GetLatestInfo(server.Id);
         bool isConnected = string.Equals(metrics.ConnectionState, "Connected", StringComparison.Ordinal);
 
         return new DashboardServerItem(

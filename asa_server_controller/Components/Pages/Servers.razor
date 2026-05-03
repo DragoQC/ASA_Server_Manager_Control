@@ -2,13 +2,14 @@
 @using RemoteInstallStateSnapshot = asa_server_controller.Models.Install.RemoteInstallStateSnapshot
 @using RemoteManagerCommandResponse = asa_server_controller.Models.Servers.RemoteManagerCommandResponse
 @using ServerListItem = asa_server_controller.Models.Servers.RemoteServerListItem
-@inject asa_server_controller.Services.RemoteServerService RemoteServerService
-@inject asa_server_controller.Services.RemoteManagerService RemoteManagerService
-@inject asa_server_controller.Services.RemoteServerHubClientService RemoteServerHubClientService
-@inject asa_server_controller.Services.RemoteServerInstallStateHubClientService RemoteServerInstallStateHubClientService
-@inject asa_server_controller.Services.RemoteServerInfoService RemoteServerInfoService
-@inject asa_server_controller.Services.ToastService ToastService
-@inject asa_server_controller.Services.VpnService VpnService
+@using asa_server_controller.Services
+@inject RemoteServerService RemoteServerService
+@inject RemoteManagerService RemoteManagerService
+@inject RemoteServerHubClientService RemoteServerHubClientService
+@inject RemoteServerInstallStateHubClientService RemoteServerInstallStateHubClientService
+@inject RemoteServerInfoService RemoteServerInfoService
+@inject ToastService ToastService
+@inject VpnService VpnService
 @implements IDisposable
 
 <PageTitle>Servers</PageTitle>
@@ -396,7 +397,7 @@ private readonly ServerPageModel _page = new();
 		_page.DialogStatusIsError = false;
 		_page.EditConnectionRemoteServerId = item.Id;
 		_page.SelectedVpnAddress = item.VpnAddress;
-		_page.SelectedPort = item.Port?.ToString() ?? asa_server_controller.Services.RemoteServerService.DefaultRemoteServerPort;
+		_page.SelectedPort = item.Port?.ToString() ?? RemoteServerService.DefaultRemoteServerPort;
 		_page.SelectedExposedGamePort = item.ExposedGamePort?.ToString() ?? string.Empty;
 		_page.IsEditServerDialogOpen = true;
 	}
@@ -584,7 +585,7 @@ private readonly ServerPageModel _page = new();
 	{
 		_page.EditConnectionRemoteServerId = 0;
 		_page.SelectedVpnAddress = null;
-		_page.SelectedPort = asa_server_controller.Services.RemoteServerService.DefaultRemoteServerPort;
+		_page.SelectedPort = RemoteServerService.DefaultRemoteServerPort;
 		_page.SelectedExposedGamePort = string.Empty;
 	}
 
