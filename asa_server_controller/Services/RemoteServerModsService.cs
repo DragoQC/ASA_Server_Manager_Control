@@ -186,6 +186,7 @@ public sealed class RemoteServerModsService(
                     snapshot.PlayerCount.CurrentPlayers,
                     server.MaxPlayers ?? snapshot.PlayerCount.MaxPlayers,
                     server.MapName,
+                    !string.IsNullOrWhiteSpace(server.ServerPassword),
                     modsByServerId.TryGetValue(server.Id, out IReadOnlyList<PublicServerModItem>? items)
                         ? items
                         : []);
@@ -210,6 +211,7 @@ public sealed class RemoteServerModsService(
                 server.CurrentPlayers,
                 server.MaxPlayers,
                 mapNameService.Format(server.MapName),
+                server.IsPasswordProtected,
                 server.Mods))
             .ToList();
 

@@ -39,6 +39,7 @@ public sealed class RemoteServerService(
                 0,
                 server.MaxPlayers ?? 0,
                 server.GamePort,
+                server.ServerPassword,
                 server.ServerInfoCheckedAtUtc,
                 server.LastSeenAtUtc,
                 server.CreatedAtUtc))

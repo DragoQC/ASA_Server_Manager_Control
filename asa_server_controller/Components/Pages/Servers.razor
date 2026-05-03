@@ -115,6 +115,14 @@
 										}
 										<p>Created: @item.CreatedAtUtc.LocalDateTime</p>
 										<p>Last seen: @(item.LastSeenAtUtc?.LocalDateTime.ToString() ?? "Never")</p>
+										@if (IsPasswordProtected(item))
+										{
+											<p class="text-xs text-amber-200/85">Password protected.</p>
+											@if (!string.IsNullOrWhiteSpace(item.ServerPassword))
+											{
+												<p class="text-xs text-amber-100/90">Password: @item.ServerPassword</p>
+											}
+										}
 									</div>
 
 									@if (_page.ServerMessages.TryGetValue(item.Id, out string? serverMessage) &&
@@ -129,6 +137,7 @@
 									{
 										<ActionButton Text="Edit connection" Secondary="true" OnClick="@(() => OpenEditServerDialog(item))" />
 										<ActionButton Text="Edit config" Secondary="true" OnClick="@(() => OpenEditServerConfigDialogAsync(item))" />
+										<ActionButton Text="Edit INI files" Secondary="true" OnClick="@(() => OpenIniEditorAsync(item))" />
 										<ActionButton Text="Start" Disabled="@(IsStartBusy(item.Id) || !item.CanStart)"
 											OnClick="@(() => StartServerAsync(item.Id))" />
 										<ActionButton Text="Stop" Disabled="@(IsStopBusy(item.Id) || !item.CanStop)" Secondary="true"
@@ -177,6 +186,7 @@
 										{
 											<ActionButton Text="Edit connection" Secondary="true" OnClick="@(() => OpenEditServerFromMenu(item))" />
 											<ActionButton Text="Edit config" Secondary="true" OnClick="@(() => OpenEditServerConfigFromMenuAsync(item))" />
+											<ActionButton Text="Edit INI files" Secondary="true" OnClick="@(() => OpenIniEditorFromMenuAsync(item))" />
 											<ActionButton Text="Start" Disabled="@(IsStartBusy(item.Id) || !item.CanStart)"
 												OnClick="@(() => StartServerFromMenuAsync(item.Id))" />
 											<ActionButton Text="Stop" Disabled="@(IsStopBusy(item.Id) || !item.CanStop)" Secondary="true"
@@ -278,6 +288,11 @@
 			RemoteServerId="@_page.RconRemoteServerId"
 			CanSendRconCommand="@_page.CanSendRconCommand"
 			OnClose="CloseRconDialog" />
+
+<RemoteIniEditorDialog IsOpen="@_page.IsIniEditorOpen"
+					   RemoteServerId="@_page.SelectedIniRemoteServerId"
+					   ServerTitle="@_page.SelectedIniServerTitle"
+					   OnClose="CloseIniEditor" />
 
 <ConfirmationDialog IsOpen="@_page.IsDeleteServerDialogOpen"
 					IsBusy="@_page.IsDeletingServer"
@@ -619,6 +634,22 @@ private readonly ServerPageModel _page = new();
 		await OpenEditServerConfigDialogAsync(item);
 	}
 
+	private Task OpenIniEditorAsync(ServerListItem item)
+	{
+		_page.OpenActionMenuServerId = null;
+		_page.SelectedIniRemoteServerId = item.Id;
+		_page.SelectedIniServerTitle = GetServerTitle(item);
+		_page.IsIniEditorOpen = true;
+		return Task.CompletedTask;
+	}
+
+	private void CloseIniEditor()
+	{
+		_page.IsIniEditorOpen = false;
+		_page.SelectedIniRemoteServerId = 0;
+		_page.SelectedIniServerTitle = null;
+	}
+
 	private async Task StartServerFromMenuAsync(int remoteServerId)
 	{
 		_page.OpenActionMenuServerId = null;
@@ -641,6 +672,12 @@ private readonly ServerPageModel _page = new();
 	{
 		_page.OpenActionMenuServerId = null;
 		await OpenRconDialogAsync(item);
+	}
+
+	private async Task OpenIniEditorFromMenuAsync(ServerListItem item)
+	{
+		_page.OpenActionMenuServerId = null;
+		await OpenIniEditorAsync(item);
 	}
 
 	private void OpenDeleteServerFromMenu(ServerListItem item)
@@ -667,6 +704,11 @@ private readonly ServerPageModel _page = new();
 		return IsServerInstalled(item.Id)
 			? item.StateLabel
 			: "Uninstalled";
+	}
+
+	private static bool IsPasswordProtected(ServerListItem item)
+	{
+		return !string.IsNullOrWhiteSpace(item.ServerPassword);
 	}
 
 	private bool IsServerInstalled(int remoteServerId)
@@ -751,6 +793,9 @@ private readonly ServerPageModel _page = new();
 		public bool IsSavingServer { get; set; }
 		public bool IsEditServerConfigDialogOpen { get; set; }
 		public string SelectedConfigServerTitle { get; set; } = "this server";
+		public bool IsIniEditorOpen { get; set; }
+		public int SelectedIniRemoteServerId { get; set; }
+		public string? SelectedIniServerTitle { get; set; }
 		public bool IsRefreshing { get; set; }
 		public bool IsRconDialogOpen { get; set; }
 		public int? OpenActionMenuServerId { get; set; }

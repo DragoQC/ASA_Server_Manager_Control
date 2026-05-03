@@ -9,4 +9,5 @@ public sealed record HomeServerModel(
     int CurrentPlayers,
     int MaxPlayers,
     string FormattedMapName,
+    bool IsPasswordProtected,
     IReadOnlyList<PublicServerModItem> Mods);

@@ -121,6 +121,7 @@ public sealed class RemoteServerInfoService(
         remoteServer.MapName = response.MapName?.Trim() ?? string.Empty;
         remoteServer.MaxPlayers = response.MaxPlayers;
         remoteServer.GamePort = response.GamePort;
+        remoteServer.ServerPassword = response.ServerPassword?.Trim() ?? string.Empty;
         remoteServer.ServerInfoCheckedAtUtc = response.CheckedAtUtc;
 
         await dbContext.SaveChangesAsync(cancellationToken);

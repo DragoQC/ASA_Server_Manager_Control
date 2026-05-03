@@ -15,6 +15,7 @@ public sealed record RemoteServerListItem(
     int CurrentPlayers,
     int MaxPlayers,
     int? GamePort,
+    string ServerPassword,
     DateTimeOffset? ServerInfoCheckedAtUtc,
     DateTimeOffset? LastSeenAtUtc,
     DateTimeOffset CreatedAtUtc);

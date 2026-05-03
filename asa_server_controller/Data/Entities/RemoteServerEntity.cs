@@ -12,6 +12,7 @@ public sealed class RemoteServerEntity : BaseEntity
     public string MapName { get; set; } = string.Empty;
     public int? MaxPlayers { get; set; }
     public int? GamePort { get; set; }
+    public string ServerPassword { get; set; } = string.Empty;
     public DateTimeOffset? ServerInfoCheckedAtUtc { get; set; }
     public string ApiKey { get; set; } = string.Empty;
     public ICollection<InvitationEntity> Invitations { get; set; } = [];

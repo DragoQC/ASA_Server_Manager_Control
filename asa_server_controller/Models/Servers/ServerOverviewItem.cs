@@ -9,4 +9,5 @@ public sealed record ServerOverviewItem(
     int CurrentPlayers,
     int MaxPlayers,
     string MapName,
+    bool IsPasswordProtected,
     IReadOnlyList<PublicServerModItem> Mods);

@@ -54,6 +54,10 @@ public sealed class RemoteServerEntityConfiguration : IEntityTypeConfiguration<R
         builder.Property(remoteServer => remoteServer.GamePort)
             .IsRequired(false);
 
+        builder.Property(remoteServer => remoteServer.ServerPassword)
+            .HasMaxLength(512)
+            .IsRequired();
+
         builder.Property(remoteServer => remoteServer.ServerInfoCheckedAtUtc);
 
         builder.Property(remoteServer => remoteServer.ApiKey)
