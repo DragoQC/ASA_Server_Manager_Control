@@ -133,7 +133,7 @@
                             This control app acts as the VPN server. Enter the public endpoint you want remote servers to reach, then use the raw file dialog when you want to inspect or tweak the full config.
                         </p>
 
-                        <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@_file.FilePath</p>
+                        <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@FormatPathForWrap(_file.FilePath)</p>
                     </div>
 
                     <div class="rounded-[1.4rem] border border-fuchsia-400/15 bg-fuchsia-400/5 p-5">
@@ -165,7 +165,7 @@
                             <p class="mt-3 text-sm leading-6 text-neutral-300">
                                 @(_serverKeys?.Exists == true ? "Saved under the VPN folder for reuse and copy." : "No saved server key pair yet.")
                             </p>
-                            <p class="mt-3 text-xs uppercase tracking-[0.2em] text-neutral-500">@VpnConstants.ServerPublicKeyFilePath</p>
+                            <p class="mt-3 text-xs uppercase tracking-[0.2em] text-neutral-500">@FormatPathForWrap(VpnConstants.ServerPublicKeyFilePath)</p>
                         </div>
                     </div>
 
@@ -305,7 +305,7 @@
                                     <StatusTag Text="@(_nfsConfiguration.ServerConfigExists ? "Created" : "Preview")" />
                                 </div>
                                 <p class="text-sm leading-6 text-neutral-300">We strongly recommend using these default settings unless you know exactly what you want to change.</p>
-                                <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@_nfsConfiguration.ServerConfigFilePath</p>
+                                <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@FormatPathForWrap(_nfsConfiguration.ServerConfigFilePath)</p>
                                 <textarea @bind="_nfsServerConfigContent"
                                           @bind:event="oninput"
                                           spellcheck="false"
@@ -318,7 +318,7 @@
                                     <StatusTag Text="@(_nfsConfiguration.ClientConfigExists ? "Created" : "Preview")" />
                                 </div>
                                 <p class="text-sm leading-6 text-neutral-300">This is the node-side NFS mount line that invited servers can apply later for automatic mounting over the VPN.</p>
-                                <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@_nfsConfiguration.ClientConfigFilePath</p>
+                                <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">@FormatPathForWrap(_nfsConfiguration.ClientConfigFilePath)</p>
                                 <textarea @bind="_nfsClientConfigContent"
                                           @bind:event="oninput"
                                           spellcheck="false"
@@ -345,7 +345,7 @@
                         <StatusTag Text="@_file.StateLabel" />
                     </div>
                     <p class="max-w-3xl text-sm leading-6 text-neutral-300">@_file.Description</p>
-                    <p class="text-xs uppercase tracking-[0.28em] text-neutral-500">@_file.FilePath</p>
+                    <p class="text-xs uppercase tracking-[0.28em] text-neutral-500">@FormatPathForWrap(_file.FilePath)</p>
                 </div>
 
                 <button type="button"
@@ -955,5 +955,16 @@
     {
         _showGeneratedKeysDialog = false;
         return Task.CompletedTask;
+    }
+
+    private static MarkupString FormatPathForWrap(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return new MarkupString(string.Empty);
+        }
+
+        string encoded = System.Net.WebUtility.HtmlEncode(path);
+        return new MarkupString(encoded.Replace("/", "/<wbr>"));
     }
 }

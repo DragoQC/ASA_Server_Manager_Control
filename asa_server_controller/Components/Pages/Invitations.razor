@@ -63,8 +63,8 @@
             </section>
         }
 
-        <section class="min-w-0 rounded-[1.8rem] border border-white/10 bg-black/20 p-3 backdrop-blur">
-            <div class="flex flex-wrap gap-3 p-2 sm:grid sm:grid-cols-2">
+        <div class="min-w-0">
+            <div class="flex flex-wrap gap-3 border-b border-white/10 pb-4 sm:grid sm:grid-cols-2">
                 <button type="button"
                         @onclick='() => SetTab("vpn")'
                         class="@GetTabClass("vpn")">
@@ -77,12 +77,12 @@
                 </button>
             </div>
 
-            <div class="mt-6">
+            <div class="mt-5">
                 @if (string.Equals(_activeTab, "vpn", StringComparison.Ordinal))
                 {
                     <div class="@GetPanelClass()">
-                        <section class="space-y-8">
-                            <section class="min-w-0 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                        <section class="space-y-6">
+                            <section class="min-w-0 rounded-[1.8rem] border border-white/10 bg-black/20 p-5 backdrop-blur">
                                 <div class="min-w-0 space-y-3">
                                     <h2 class="text-2xl font-semibold text-white">VPN invitation link</h2>
                                     <p class="max-w-3xl text-sm leading-6 text-neutral-300" style="overflow-wrap:anywhere;">
@@ -98,7 +98,7 @@
                                 }
                                 else
                                 {
-                                    <div class="mt-6 grid gap-4 md:grid-cols-3">
+                                    <div class="mt-5 grid gap-4 md:grid-cols-3">
                                         <TextField Label="VPN address"
                                                    @bind-Value="_form.VpnAddress"
                                                    placeholder="10.10.10.3/32"
@@ -125,7 +125,7 @@
                                                    autocomplete="off" />
                                     </div>
 
-                                    <div class="mt-6 flex flex-wrap gap-3">
+                                    <div class="mt-5 flex flex-wrap gap-3">
                                         <button type="button"
                                             @onclick="CreateVpnInvitationLinkAsync"
                                                 disabled="@_isSendingVpnInvitation"
@@ -136,7 +136,7 @@
 
                                     @if (_vpnPreviewPayload is not null)
                                     {
-                                        <div class="mt-6 min-w-0 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-5">
+                                        <div class="mt-5 min-w-0 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-4">
                                             <div class="min-w-0">
                                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invite link</p>
                                                 <p class="mt-2 break-all text-sm text-neutral-300">@(string.IsNullOrWhiteSpace(_lastCreatedVpnInviteLink) ? "Create an invite to get a one-time link." : _lastCreatedVpnInviteLink)</p>
@@ -175,7 +175,7 @@
                                     <div class="space-y-4">
                                         @foreach (InvitationListItem item in _items)
                                         {
-                                            <div class="min-w-0 rounded-[1.6rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                                            <div class="min-w-0 rounded-[1.6rem] border border-white/10 bg-black/20 p-5 backdrop-blur">
                                                 <div class="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                                                     <div class="min-w-0 space-y-3">
                                                         <div class="flex flex-wrap gap-2">
@@ -230,8 +230,8 @@
                 else
                 {
                     <div class="@GetPanelClass()">
-                        <section class="space-y-8">
-                            <section class="min-w-0 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                        <section class="space-y-6">
+                            <section class="min-w-0 rounded-[1.8rem] border border-white/10 bg-black/20 p-5 backdrop-blur">
                                 <div class="min-w-0 space-y-3">
                                     <h2 class="text-2xl font-semibold text-white">NFS invitation link</h2>
                                     <p class="max-w-3xl text-sm leading-6 text-neutral-300" style="overflow-wrap:anywhere;">
@@ -247,7 +247,7 @@
                                 }
                                 else
                                 {
-                                    <div class="mt-6 grid gap-4 md:grid-cols-2">
+                                    <div class="mt-5 grid gap-4 md:grid-cols-2">
                                         <div>
                                             <label class="mb-2 block text-sm font-medium text-neutral-300">Remote server</label>
                                             <select value="@GetSelectedNfsServerValue()"
@@ -269,7 +269,7 @@
                                                    autocomplete="off" />
                                     </div>
 
-                                    <div class="mt-6 flex flex-wrap gap-3">
+                                    <div class="mt-5 flex flex-wrap gap-3">
                                         <button type="button"
                                                 @onclick="CreateNfsInvitationLinkAsync"
                                                 disabled="@(_isSendingNfsInvitation || !_selectedNfsRemoteServerId.HasValue)"
@@ -280,7 +280,7 @@
 
                                     @if (_nfsPreviewPayload is not null)
                                     {
-                                        <div class="mt-6 min-w-0 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-5">
+                                        <div class="mt-5 min-w-0 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-4">
                                             <div class="min-w-0">
                                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invite link</p>
                                                 <p class="mt-2 break-all text-sm text-neutral-300">@(string.IsNullOrWhiteSpace(_lastCreatedNfsInviteLink) ? "Create an invite to get a one-time link." : _lastCreatedNfsInviteLink)</p>
@@ -314,7 +314,7 @@
                                     <div class="space-y-4">
                                         @foreach (NfsShareInviteListItem item in _nfsItems)
                                         {
-                                            <div class="min-w-0 rounded-[1.6rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                                            <div class="min-w-0 rounded-[1.6rem] border border-white/10 bg-black/20 p-5 backdrop-blur">
                                                 <div class="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                                                     <div class="min-w-0 space-y-3">
                                                         <div class="flex flex-wrap gap-2">
@@ -364,7 +364,7 @@
                     </div>
                 }
             </div>
-        </section>
+        </div>
 </PageLayout>
 
 @code {
