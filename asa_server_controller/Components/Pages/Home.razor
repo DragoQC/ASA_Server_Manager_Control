@@ -12,9 +12,7 @@
 
 <PageTitle>ASA Fleet</PageTitle>
 
-<section
-	class="rounded-b-4xl border-x border-b border-fuchsia-400/15 bg-linear-to-br from-black/35 via-[#0b0612]/30 to-[#17081f]/35 p-8 shadow-[0_0_48px_rgba(168,85,247,0.16)] backdrop-blur-[2px]">
-	<div class="space-y-8">
+<PageLayout>
 		<div class="flex flex-wrap items-center justify-between gap-4">
 			<div>
 				<p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Public fleet overview</p>
@@ -77,8 +75,7 @@
 					}
 				</div>
 			}
-		</div>
-	</section>
+	</PageLayout>
 
 	@if (_selectedServer is not null)
 	{
