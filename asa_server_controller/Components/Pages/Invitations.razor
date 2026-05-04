@@ -63,8 +63,8 @@
             </section>
         }
 
-        <div class="min-w-0">
-            <div class="flex flex-wrap gap-3 border-b border-white/10 pb-4 sm:grid sm:grid-cols-2">
+        <section class="min-w-0 rounded-[1.8rem] border border-white/10 bg-black/20 p-3 backdrop-blur">
+            <div class="flex flex-wrap gap-3 p-2 sm:grid sm:grid-cols-2">
                 <button type="button"
                         @onclick='() => SetTab("vpn")'
                         class="@GetTabClass("vpn")">
@@ -125,7 +125,7 @@
                                                    autocomplete="off" />
                                     </div>
 
-                                    <div class="mt-5 flex flex-wrap gap-3">
+                                    <div class="mt-5 flex flex-wrap gap-3 border-b border-white/10 pb-5">
                                         <button type="button"
                                             @onclick="CreateVpnInvitationLinkAsync"
                                                 disabled="@_isSendingVpnInvitation"
@@ -136,7 +136,7 @@
 
                                     @if (_vpnPreviewPayload is not null)
                                     {
-                                        <div class="mt-5 min-w-0 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-4">
+                                        <div class="mt-5 min-w-0 space-y-5">
                                             <div class="min-w-0">
                                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invite link</p>
                                                 <p class="mt-2 break-all text-sm text-neutral-300">@(string.IsNullOrWhiteSpace(_lastCreatedVpnInviteLink) ? "Create an invite to get a one-time link." : _lastCreatedVpnInviteLink)</p>
@@ -269,7 +269,7 @@
                                                    autocomplete="off" />
                                     </div>
 
-                                    <div class="mt-5 flex flex-wrap gap-3">
+                                    <div class="mt-5 flex flex-wrap gap-3 border-b border-white/10 pb-5">
                                         <button type="button"
                                                 @onclick="CreateNfsInvitationLinkAsync"
                                                 disabled="@(_isSendingNfsInvitation || !_selectedNfsRemoteServerId.HasValue)"
@@ -280,7 +280,7 @@
 
                                     @if (_nfsPreviewPayload is not null)
                                     {
-                                        <div class="mt-5 min-w-0 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-4">
+                                        <div class="mt-5 min-w-0 space-y-5">
                                             <div class="min-w-0">
                                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invite link</p>
                                                 <p class="mt-2 break-all text-sm text-neutral-300">@(string.IsNullOrWhiteSpace(_lastCreatedNfsInviteLink) ? "Create an invite to get a one-time link." : _lastCreatedNfsInviteLink)</p>
@@ -364,7 +364,7 @@
                     </div>
                 }
             </div>
-        </div>
+        </section>
 </PageLayout>
 
 @code {
