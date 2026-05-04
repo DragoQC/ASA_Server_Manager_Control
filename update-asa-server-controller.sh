@@ -20,7 +20,7 @@ VERBOSE=false
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 log_manager() {
-  echo -e "${SECTION_COLOR}[AsaServerController]${RESET} $1"
+  echo -e "${SECTION_COLOR}[ASA Server Controller]${RESET} $1"
 }
 
 log_git() {
