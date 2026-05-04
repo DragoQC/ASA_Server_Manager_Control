@@ -8,45 +8,45 @@
 <PageTitle>Logs</PageTitle>
 
 <PageLayout>
-        <div class="flex flex-wrap items-center gap-4">
-            <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Logs</p>
-            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                WireGuard
-            </span>
+  <div class="flex flex-wrap items-center gap-4">
+    <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Logs</p>
+    <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+      WireGuard
+    </span>
+  </div>
+
+  <div class="min-w-0">
+    <h1 class="text-4xl font-semibold tracking-tight text-white">Logs</h1>
+    <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300" style="overflow-wrap:anywhere;">
+      Live status for <code class="rounded bg-white/10 px-2 py-1 text-neutral-100 break-all">wg-quick@wg0.service</code>. This page refreshes every 5 seconds.
+    </p>
+  </div>
+
+  @if (!string.IsNullOrWhiteSpace(_loadError))
+  {
+    <div class="rounded-2xl border border-red-300/20 bg-red-400/10 px-5 py-4 text-sm text-red-100">
+      @_loadError
+    </div>
+  }
+
+  <div class="space-y-6">
+    @foreach (LogSectionSnapshot logSection in GetSections())
+    {
+      <section class="min-w-0 rounded-[1.6rem] border border-white/10 bg-black/40 p-6 shadow-[0_0_30px_rgba(168,85,247,0.08)]">
+        <div class="min-w-0 space-y-3">
+          <div class="flex flex-wrap items-center gap-3">
+            <h2 class="text-2xl font-semibold text-white">@logSection.Title</h2>
+            <StatusTag Text="@(logSection.IsAvailable ? "OK" : "Missing")" />
+          </div>
+
+          <p class="text-sm leading-6 text-neutral-300" style="overflow-wrap:anywhere;">@logSection.Description</p>
         </div>
 
-        <div>
-            <h1 class="text-4xl font-semibold tracking-tight text-white">Logs</h1>
-            <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
-                Live status for <code class="rounded bg-white/10 px-2 py-1 text-neutral-100">wg-quick@wg0.service</code>. This page refreshes every 5 seconds.
-            </p>
-        </div>
-
-        @if (!string.IsNullOrWhiteSpace(_loadError))
-        {
-            <div class="rounded-2xl border border-red-300/20 bg-red-400/10 px-5 py-4 text-sm text-red-100">
-                @_loadError
-            </div>
-        }
-
-        <div class="space-y-6">
-            @foreach (LogSectionSnapshot logSection in GetSections())
-            {
-                <section class="rounded-[1.6rem] border border-white/10 bg-black/40 p-6 shadow-[0_0_30px_rgba(168,85,247,0.08)]">
-                    <div class="space-y-3">
-                        <div class="flex flex-wrap items-center gap-3">
-                            <h2 class="text-2xl font-semibold text-white">@logSection.Title</h2>
-                            <StatusTag Text="@(logSection.IsAvailable ? "OK" : "Missing")" />
-                        </div>
-
-                        <p class="text-sm leading-6 text-neutral-300">@logSection.Description</p>
-                    </div>
-
-                    <pre class="mt-5 h-[20rem] overflow-auto rounded-[1.2rem] border border-white/10 bg-[#05070d] p-4 font-mono text-sm leading-6 whitespace-pre-wrap text-fuchsia-100 shadow-[inset_0_0_25px_rgba(168,85,247,0.08)]">@logSection.Content</pre>
-                </section>
-            }
-        </div>
-    </PageLayout>
+        <pre class="mt-5 h-[20rem] min-w-0 overflow-auto rounded-[1.2rem] border border-white/10 bg-[#05070d] p-4 font-mono text-sm leading-6 whitespace-pre-wrap text-fuchsia-100 shadow-[inset_0_0_25px_rgba(168,85,247,0.08)]" style="overflow-wrap:anywhere;word-break:break-word;">@logSection.Content</pre>
+      </section>
+    }
+  </div>
+</PageLayout>
 
 @code {
     private ControlLogsSnapshot _snapshot = new(

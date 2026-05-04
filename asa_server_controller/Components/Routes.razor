@@ -1,11 +1,13 @@
-﻿<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(global::asa_server_controller.Components.Pages.NotFound)">
-    <Found Context="routeData">
-        <ForcePasswordChangeRedirect RouteData="routeData" />
-        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(global::asa_server_controller.Components.Layout.MainLayout)">
-            <NotAuthorized>
-                <RedirectToLogin />
-            </NotAuthorized>
-        </AuthorizeRouteView>
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
-    </Found>
+﻿<Router AppAssembly="typeof(Program).Assembly"
+				NotFoundPage="typeof(global::asa_server_controller.Components.Pages.NotFound)">
+	<Found Context="routeData">
+		<ForcePasswordChangeRedirect RouteData="routeData" />
+		<AuthorizeRouteView RouteData="routeData"
+												DefaultLayout="typeof(global::asa_server_controller.Components.Layout.MainLayout)">
+			<NotAuthorized>
+				<RedirectToLogin />
+			</NotAuthorized>
+		</AuthorizeRouteView>
+		<FocusOnNavigate RouteData="routeData" Selector="h1" />
+	</Found>
 </Router>
