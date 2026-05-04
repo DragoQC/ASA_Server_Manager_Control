@@ -14,19 +14,19 @@
 <PageTitle>Invitations</PageTitle>
 
 <PageLayout>
-        <div class="flex flex-wrap items-center gap-4">
-            <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Invitations</p>
-            <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
-                Remote join flow
-            </span>
-        </div>
+  <div class="flex flex-wrap items-center gap-4">
+    <p class="text-[0.7rem] uppercase tracking-[0.35em] text-fuchsia-200/85">Invitations</p>
+    <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+      Remote join flow
+    </span>
+  </div>
 
-        <div>
-            <h1 class="text-4xl font-semibold tracking-tight text-white">Invitations</h1>
-            <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300">
-                Create one-time VPN and NFS invitation links for remote servers, preview the payload that gets returned, and keep a history of previous invitation links.
-            </p>
-        </div>
+  <div class="min-w-0">
+    <h1 class="text-4xl font-semibold tracking-tight text-white">Invitations</h1>
+    <p class="mt-4 max-w-3xl text-sm leading-7 text-neutral-300" style="overflow-wrap:anywhere;">
+      Create one-time VPN and NFS invitation links for remote servers, preview the payload that gets returned, and keep a history of previous invitation links.
+    </p>
+  </div>
 
         @if (!string.IsNullOrWhiteSpace(_statusMessage))
         {
@@ -63,7 +63,7 @@
             </section>
         }
 
-        <section class="rounded-[1.8rem] border border-white/10 bg-black/20 p-3 backdrop-blur">
+        <section class="min-w-0 rounded-[1.8rem] border border-white/10 bg-black/20 p-3 backdrop-blur">
             <div class="flex flex-wrap gap-3 p-2 sm:grid sm:grid-cols-2">
                 <button type="button"
                         @onclick='() => SetTab("vpn")'
@@ -82,10 +82,10 @@
                 {
                     <div class="@GetPanelClass()">
                         <section class="space-y-8">
-                            <section class="rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
-                                <div class="space-y-3">
+                            <section class="min-w-0 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                                <div class="min-w-0 space-y-3">
                                     <h2 class="text-2xl font-semibold text-white">VPN invitation link</h2>
-                                    <p class="max-w-3xl text-sm leading-6 text-neutral-300">
+                                    <p class="max-w-3xl text-sm leading-6 text-neutral-300" style="overflow-wrap:anywhere;">
                                         Generate a one-time VPN invitation link. The control app will create or update the remote server entry automatically, store the API key there, and prebuild that node's WireGuard files before the link is used.
                                     </p>
                                 </div>
@@ -136,20 +136,20 @@
 
                                     @if (_vpnPreviewPayload is not null)
                                     {
-                                        <div class="mt-6 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-5">
-                                            <div>
+                                        <div class="mt-6 min-w-0 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-5">
+                                            <div class="min-w-0">
                                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invite link</p>
                                                 <p class="mt-2 break-all text-sm text-neutral-300">@(string.IsNullOrWhiteSpace(_lastCreatedVpnInviteLink) ? "Create an invite to get a one-time link." : _lastCreatedVpnInviteLink)</p>
                                             </div>
 
-                                            <div>
+                                            <div class="min-w-0">
                                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Payload preview</p>
-                                                <pre class="mt-4 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200">@BuildPayloadPreview()</pre>
+                                                <pre class="mt-4 min-w-0 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200" style="overflow-wrap:anywhere;word-break:break-word;">@BuildPayloadPreview()</pre>
                                             </div>
 
-                                            <div>
+                                            <div class="min-w-0">
                                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invitation wg0.conf preview</p>
-                                                <pre class="mt-4 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200">@_vpnPreviewPayload.Wg0Config</pre>
+                                                <pre class="mt-4 min-w-0 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200" style="overflow-wrap:anywhere;word-break:break-word;">@_vpnPreviewPayload.Wg0Config</pre>
                                             </div>
                                         </div>
                                     }
@@ -175,15 +175,15 @@
                                     <div class="space-y-4">
                                         @foreach (InvitationListItem item in _items)
                                         {
-                                            <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
-                                                <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                                                    <div class="space-y-3">
+                                            <div class="min-w-0 rounded-[1.6rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                                                <div class="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                                                    <div class="min-w-0 space-y-3">
                                                         <div class="flex flex-wrap gap-2">
                                                             <StatusTag Text="@item.InviteStatus" />
                                                             <StatusTag Text="@item.ValidationStatus" />
                                                         </div>
 
-                                                        <div>
+                                                        <div class="min-w-0">
                                                             <p class="text-sm font-medium text-white">VPN invitation</p>
                                                             <p class="mt-1 text-sm text-neutral-300">Cluster ID: @item.ClusterId</p>
                                                             <p class="mt-1 text-sm text-neutral-300">VPN address: @item.VpnAddress</p>
@@ -213,7 +213,7 @@
                                                         </div>
                                                     </div>
 
-                                                    <div class="text-sm text-neutral-400">
+                                                    <div class="min-w-0 text-sm text-neutral-400" style="overflow-wrap:anywhere;">
                                                         <p>Created: @item.CreatedAtUtc.LocalDateTime</p>
                                                         <p>Used: @(item.UsedAtUtc?.LocalDateTime.ToString() ?? "Not used")</p>
                                                         <p>Last seen: @(item.LastSeenAtUtc?.LocalDateTime.ToString() ?? "Never")</p>
@@ -231,10 +231,10 @@
                 {
                     <div class="@GetPanelClass()">
                         <section class="space-y-8">
-                            <section class="rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
-                                <div class="space-y-3">
+                            <section class="min-w-0 rounded-[1.8rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                                <div class="min-w-0 space-y-3">
                                     <h2 class="text-2xl font-semibold text-white">NFS invitation link</h2>
-                                    <p class="max-w-3xl text-sm leading-6 text-neutral-300">
+                                    <p class="max-w-3xl text-sm leading-6 text-neutral-300" style="overflow-wrap:anywhere;">
                                         Generate a one-time NFS invitation link for a joined remote server. This payload returns the VPN share path, the node mount path, and the NFS mount config content.
                                     </p>
                                 </div>
@@ -252,7 +252,7 @@
                                             <label class="mb-2 block text-sm font-medium text-neutral-300">Remote server</label>
                                             <select value="@GetSelectedNfsServerValue()"
                                                     @onchange="OnNfsServerChangedAsync"
-                                                    class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none">
+                                                    class="w-full min-w-0 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none">
                                                 <option value="">Select a joined server</option>
                                                 @foreach (NfsShareInviteServerOption option in _nfsServerOptions)
                                                 {
@@ -280,15 +280,15 @@
 
                                     @if (_nfsPreviewPayload is not null)
                                     {
-                                        <div class="mt-6 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-5">
-                                            <div>
+                                        <div class="mt-6 min-w-0 space-y-4 rounded-[1.6rem] border border-white/10 bg-black/25 p-5">
+                                            <div class="min-w-0">
                                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Invite link</p>
                                                 <p class="mt-2 break-all text-sm text-neutral-300">@(string.IsNullOrWhiteSpace(_lastCreatedNfsInviteLink) ? "Create an invite to get a one-time link." : _lastCreatedNfsInviteLink)</p>
                                             </div>
 
-                                            <div>
+                                            <div class="min-w-0">
                                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-300">Payload preview</p>
-                                                <pre class="mt-4 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200">@BuildNfsPayloadPreview()</pre>
+                                                <pre class="mt-4 min-w-0 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-neutral-200" style="overflow-wrap:anywhere;word-break:break-word;">@BuildNfsPayloadPreview()</pre>
                                             </div>
                                         </div>
                                     }
@@ -314,14 +314,14 @@
                                     <div class="space-y-4">
                                         @foreach (NfsShareInviteListItem item in _nfsItems)
                                         {
-                                            <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
-                                                <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                                                    <div class="space-y-3">
+                                            <div class="min-w-0 rounded-[1.6rem] border border-white/10 bg-black/20 p-6 backdrop-blur">
+                                                <div class="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                                                    <div class="min-w-0 space-y-3">
                                                         <div class="flex flex-wrap gap-2">
                                                             <StatusTag Text="@(item.UsedAtUtc is null ? "Pending" : "Accepted")" />
                                                         </div>
 
-                                                        <div>
+                                                        <div class="min-w-0">
                                                             <p class="text-sm font-medium text-white">NFS invitation</p>
                                                             <p class="mt-1 text-sm text-neutral-300">VPN address: @item.VpnAddress</p>
                                                             <p class="mt-1 break-all text-sm text-neutral-300">Invite link: @item.InviteLink</p>
@@ -350,7 +350,7 @@
                                                         </div>
                                                     </div>
 
-                                                    <div class="text-sm text-neutral-400">
+                                                    <div class="min-w-0 text-sm text-neutral-400" style="overflow-wrap:anywhere;">
                                                         <p>Created: @item.CreatedAtUtc.LocalDateTime</p>
                                                         <p>Used: @(item.UsedAtUtc?.LocalDateTime.ToString() ?? "Not used")</p>
                                                     </div>
@@ -365,7 +365,7 @@
                 }
             </div>
         </section>
-    </PageLayout>
+</PageLayout>
 
 @code {
     private readonly InvitationFormModel _form = new();
@@ -873,7 +873,7 @@
             Title="@_selectedInviteConfigTitle"
             PillText="Config"
             OnClose="@CloseInvitationConfigDialog">
-    <pre class="overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-fuchsia-100">@(_selectedInviteConfigContent ?? "No invitation config loaded.")</pre>
+  <pre class="min-w-0 overflow-x-auto whitespace-pre-wrap rounded-[1.2rem] border border-white/10 bg-black/35 px-4 py-3 font-mono text-xs leading-6 text-fuchsia-100" style="overflow-wrap:anywhere;word-break:break-word;">@(_selectedInviteConfigContent ?? "No invitation config loaded.")</pre>
 </InfoDialog>
 
 <style>
