@@ -339,6 +339,7 @@ private readonly ServerPageModel _page = new();
 			IReadOnlyList<ServerListItem> previousItems = _page.Items;
 			_page.Items = await RemoteServerService.LoadAsync();
 			_page.VpnPort = await VpnService.LoadCurrentListenPortAsync();
+			SyncOpenRconDialogState();
 			HandleServerStateToasts(previousItems, _page.Items);
 		}
 		finally
@@ -531,6 +532,20 @@ private readonly ServerPageModel _page = new();
 		_page.RconRemoteServerId = 0;
 		_page.CanSendRconCommand = false;
 		_page.RconOnlinePlayers = [];
+	}
+
+	private void SyncOpenRconDialogState()
+	{
+		if (!_page.IsRconDialogOpen || _page.RconRemoteServerId <= 0)
+		{
+			return;
+		}
+
+		ServerListItem? currentItem = _page.Items.FirstOrDefault(item => item.Id == _page.RconRemoteServerId);
+		asa_server_controller.Models.Servers.RemoteServerHubSnapshot snapshot = RemoteServerHubClientService.GetSnapshot(_page.RconRemoteServerId);
+
+		_page.CanSendRconCommand = currentItem?.CanSendRconCommand ?? snapshot.CanSendRconCommand;
+		_page.RconOnlinePlayers = snapshot.PlayerCount.Players;
 	}
 
 	private void OpenDeleteServerDialog(ServerListItem item)
