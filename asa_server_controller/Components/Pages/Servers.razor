@@ -286,6 +286,7 @@
 <RconDialog IsOpen="@_page.IsRconDialogOpen"
 			RemoteServerId="@_page.RconRemoteServerId"
 			CanSendRconCommand="@_page.CanSendRconCommand"
+			OnlinePlayers="@_page.RconOnlinePlayers"
 			OnClose="CloseRconDialog" />
 
 <RemoteIniEditorDialog IsOpen="@_page.IsIniEditorOpen"
@@ -516,8 +517,10 @@ private readonly ServerPageModel _page = new();
 	private async Task OpenRconDialogAsync(ServerListItem item)
 	{
 		_page.OpenActionMenuServerId = null;
+		asa_server_controller.Models.Servers.RemoteServerHubSnapshot snapshot = RemoteServerHubClientService.GetSnapshot(item.Id);
 		_page.RconRemoteServerId = item.Id;
 		_page.CanSendRconCommand = item.CanSendRconCommand;
+		_page.RconOnlinePlayers = snapshot.PlayerCount.Players;
 		_page.IsRconDialogOpen = true;
 		await Task.CompletedTask;
 	}
@@ -527,6 +530,7 @@ private readonly ServerPageModel _page = new();
 		_page.IsRconDialogOpen = false;
 		_page.RconRemoteServerId = 0;
 		_page.CanSendRconCommand = false;
+		_page.RconOnlinePlayers = [];
 	}
 
 	private void OpenDeleteServerDialog(ServerListItem item)
@@ -783,6 +787,7 @@ private readonly ServerPageModel _page = new();
 		public int EditConnectionRemoteServerId { get; set; }
 		public int EditServerConfigRemoteServerId { get; set; }
 		public int RconRemoteServerId { get; set; }
+		public IReadOnlyList<asa_server_controller.Models.Servers.OnlinePlayerSnapshot> RconOnlinePlayers { get; set; } = [];
 		public string? SelectedVpnAddress { get; set; }
 		public string? SelectedPort { get; set; }
 		public string SelectedExposedGamePort { get; set; } = string.Empty;

@@ -163,6 +163,41 @@ public sealed class RemoteServerHubClientService(
             NotifyChanged(server.Id);
         });
 
+        connection.On<IReadOnlyList<OnlinePlayerSnapshot>>(AsaStateHubConstants.PlayerListUpdatedMethod, players =>
+        {
+            IReadOnlyList<OnlinePlayerSnapshot> normalizedPlayers = players ?? [];
+
+            _snapshots.AddOrUpdate(
+                server.Id,
+                _ => new RemoteServerHubSnapshot(
+                    server.Id,
+                    connection.State.ToString(),
+                    RemoteAsaServiceStatus.Unknown(),
+                    RemotePlayerCountSnapshot.Default() with
+                    {
+                        CurrentPlayers = normalizedPlayers.Count,
+                        Players = normalizedPlayers,
+                        UpdatedAtUtc = DateTimeOffset.UtcNow
+                    },
+                    false,
+                    DateTimeOffset.UtcNow),
+                (_, current) => current with
+                {
+                    ConnectionState = connection.State.ToString(),
+                    PlayerCount = current.PlayerCount with
+                    {
+                        CurrentPlayers = normalizedPlayers.Count > 0
+                            ? normalizedPlayers.Count
+                            : current.PlayerCount.CurrentPlayers,
+                        Players = normalizedPlayers,
+                        UpdatedAtUtc = DateTimeOffset.UtcNow
+                    },
+                    UpdatedAtUtc = DateTimeOffset.UtcNow
+                });
+
+            NotifyChanged(server.Id);
+        });
+
         connection.On<bool>(AsaStateHubConstants.CanSendRconCommandUpdatedMethod, canSendRconCommand =>
         {
             _snapshots.AddOrUpdate(
